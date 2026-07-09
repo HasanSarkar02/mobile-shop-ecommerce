@@ -10,7 +10,7 @@ final class Tenancy
 {
     private ?Tenant $tenant = null;
 
-    public function set(Tenant $tenant): void
+    public function set(?Tenant $tenant): void 
     {
         $this->tenant = $tenant;
     }

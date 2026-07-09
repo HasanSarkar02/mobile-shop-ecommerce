@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tenant extends Model
 {
-    protected $fillable = ['name', 'subdomain', 'status', 'plan', 'settings'];
+    protected $fillable = [
+    'name', 'subdomain', 'status', 'plan', 'settings',
+    'logo_path', 'currency', 'primary_color', 'contact_email', 'contact_phone',
+];
 
     protected function casts(): array
     {

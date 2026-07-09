@@ -15,13 +15,16 @@ class IdentifyTenant
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $host = $request->getHost();
-        $central = config('tenancy.central_domain');
+        $host = strtolower(trim($request->getHost()));
+        $central = strtolower(trim(config('tenancy.central_domain')));
 
         if ($host === $central || $host === "www.{$central}") {
+            // Reset tenant for central domain
+            app(Tenancy::class)->set(null);   // ← This line was causing the crash
             return $next($request);
         }
 
+        // Tenant subdomain / custom domain logic
         $tenant = str_ends_with($host, ".{$central}")
             ? Tenant::query()->where('subdomain', substr($host, 0, -strlen(".{$central}")))->first()
             : Domain::query()->where('domain', $host)->whereNotNull('verified_at')->first()?->tenant;

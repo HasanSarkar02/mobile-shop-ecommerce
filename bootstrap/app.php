@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'tenant' => \App\Http\Middleware\EnsureTenant::class,
+            'central' => \App\Http\Middleware\EnsureCentralDomain::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
