@@ -17,8 +17,9 @@ class ProductVariantFactory extends Factory
         return [
             'sku' => strtoupper($this->faker->bothify('SKU-????-####')),
             'price' => $this->faker->numberBetween(1000000, 15000000),
-            'currency' => 'BDT',
-            'availability' => VariantAvailability::InStock,
+            'inventory_type' => 'tracked',
+            'fulfillment_strategy' => 'stock',
+            'availability' => 'in_stock',
             'is_active' => true,
         ];
     }

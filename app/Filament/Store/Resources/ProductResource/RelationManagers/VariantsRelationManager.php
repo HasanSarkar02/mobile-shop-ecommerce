@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Store\Resources\ProductResource\RelationManagers;
 
+use App\Enums\BackorderPolicy;
+use App\Enums\FulfillmentStrategy;
+use App\Enums\InventoryType;
 use App\Enums\VariantAvailability;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -37,6 +40,7 @@ class VariantsRelationManager extends RelationManager
                 'eSIM' => 'eSIM',
                 'Dual SIM + eSIM' => 'Dual SIM + eSIM',
             ]),
+            TextInput::make('region')->helperText('e.g. Global, USA, Japan, Australia — leave blank if not region-specific.'),
             TextInput::make('price')
                 ->label('Price (BDT)')
                 ->numeric()
@@ -48,14 +52,32 @@ class VariantsRelationManager extends RelationManager
                 ->numeric()
                 ->formatStateUsing(fn (?int $state): ?float => $state !== null ? $state / 100 : null)
                 ->dehydrateStateUsing(fn (?float $state): ?int => $state !== null ? (int) round($state * 100) : null),
+            TextInput::make('cost_price')
+                ->label('Cost price (BDT) — internal, not shown to customers')
+                ->numeric()
+                ->formatStateUsing(fn (?int $state): ?float => $state !== null ? $state / 100 : null)
+                ->dehydrateStateUsing(fn (?float $state): ?int => $state !== null ? (int) round($state * 100) : null),
+            Select::make('inventory_type')
+                ->options(collect(InventoryType::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                ->default(InventoryType::Tracked->value)
+                ->required()
+                ->live(),
+            Select::make('fulfillment_strategy')
+                ->options(collect(FulfillmentStrategy::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                ->default(FulfillmentStrategy::Stock->value)
+                ->required()
+                ->live(),
+            Select::make('backorder_policy')
+                ->options(collect(BackorderPolicy::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                ->visible(fn (Get $get): bool => $get('fulfillment_strategy') === FulfillmentStrategy::Stock->value),
+            TextInput::make('low_stock_threshold')->numeric()->helperText('Overrides the store default for this SKU.'),
             Select::make('availability')
                 ->options(collect(VariantAvailability::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                 ->default(VariantAvailability::InStock->value)
-                ->required()
-                ->live(),
+                ->required(),
             DateTimePicker::make('expected_available_at')
                 ->label('Expected availability date')
-                ->visible(fn (Get $get): bool => $get('availability') === VariantAvailability::PreOrder->value),
+                ->visible(fn (Get $get): bool => $get('fulfillment_strategy') === FulfillmentStrategy::Preorder->value),
             SpatieMediaLibraryFileUpload::make('images')
                 ->collection('images')
                 ->image()
@@ -76,13 +98,10 @@ class VariantsRelationManager extends RelationManager
                 TextColumn::make('color')->placeholder('—'),
                 TextColumn::make('storage_gb')->suffix(' GB')->placeholder('—'),
                 TextColumn::make('ram_gb')->suffix(' GB')->placeholder('—'),
-                TextColumn::make('sim_type')->placeholder('—'),
                 TextColumn::make('price')->formatStateUsing(fn (int $state): string => number_format($state / 100, 2)),
-                TextColumn::make('compare_at_price')
-                    ->label('Discount')
-                    ->formatStateUsing(fn ($state, $record): string => $record->discountPercentage() ? $record->discountPercentage().'% off' : '—'),
+                TextColumn::make('fulfillment_strategy')->badge(),
+                TextColumn::make('inventory_type')->badge(),
                 TextColumn::make('availability')->badge(),
-                TextColumn::make('expected_available_at')->date()->placeholder('—'),
                 TextColumn::make('is_active')->badge(),
             ])
             ->headerActions([CreateAction::make()])

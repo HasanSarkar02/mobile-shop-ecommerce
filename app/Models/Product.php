@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ProductRelationType;
 use App\Enums\ProductStatus;
+use App\Enums\ProductType;
 use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,21 +16,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Database\Eloquent\Builder;
 
 class Product extends Model implements HasMedia
 {
     use BelongsToTenant;
     use HasFactory;
     use InteractsWithMedia;
+    use LogsActivity;
     use Searchable;
     use SoftDeletes;
 
     protected $fillable = [
-        'brand_id', 'category_id', 'model_number', 'base_price', 'currency',
+        'brand_id', 'category_id', 'model_number', 'type', 'base_price',
         'status', 'is_featured', 'is_serialized', 'published_at', 'created_by', 'updated_by',
     ];
 
@@ -35,11 +42,17 @@ class Product extends Model implements HasMedia
     {
         return [
             'status' => ProductStatus::class,
+            'type' => ProductType::class,
             'is_featured' => 'boolean',
             'is_serialized' => 'boolean',
             'base_price' => 'integer',
             'published_at' => 'datetime',
         ];
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(get: fn () => $this->translation('en')?->name);
     }
 
     public function brand(): BelongsTo
@@ -82,6 +95,41 @@ class Product extends Model implements HasMedia
         return $this->belongsToMany(EmiPlan::class, 'product_emi_plan');
     }
 
+    public function productRelations(): HasMany
+    {
+        return $this->hasMany(ProductRelation::class);
+    }
+
+    public function relatedProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'product_relations', 'product_id', 'related_product_id')
+            ->wherePivot('type', ProductRelationType::Related->value);
+    }
+
+    public function crossSells(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'product_relations', 'product_id', 'related_product_id')
+            ->wherePivot('type', ProductRelationType::CrossSell->value);
+    }
+
+    public function upsells(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'product_relations', 'product_id', 'related_product_id')
+            ->wherePivot('type', ProductRelationType::Upsell->value);
+    }
+
+    public function frequentlyBoughtWith(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'product_relations', 'product_id', 'related_product_id')
+            ->wherePivot('type', ProductRelationType::FrequentlyBoughtTogether->value);
+    }
+
+    public function compatibleAccessories(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'product_relations', 'product_id', 'related_product_id')
+            ->wherePivot('type', ProductRelationType::Compatible->value);
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('images');
@@ -108,5 +156,17 @@ class Product extends Model implements HasMedia
             'name' => $translation?->name,
             'description' => $translation?->description,
         ];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['status'])
+            ->logOnlyDirty();
+    }
+
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query->where('status', ProductStatus::Published);
     }
 }

@@ -15,7 +15,7 @@ class Category extends Model
 {
     use BelongsToTenant;
 
-    protected $fillable = ['parent_id', 'name', 'slug', 'description'];
+    protected $fillable = ['parent_id', 'name', 'slug', 'description', 'image_path', 'meta_title', 'meta_description'];
 
     protected static function booted(): void
     {
@@ -42,5 +42,15 @@ class Category extends Model
     public function attributeDefinitions(): BelongsToMany
     {
         return $this->belongsToMany(AttributeDefinition::class, 'category_attribute_definition');
+    }
+
+    public function attributeValues(): HasMany
+    {
+        return $this->hasMany(ProductAttributeValue::class);
+    }
+
+    public function hasRecordedValues(): bool
+    {
+        return $this->attributeValues()->exists();
     }
 }

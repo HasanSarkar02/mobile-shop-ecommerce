@@ -41,7 +41,7 @@ class DatabaseSeeder extends Seeder
             'brand_id' => $brand->id,
             'category_id' => $category->id,
             'model_number' => 'GAL-DEMO',
-            'currency' => 'BDT',
+
             'status' => 'published',
         ]);
 
@@ -52,10 +52,20 @@ class DatabaseSeeder extends Seeder
             'slug' => 'galaxy-demo-phone',
         ]);
 
-        $product->variants()->create([
+        \App\Models\Customer::query()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Demo Customer',
+            'email' => 'customer@demo.test',
+            'phone' => '01700000000',
+            'password' => bcrypt('password'),
+        ]);
+
+        $variant1 = $product->variants()->create([
             'tenant_id' => $tenant->id,
             'sku' => 'GAL-DEMO-128-8',
             'price' => 3500000,
+            'inventory_type' => 'tracked',
+            'fulfillment_strategy' => 'stock',
             'availability' => 'in_stock',
         ]);
 
@@ -63,16 +73,19 @@ class DatabaseSeeder extends Seeder
             'tenant_id' => $tenant->id,
             'sku' => 'GAL-DEMO-512-12',
             'price' => 4500000,
-            'availability' => 'pre_order',
+            'inventory_type' => 'not_tracked',
+            'fulfillment_strategy' => 'preorder',
+            'availability' => 'in_stock',
             'expected_available_at' => now()->addDays(21),
         ]);
 
-        \App\Models\Customer::query()->create([
+        app(\App\Services\InventoryService::class)->restock($variant1, 25, null, 'Initial demo stock');
+
+        \App\Models\SerialNumber::query()->create([
             'tenant_id' => $tenant->id,
-            'name' => 'Demo Customer',
-            'email' => 'customer@demo.test',
-            'phone' => '01700000000',
-            'password' => bcrypt('password'),
+            'product_variant_id' => $variant1->id,
+            'imei_or_serial' => '359123456789012',
+            'status' => 'available',
         ]);
     }
 }

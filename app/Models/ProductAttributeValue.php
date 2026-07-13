@@ -45,4 +45,15 @@ class ProductAttributeValue extends Model
     {
         return $this->belongsTo(AttributeOption::class);
     }
+
+    public function displayValue(): ?string
+    {
+        return match (true) {
+            $this->attribute_option_id !== null => $this->attributeOption?->label,
+            $this->value_boolean !== null => $this->value_boolean ? 'Yes' : 'No',
+            $this->value_decimal !== null => (string) $this->value_decimal,
+            $this->value_integer !== null => (string) $this->value_integer,
+            default => $this->value_string,
+        };
+    }
 }

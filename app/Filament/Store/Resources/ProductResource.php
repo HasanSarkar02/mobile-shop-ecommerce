@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Filament\Store\Resources;
 
+use App\Enums\ProductType;
 use App\Filament\Store\Resources\ProductResource\Pages;
 use App\Filament\Store\Resources\ProductResource\RelationManagers\AttributeValuesRelationManager;
+use App\Filament\Store\Resources\ProductResource\RelationManagers\ProductRelationsRelationManager;
 use App\Filament\Store\Resources\ProductResource\RelationManagers\VariantsRelationManager;
 use App\Models\Product;
 use BackedEnum;
@@ -42,6 +44,7 @@ class ProductResource extends Resource
                     TextInput::make('name')->required(),
                     TextInput::make('slug')->required(),
                     Textarea::make('description')->rows(4),
+                    Textarea::make('warranty_info')->rows(3)->helperText('Warranty terms shown in the Warranty tab.'),
                     TextInput::make('meta_title'),
                     Textarea::make('meta_description')->rows(2),
                 ])
@@ -51,6 +54,10 @@ class ProductResource extends Resource
             Select::make('brand_id')->relationship('brand', 'name')->searchable()->preload(),
             Select::make('category_id')->relationship('category', 'name')->searchable()->preload(),
             TextInput::make('model_number'),
+            Select::make('type')
+                ->options(collect(ProductType::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                ->default(ProductType::Simple->value)
+                ->required(),
             Select::make('status')->options(['draft' => 'Draft', 'published' => 'Published', 'archived' => 'Archived'])->required()->default('draft'),
             Toggle::make('is_featured'),
             Toggle::make('is_serialized')->helperText('Enable for products requiring IMEI/serial tracking.'),
@@ -65,7 +72,7 @@ class ProductResource extends Resource
         return $table
             ->columns([
                 SpatieMediaLibraryImageColumn::make('images')->collection('images')->conversion('thumb'),
-                TextColumn::make('translations.name')->label('Name')->limit(40),
+                TextColumn::make('name')->label('Name')->limit(40),
                 TextColumn::make('brand.name'),
                 TextColumn::make('category.name'),
                 TextColumn::make('base_price')->formatStateUsing(fn (int $state): string => number_format($state / 100, 2)),
@@ -77,7 +84,7 @@ class ProductResource extends Resource
 
     public static function getRelations(): array
     {
-        return [VariantsRelationManager::class, AttributeValuesRelationManager::class];
+        return [VariantsRelationManager::class, AttributeValuesRelationManager::class, ProductRelationsRelationManager::class];
     }
 
     public static function getPages(): array

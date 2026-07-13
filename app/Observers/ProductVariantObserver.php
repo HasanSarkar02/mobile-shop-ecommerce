@@ -1,25 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Observers;
 
+use App\Models\Location;
 use App\Models\ProductVariant;
+use App\Models\StockItem;
 
 class ProductVariantObserver
 {
-    /**
-     * Handle the ProductVariant "created" event.
-     */
-    public function created(ProductVariant $productVariant): void
+    public function created(ProductVariant $variant): void
     {
-        //
-    }
+        $location = Location::query()
+            ->where('tenant_id', $variant->tenant_id)
+            ->where('is_default', true)
+            ->first();
 
-    /**
-     * Handle the ProductVariant "updated" event.
-     */
-    public function updated(ProductVariant $productVariant): void
-    {
-        //
+        if ($location) {
+            StockItem::query()->firstOrCreate(
+                ['product_variant_id' => $variant->id, 'location_id' => $location->id],
+                ['tenant_id' => $variant->tenant_id, 'quantity' => 0, 'reserved_quantity' => 0],
+            );
+        }
     }
 
     public function saved(ProductVariant $variant): void
@@ -37,21 +40,5 @@ class ProductVariantObserver
         $minPrice = $variant->product->variants()->where('is_active', true)->min('price');
 
         $variant->product->update(['base_price' => $minPrice ?? 0]);
-    }
-
-    /**
-     * Handle the ProductVariant "restored" event.
-     */
-    public function restored(ProductVariant $productVariant): void
-    {
-        //
-    }
-
-    /**
-     * Handle the ProductVariant "force deleted" event.
-     */
-    public function forceDeleted(ProductVariant $productVariant): void
-    {
-        //
     }
 }

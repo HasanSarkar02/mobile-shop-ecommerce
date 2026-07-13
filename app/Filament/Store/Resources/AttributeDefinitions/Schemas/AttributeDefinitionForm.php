@@ -25,14 +25,10 @@ class AttributeDefinitionForm
                     ->required(),
 
                 Select::make('data_type')
-                    ->options(
-                        collect(AttributeDataType::cases())
-                            ->mapWithKeys(fn (AttributeDataType $case) => [
-                                $case->value => $case->label(),
-                            ])
-                            ->all()
-                    )
-                    ->required(),
+                    ->options(collect(AttributeDataType::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                    ->required()
+                    ->disabled(fn (?\App\Models\AttributeDefinition $record): bool => $record?->hasRecordedValues() ?? false)
+                    ->helperText(fn (?\App\Models\AttributeDefinition $record): ?string => $record?->hasRecordedValues() ? 'Locked — values already recorded against this attribute.' : null),
 
                 TextInput::make('unit')
                     ->helperText('e.g. GB, inch, mAh'),

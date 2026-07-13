@@ -9,6 +9,7 @@ use App\Models\Category;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -35,6 +36,9 @@ class CategoryResource extends Resource
                 ->options(fn () => Category::query()->pluck('name', 'id'))
                 ->searchable(),
             Textarea::make('description'),
+            FileUpload::make('image_path')->image()->directory('category-images'),
+            TextInput::make('meta_title'),
+            Textarea::make('meta_description')->rows(2),
         ]);
     }
 

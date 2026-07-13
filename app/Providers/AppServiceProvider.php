@@ -21,5 +21,7 @@ class AppServiceProvider extends ServiceProvider
     {
         \App\Models\Product::observe(\App\Observers\ProductObserver::class);
         \App\Models\ProductVariant::observe(\App\Observers\ProductVariantObserver::class);
+        \App\Models\Tenant::observe(\App\Observers\TenantObserver::class);
+        \App\Models\SerialNumber::observe(\App\Observers\SerialNumberObserver::class);
     }
 }

@@ -10,6 +10,7 @@ use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -30,6 +31,8 @@ class BrandResource extends Resource
             TextInput::make('name')->required(),
             TextInput::make('slug')->required()->unique(ignoreRecord: true),
             FileUpload::make('logo_path')->image()->directory('brand-logos'),
+            TextInput::make('meta_title'),
+            Textarea::make('meta_description')->rows(2),
         ]);
     }
 

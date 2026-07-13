@@ -13,7 +13,7 @@ class Brand extends Model
 {
     use BelongsToTenant;
 
-    protected $fillable = ['name', 'slug', 'logo_path'];
+    protected $fillable = ['name', 'slug', 'logo_path', 'meta_title', 'meta_description'];
 
     protected static function booted(): void
     {
