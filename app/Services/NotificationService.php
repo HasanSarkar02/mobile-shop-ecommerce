@@ -66,7 +66,7 @@ class NotificationService
                 'idempotency_key' => $idempotencyKey,
             ]);
 
-            SendNotificationJob::dispatch($log->id);
+            SendNotificationJob::dispatch($log->id, $log->tenant_id);
         }
     }
 }

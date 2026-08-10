@@ -14,6 +14,7 @@ class RedirectService
         'brand' => '/brand/',
         'collection' => '/collection/',
         'static_page' => '/page/',
+        'blog_post' => '/blog/',
     ];
 
     public function recordSlugChange(string $sourceType, int $sourceId, ?string $oldSlug, ?string $newSlug): void

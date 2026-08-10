@@ -10,14 +10,18 @@ enum HomepageSectionType: string
     case ProductGrid = 'product_grid';
     case CategoryGrid = 'category_grid';
     case CustomHtml = 'custom_html';
+    case TrustBadges = 'trust_badges';
+    case NewsletterCta = 'newsletter_cta';
 
     public function label(): string
     {
         return match ($this) {
             self::BannerCarousel => 'Banner Carousel',
             self::ProductGrid => 'Product Grid',
-            self::CategoryGrid => 'Category Grid',
+            self::CategoryGrid => 'Category / Brand Grid',
             self::CustomHtml => 'Custom HTML',
+            self::TrustBadges => 'Trust Badges',
+            self::NewsletterCta => 'Newsletter Signup',
         };
     }
 }

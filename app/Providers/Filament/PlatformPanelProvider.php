@@ -19,6 +19,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Pages\Dashboard;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 
 class PlatformPanelProvider extends PanelProvider
 {
@@ -34,6 +35,9 @@ class PlatformPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class, 
             ])
+            ->widgets([
+                        \App\Filament\Platform\Widgets\PlatformStatsOverview::class,
+                    ])
             ->discoverResources(in: app_path('Filament/Platform/Resources'), for: 'App\\Filament\\Platform\\Resources')
             ->discoverPages(in: app_path('Filament/Platform/Pages'), for: 'App\\Filament\\Platform\\Pages')
             ->discoverWidgets(in: app_path('Filament/Platform/Widgets'), for: 'App\\Filament\\Platform\\Widgets')
@@ -50,6 +54,9 @@ class PlatformPanelProvider extends PanelProvider
             DisableBladeIconComponents::class,
             DispatchServingFilamentEvent::class,
         ])
-            ->authMiddleware([Authenticate::class]);
+            ->authMiddleware([Authenticate::class])
+            ->multiFactorAuthentication([
+                AppAuthentication::make()->recoverable(),
+            ]);
     }
 }

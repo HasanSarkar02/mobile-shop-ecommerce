@@ -35,7 +35,7 @@ class Product extends Model implements HasMedia
 
     protected $fillable = [
         'brand_id', 'category_id', 'model_number', 'type', 'base_price',
-        'status', 'is_featured', 'is_serialized', 'published_at', 'created_by', 'updated_by',
+        'status', 'is_featured', 'is_serialized', 'published_at', 'created_by', 'updated_by','is_official_import', 'max_discount_percentage', 'view_count',
     ];
 
     protected function casts(): array
@@ -47,6 +47,11 @@ class Product extends Model implements HasMedia
             'is_serialized' => 'boolean',
             'base_price' => 'integer',
             'published_at' => 'datetime',
+            'is_official_import' => 'boolean',
+            'max_discount_percentage' => 'integer',
+            'view_count' => 'integer',
+            'average_rating' => 'decimal:2',
+            'reviews_count' => 'integer',
         ];
     }
 
@@ -137,8 +142,8 @@ class Product extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')->width(300)->height(300)->fit(Fit::Contain, 300, 300)->format('webp')->nonQueued();
-        $this->addMediaConversion('large')->width(1200)->format('webp')->nonQueued();
+        $this->addMediaConversion('thumb')->width(300)->height(300)->fit(Fit::Contain, 300, 300)->format('webp');
+        $this->addMediaConversion('large')->width(1200)->format('webp');
     }
 
     public function shouldBeSearchable(): bool
@@ -168,5 +173,37 @@ class Product extends Model implements HasMedia
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', ProductStatus::Published);
+    }
+    public function collections(): BelongsToMany
+    {
+        return $this->belongsToMany(Collection::class, 'collection_product')->withPivot('sort_order');
+    }
+
+    public function scopeInStock(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q): void {
+            $q->whereHas('variants', function (Builder $v): void {
+                $v->where('is_active', true)
+                    ->where(function (Builder $vv): void {
+                        $vv->whereIn('fulfillment_strategy', ['preorder', 'dropship'])
+                            ->orWhereHas('stockItems', fn (Builder $s) => $s->whereRaw('quantity - reserved_quantity > 0'));
+                    });
+            });
+        });
+    }
+
+    public function faqs(): HasMany
+    {
+        return $this->hasMany(Faq::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function approvedReviews(): HasMany
+    {
+        return $this->reviews()->where('status', 'approved')->latest();
     }
 }

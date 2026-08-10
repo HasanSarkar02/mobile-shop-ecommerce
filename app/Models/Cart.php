@@ -19,6 +19,7 @@ class Cart extends Model
     'session_token',
     'currency_code',
     'converted_at',
+    'coupon_id',
 ];
 
     protected function casts(): array
@@ -39,5 +40,9 @@ class Cart extends Model
     public function isConverted(): bool
     {
         return $this->converted_at !== null;
+    }
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 }

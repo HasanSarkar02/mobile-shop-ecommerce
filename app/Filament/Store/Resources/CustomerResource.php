@@ -57,4 +57,17 @@ class CustomerResource extends Resource
             'edit' => Pages\EditCustomer::route('/{record}/edit'),
         ];
     }
+
+    // Staff can view and edit customer records as part of normal customer
+    // service (addresses, notes, etc.); deleting a customer record is a more
+    // significant, less-reversible action reserved for owners.
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return auth()->user()?->isOwner() ?? false;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return auth()->user()?->isOwner() ?? false;
+    }
 }

@@ -6,4 +6,26 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Softer, larger-blur shadows read more premium than Tailwind's default
+       shadow scale — used for header, dropdowns, cards, and drawers. */
+    --shadow-soft: 0 2px 10px -2px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+    --shadow-elevated: 0 20px 40px -12px rgb(0 0 0 / 0.16), 0 4px 12px -4px rgb(0 0 0 / 0.08);
+}
+
+/* Alpine sets [x-cloak] on elements before it boots; without this rule the
+   attribute has no visual effect and cloaked elements (mobile menu, mini-cart
+   dropdown, search panel) flash open on every page load. */
+[x-cloak] {
+    display: none !important;
+}
+
+/* iOS/Android safe-area support for the fixed mobile bottom nav, so it never
+   sits under a device's home indicator or gesture bar. */
+:root {
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+    scroll-behavior: smooth;
 }

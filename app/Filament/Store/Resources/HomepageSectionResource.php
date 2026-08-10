@@ -9,6 +9,7 @@ use App\Enums\LinkType;
 use App\Enums\ProductGridDataSource;
 use App\Enums\Visibility;
 use App\Filament\Store\Resources\HomepageSectionResource\Pages;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Collection as CollectionModel;
 use App\Models\HomepageSection;
@@ -50,7 +51,13 @@ class HomepageSectionResource extends Resource
 
             Select::make('config_placement')
                 ->label('Which banner placement to show')
-                ->options(['hero' => 'Hero', 'sidebar' => 'Sidebar'])
+                ->options(collect(\App\Enums\BannerPlacement::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::BannerCarousel->value),
+            Select::make('config_layout')
+                ->label('Layout')
+                ->options(['carousel' => 'Rotating carousel', 'grid' => 'Static grid'])
+                ->default('carousel')
+                ->helperText('Grid shows every active banner for this placement side by side, instead of rotating through them.')
                 ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::BannerCarousel->value),
 
             Select::make('config_data_source')
@@ -82,12 +89,28 @@ class HomepageSectionResource extends Resource
                 ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::ProductGrid->value
                     && $get('config_data_source') === ProductGridDataSource::Tag->value),
 
+            Select::make('config_source')
+                ->label('Show')
+                ->options(['category' => 'Categories', 'brand' => 'Brands'])
+                ->default('category')
+                ->live()
+                ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::CategoryGrid->value),
             Select::make('config_category_ids')
                 ->label('Categories to show')
                 ->options(fn () => Category::query()->pluck('name', 'id'))
                 ->multiple()
                 ->searchable()
-                ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::CategoryGrid->value),
+                ->helperText('Leave empty to automatically show the top-level categories with the most products.')
+                ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::CategoryGrid->value
+                    && ($get('config_source') ?? 'category') === 'category'),
+            Select::make('config_brand_ids')
+                ->label('Brands to show')
+                ->options(fn () => Brand::query()->pluck('name', 'id'))
+                ->multiple()
+                ->searchable()
+                ->helperText('Leave empty to automatically show the brands with the most products.')
+                ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::CategoryGrid->value
+                    && $get('config_source') === 'brand'),
 
             Textarea::make('config_html')
                 ->label('HTML content')

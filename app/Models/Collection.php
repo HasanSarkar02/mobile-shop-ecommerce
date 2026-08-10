@@ -46,6 +46,6 @@ class Collection extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('large')->width(1600)->fit(Fit::Max, 1600, 900)->format('webp')->nonQueued();
+        $this->addMediaConversion('large')->width(1600)->fit(Fit::Max, 1600, 900)->format('webp');
     }
 }

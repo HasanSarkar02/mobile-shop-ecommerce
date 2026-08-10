@@ -11,7 +11,7 @@ class NotificationTemplate extends Model
 {
     use BelongsToTenant;
 
-    protected $fillable = ['event_key', 'channel', 'subject', 'body', 'is_active'];
+    protected $fillable = ['tenant_id','event_key', 'channel', 'subject', 'body', 'is_active'];
 
     protected function casts(): array
     {

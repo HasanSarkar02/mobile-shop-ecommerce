@@ -9,6 +9,7 @@ enum BannerPlacement: string
     case Hero = 'hero';
     case Sidebar = 'sidebar';
     case Popup = 'popup';
+    case Promo = 'promo';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum BannerPlacement: string
             self::Hero => 'Hero',
             self::Sidebar => 'Sidebar',
             self::Popup => 'Popup',
+            self::Promo => 'Promo',
         };
     }
 }

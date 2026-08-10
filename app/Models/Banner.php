@@ -62,7 +62,6 @@ class Banner extends Model implements HasMedia
             ->width(1600)
             ->fit(Fit::Max, 1600, 900)
             ->format('webp')
-            ->nonQueued()
             ->performOnCollections('image');
     }
 }

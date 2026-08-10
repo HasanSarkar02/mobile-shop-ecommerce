@@ -9,6 +9,7 @@ use App\Enums\OrderFulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
+use App\Exceptions\CartAlreadyConvertedException;
 use App\Exceptions\InvalidOrderTransitionException;
 use App\Models\Cart;
 use App\Models\Customer;
@@ -21,13 +22,14 @@ use App\Events\OrderCancelled;
 use App\Events\OrderPaymentRecorded;
 use App\Events\OrderPlaced;
 use App\Events\OrderStatusChanged;
+use App\Models\OrderItem;
 
 class OrderService
 {
     public function __construct(
         private readonly InventoryService $inventory,
         private readonly SequenceGenerator $sequences,
-        private readonly CartService $carts,
+        private readonly CouponService $coupons,
     ) {
     }
 
@@ -46,6 +48,18 @@ class OrderService
                 throw new \InvalidArgumentException('Guest checkout requires guest_name, guest_email, and guest_phone.');
             }
         return DB::transaction(function () use ($cart, $orderData, $source): Order {
+            // Lock the cart row for the remainder of this transaction so a
+            // concurrent/duplicate checkout submission for the same cart blocks
+            // here until this transaction commits or rolls back, then re-checks
+            // converted_at and finds it already set. This is the authoritative
+            // guard against double order creation; UI-level submit guards are
+            // only a UX nicety on top of this.
+            $cart = Cart::query()->whereKey($cart->id)->lockForUpdate()->firstOrFail();
+
+            if ($cart->converted_at !== null) {
+                throw new CartAlreadyConvertedException('This cart has already been converted into an order.');
+            }
+
             $cart->load('items.variant');
 
             if ($cart->items->isEmpty()) {
@@ -54,6 +68,13 @@ class OrderService
 
             $subtotal = $cart->items->sum(fn ($item) => $item->lineTotal());
             $shippingCost = $orderData['shipping_cost'] ?? 0;
+
+            $couponResult = $this->coupons->lockAndComputeForCart($cart, $cart->customer);
+            $discountTotal = $couponResult->valid ? $couponResult->discountAmount : 0;
+
+            if ($couponResult->valid && $couponResult->freeShipping) {
+                $shippingCost = 0;
+            }
 
             $order = Order::query()->create([
                 'tenant_id' => $cart->tenant_id,
@@ -72,14 +93,15 @@ class OrderService
                 'currency_rate' => 1.000000,
                 'subtotal' => $subtotal,
                 'shipping_cost' => $shippingCost,
-                'discount_total' => 0,
+                'discount_total' => $discountTotal,
                 'tax_total' => $orderData['tax_total'] ?? 0,
-                'grand_total' => $subtotal + $shippingCost + ($orderData['tax_total'] ?? 0),
+                'grand_total' => $subtotal + $shippingCost + ($orderData['tax_total'] ?? 0) - $discountTotal,
                 'shipping_address_id' => $orderData['shipping_address_id'] ?? null,
                 'shipping_address_snapshot' => $orderData['shipping_address'] ?? null,
                 'billing_address_id' => $orderData['billing_address_id'] ?? null,
                 'billing_address_snapshot' => $orderData['billing_address'] ?? null,
                 'customer_note' => $orderData['customer_note'] ?? null,
+                'reservation_expires_at' => now()->addHours((int) config('orders.reservation_hours')),
                 'placed_at' => now(),
             ]);
 
@@ -112,7 +134,8 @@ class OrderService
                 OrderStatus::Pending,
             );
 
-            $this->carts->markConverted($cart);
+            $cart->update(['converted_at' => now()]);
+            $this->coupons->recordRedemption($order, $cart, $cart->customer, $discountTotal);
             OrderPlaced::dispatch($order);
 
             return $order;
@@ -146,6 +169,10 @@ class OrderService
                         $this->inventory->release($item->variant, $item->quantity, null, $order);
                     }
                 }
+            }
+
+            if ($newStatus === OrderStatus::Cancelled) {
+                $this->coupons->releaseForOrder($order);
             }
 
             // Cancelling after stock has already been committed (Confirmed/Processing/Shipped) requires
@@ -228,5 +255,25 @@ class OrderService
             'description' => $description,
             'created_by' => auth()->id(),
         ]);
+    }
+    public function releaseExpiredReservations(?ProductVariant $onlyVariant = null): int
+    {
+        $query = Order::query()
+            ->where('status', OrderStatus::Pending)
+            ->whereNotNull('reservation_expires_at')
+            ->where('reservation_expires_at', '<', now());
+
+        if ($onlyVariant) {
+            $query->whereHas('items', fn ($q) => $q->where('product_variant_id', $onlyVariant->id));
+        }
+
+        $released = 0;
+
+        foreach ($query->get() as $order) {
+            $this->updateStatus($order, OrderStatus::Cancelled, 'Auto-cancelled — reservation expired.');
+            $released++;
+        }
+
+        return $released;
     }
 }

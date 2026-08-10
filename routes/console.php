@@ -6,3 +6,12 @@ use Illuminate\Support\Facades\Artisan;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+use App\Console\Commands\ReleaseExpiredReservations;
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command(ReleaseExpiredReservations::class)->everyFifteenMinutes();
+
+use App\Console\Commands\ProcessSubscriptionExpirations;
+
+Schedule::command(ProcessSubscriptionExpirations::class)->daily();

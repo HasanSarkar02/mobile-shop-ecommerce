@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\StockAdjustmentReason;
 use App\Enums\StockMovementType;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\PreventsDeletion;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class StockMovement extends Model
 {
     use BelongsToTenant;
+    use PreventsDeletion;
 
     public const UPDATED_AT = null;
 

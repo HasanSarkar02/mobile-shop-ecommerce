@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="--brand: {{ tenant()->primary_color ?? '#16a34a' }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="--brand: {{ $theme?->primary_color ?? '#16a34a' }}">
 
 <head>
+    {{-- Runs before CSS paints to avoid a flash of the wrong theme; must stay
+         inline and above @vite (localStorage/matchMedia aren't available at
+         build time, and this needs to execute before first paint). --}}
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia(
                 '(prefers-color-scheme: dark)').matches)) {
@@ -10,36 +13,37 @@
     </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', tenant()->name)</title>
+    @if ($theme?->favicon_path)
+        <link rel="icon" href="{{ asset('storage/' . $theme->favicon_path) }}">
+    @endif
+    @stack('meta')
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 
-<body class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 antialiased">
-    <header class="border-b border-gray-200 dark:border-gray-800">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <a href="{{ route('storefront.home') }}" class="text-xl font-bold">
-                @if (tenant()->logo_path)
-                    <img src="{{ asset('storage/' . tenant()->logo_path) }}" alt="{{ tenant()->name }}" class="h-8">
-                @else
-                    {{ tenant()->name }}
-                @endif
-            </a>
-            <button x-data
-                @click="document.documentElement.classList.toggle('dark'); localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';"
-                class="p-2 rounded-lg border border-gray-300 dark:border-gray-700"
-                aria-label="Toggle dark mode">🌓</button>
-        </div>
+<body class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 antialiased pb-16 lg:pb-0">
+    <x-storefront.announcement-bar :announcement="$announcement" />
+
+    <header
+        class="sticky top-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+        <x-storefront.desktop-header :header-menu="$headerMenu" :theme="$theme" :wishlist-count="$wishlistCount" />
+        <x-storefront.mobile-header :header-menu="$headerMenu" :theme="$theme" />
     </header>
 
     <main>
         @yield('content')
     </main>
 
-    <footer class="border-t border-gray-200 dark:border-gray-800 mt-16 py-8 text-center text-sm text-gray-500">
-        &copy; {{ now()->year }} {{ tenant()->name }}
-    </footer>
+    <x-storefront.footer :footer-menu="$footerMenu" :footer-pages="$footerPages" :theme="$theme" />
+
+    <x-storefront.mobile-bottom-nav :wishlist-count="$wishlistCount" />
 
     @stack('scripts')
+    @livewireScripts
+    @include('components.ui.toast-container')
 </body>
 
 </html>

@@ -51,7 +51,9 @@ class VariantsRelationManager extends RelationManager
                 ->label('Original price (BDT) — optional, shows as discount')
                 ->numeric()
                 ->formatStateUsing(fn (?int $state): ?float => $state !== null ? $state / 100 : null)
-                ->dehydrateStateUsing(fn (?float $state): ?int => $state !== null ? (int) round($state * 100) : null),
+                ->dehydrateStateUsing(fn (?float $state): ?int => $state !== null ? (int) round($state * 100) : null)
+                ->gt('price')
+                ->validationMessages(['gt' => 'The original price must be higher than the selling price.']),
             TextInput::make('cost_price')
                 ->label('Cost price (BDT) — internal, not shown to customers')
                 ->numeric()

@@ -14,11 +14,19 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\IdentifyTenant::class,
+            \App\Http\Middleware\AssignStorefrontTokens::class,
         ]);
 
         $middleware->alias([
             'tenant' => \App\Http\Middleware\EnsureTenant::class,
             'central' => \App\Http\Middleware\EnsureCentralDomain::class,
+        ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'payment/success',
+            'payment/fail',
+            'payment/cancel',
+            'payment/ipn',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

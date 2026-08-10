@@ -25,7 +25,7 @@ class TenantResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')->required(),
-            TextInput::make('subdomain')->required()->unique(ignoreRecord: true)->alpha_dash(),
+            TextInput::make('subdomain')->required()->unique(ignoreRecord: true)->regex('/^[a-zA-Z0-9_-]+$/'),
             Select::make('status')->options([
                 'trial' => 'Trial',
                 'active' => 'Active',

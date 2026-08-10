@@ -40,4 +40,14 @@ class AttributeDefinition extends Model
     {
         return in_array($this->data_type, [AttributeDataType::Select, AttributeDataType::MultiSelect], true);
     }
+
+    public function productAttributeValues(): HasMany
+    {
+        return $this->hasMany(ProductAttributeValue::class);
+    }
+
+    public function hasRecordedValues(): bool
+    {
+        return $this->productAttributeValues()->exists();
+    }
 }

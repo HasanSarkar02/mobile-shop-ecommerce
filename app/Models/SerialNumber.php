@@ -8,10 +8,11 @@ use App\Enums\SerialNumberStatus;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 class SerialNumber extends Model
 {
     use BelongsToTenant;
+    use HasFactory;
 
     protected $fillable = [
         'product_variant_id','location_id', 'imei_or_serial', 'status',

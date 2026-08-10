@@ -27,11 +27,18 @@ class ItemsRelationManager extends RelationManager
             TextInput::make('label')->required(),
             Select::make('parent_id')
                 ->label('Parent item (leave empty for top-level)')
-                ->options(fn (): array => MenuItem::query()
-                    ->where('menu_id', $this->getOwnerRecord()->id)
-                    ->where('id', '!=', $this->getRecord()?->id ?? 0)
-                    ->pluck('label', 'id')
-                    ->all()),
+                ->options(function (?MenuItem $record): array {
+                    $query = MenuItem::query()
+                        ->where('menu_id', $this->getOwnerRecord()->id);
+
+                    if ($record?->getKey() !== null) {
+                        $query->whereKeyNot($record->getKey());
+                    }
+
+                    return $query
+                        ->pluck('label', 'id')
+                        ->all();
+                }),
             Select::make('link_type')
                 ->options(collect(LinkType::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                 ->default(LinkType::None->value)

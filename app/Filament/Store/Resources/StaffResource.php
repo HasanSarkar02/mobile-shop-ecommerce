@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Store\Resources;
 
+use App\Filament\Store\Concerns\RestrictsToOwner;
 use App\Filament\Store\Resources\StaffResource\Pages;
 use App\Models\User;
 use BackedEnum;
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class StaffResource extends Resource
 {
+    use RestrictsToOwner;
+
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
@@ -51,11 +54,6 @@ class StaffResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->where('role', 'staff');
-    }
-
-    public static function canViewAny(): bool
-    {
-        return auth()->user()?->isOwner() ?? false;
     }
 
     public static function getPages(): array

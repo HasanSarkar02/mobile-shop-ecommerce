@@ -18,12 +18,13 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 class StorePanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
+            ->default()
             ->id('store')
             ->path('admin')
             ->login()
@@ -31,6 +32,11 @@ class StorePanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')
             ->discoverWidgets(in: app_path('Filament/Store/Widgets'), for: 'App\\Filament\\Store\\Widgets')
+            ->widgets([
+                        \App\Filament\Store\Widgets\StoreStatsOverview::class,
+                        \App\Filament\Store\Widgets\RecentOrdersWidget::class,
+                        \App\Filament\Store\Widgets\LowStockWidget::class,
+                    ])
             ->middleware([
                         IdentifyTenant::class,
                         EnsureTenant::class,
@@ -44,6 +50,9 @@ class StorePanelProvider extends PanelProvider
                         DisableBladeIconComponents::class,
                         DispatchServingFilamentEvent::class,
                     ])
-                    ->authMiddleware([Authenticate::class]);
+                    ->authMiddleware([Authenticate::class])
+                    ->multiFactorAuthentication([
+                        AppAuthentication::make()->recoverable(),
+                    ]);
             }
         }

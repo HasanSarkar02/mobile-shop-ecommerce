@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('products', function (Blueprint $table): void {
+            $table->boolean('is_official_import')->default(true)->after('is_serialized');
+            $table->unsignedTinyInteger('max_discount_percentage')->nullable()->after('base_price');
+            $table->unsignedInteger('view_count')->default(0)->after('max_discount_percentage');
+
+            $table->index(['tenant_id', 'max_discount_percentage']);
+            $table->index(['tenant_id', 'view_count']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('products', function (Blueprint $table): void {
+            $table->dropColumn(['is_official_import', 'max_discount_percentage', 'view_count']);
+        });
+    }
+};

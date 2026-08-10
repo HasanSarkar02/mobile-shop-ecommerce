@@ -17,7 +17,6 @@ class ProductFactory extends Factory
         return [
             'model_number' => $this->faker->bothify('MDL-####'),
             'base_price' => $this->faker->numberBetween(1000000, 15000000),
-            'currency' => 'BDT',
             'status' => ProductStatus::Draft,
             'is_featured' => false,
             'is_serialized' => true,

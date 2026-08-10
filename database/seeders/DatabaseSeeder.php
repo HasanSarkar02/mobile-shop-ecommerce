@@ -6,17 +6,38 @@ namespace Database\Seeders;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Tenancy\Tenancy;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $trialPlan = \App\Models\Plan::query()->create([
+            'name' => 'Free Trial', 'slug' => 'trial', 'price' => 0, 'billing_period' => 'monthly',
+            'max_products' => 50, 'max_staff' => 2, 'custom_domain_allowed' => false, 'is_active' => true, 'sort_order' => 1,
+        ]);
+        \App\Models\Plan::query()->create([
+            'name' => 'Starter', 'slug' => 'starter', 'price' => 99000, 'billing_period' => 'monthly',
+            'max_products' => 500, 'max_staff' => 5, 'custom_domain_allowed' => true, 'is_active' => true, 'sort_order' => 2,
+        ]);
+        \App\Models\Plan::query()->create([
+            'name' => 'Growth', 'slug' => 'growth', 'price' => 249000, 'billing_period' => 'monthly',
+            'max_products' => null, 'max_staff' => null, 'custom_domain_allowed' => true, 'is_active' => true, 'sort_order' => 3,
+        ]);
         $tenant = Tenant::query()->create([
             'name' => 'Demo Store',
             'subdomain' => 'demo',
             'status' => 'active',
         ]);
+
+        // Everything below reads/writes tenant-scoped models (e.g. InventoryService's
+        // restock() looks up the tenant's default Location), so a tenant context must
+        // be resolved for the duration of this seeding block, same as any other
+        // non-HTTP context (console command, job).
+        app(Tenancy::class)->set($tenant);
+
+        app(\App\Services\SubscriptionService::class)->startTrial($tenant, $trialPlan, 14);
 
         User::query()->create([
             'name' => 'Platform Admin',
@@ -87,5 +108,30 @@ class DatabaseSeeder extends Seeder
             'imei_or_serial' => '359123456789012',
             'status' => 'available',
         ]);
+
+        \App\Models\PaymentMethod::query()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Cash on Delivery',
+            'type' => 'cod',
+            'is_active' => true,
+        ]);
+
+        \App\Models\PaymentMethod::query()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Online Payment (bKash/Nagad/Card)',
+            'type' => 'aggregator',
+            'gateway_driver' => 'sslcommerz',
+            'is_active' => true,
+        ]);
+
+        \App\Models\ShippingMethod::query()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Standard Delivery',
+            'type' => 'flat_rate',
+            'cost' => 6000,
+            'is_active' => true,
+        ]);
+
+        app(Tenancy::class)->set(null);
     }
 }

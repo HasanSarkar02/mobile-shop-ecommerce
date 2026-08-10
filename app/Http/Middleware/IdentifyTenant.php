@@ -20,14 +20,14 @@ class IdentifyTenant
 
         if ($host === $central || $host === "www.{$central}") {
             // Reset tenant for central domain
-            app(Tenancy::class)->set(null);   // ← This line was causing the crash
+            app(Tenancy::class)->set(null);
             return $next($request);
         }
 
         // Tenant subdomain / custom domain logic
         $tenant = str_ends_with($host, ".{$central}")
             ? Tenant::query()->where('subdomain', substr($host, 0, -strlen(".{$central}")))->first()
-            : Domain::query()->where('domain', $host)->whereNotNull('verified_at')->first()?->tenant;
+            : Domain::query()->where('domain', $host)->first()?->tenant;
 
         abort_unless($tenant?->isActive(), 404);
 

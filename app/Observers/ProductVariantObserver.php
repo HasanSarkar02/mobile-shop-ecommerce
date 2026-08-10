@@ -37,8 +37,18 @@ class ProductVariantObserver
 
     private function syncBasePrice(ProductVariant $variant): void
     {
-        $minPrice = $variant->product->variants()->where('is_active', true)->min('price');
+        $activeVariants = $variant->product->variants()->where('is_active', true)->get();
 
-        $variant->product->update(['base_price' => $minPrice ?? 0]);
+        $minPrice = $activeVariants->min('price');
+
+        $maxDiscount = $activeVariants
+            ->map(fn (ProductVariant $v) => $v->discountPercentage())
+            ->filter()
+            ->max();
+
+        $variant->product->update([
+            'base_price' => $minPrice ?? 0,
+            'max_discount_percentage' => $maxDiscount,
+        ]);
     }
 }

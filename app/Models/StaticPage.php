@@ -29,4 +29,9 @@ class StaticPage extends Model
             $page->slug ??= Str::slug($page->title);
         });
     }
+
+    public function sanitizedContent(): ?string
+    {
+        return $this->content ? \Mews\Purifier\Facades\Purifier::clean($this->content) : null;
+    }
 }

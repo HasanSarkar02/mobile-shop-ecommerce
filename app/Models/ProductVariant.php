@@ -105,8 +105,8 @@ class ProductVariant extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')->width(300)->height(300)->fit(Fit::Contain, 300, 300)->format('webp')->nonQueued();
-        $this->addMediaConversion('large')->width(1200)->format('webp')->nonQueued();
+        $this->addMediaConversion('thumb')->width(300)->height(300)->fit(Fit::Contain, 300, 300)->format('webp');
+        $this->addMediaConversion('large')->width(1200)->format('webp');
     }
 
     public function getActivitylogOptions(): LogOptions

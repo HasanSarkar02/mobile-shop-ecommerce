@@ -14,7 +14,7 @@ class StoreThemeSetting extends Model
     protected $table = 'store_theme_settings';
 
     protected $fillable = [
-        'logo_path', 'favicon_path', 'primary_color', 'secondary_color', 'font_family', 'social_links', 'footer_text',
+        'tenant_id','logo_path', 'favicon_path', 'primary_color', 'secondary_color', 'font_family', 'social_links', 'footer_text',
     ];
 
     protected function casts(): array

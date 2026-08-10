@@ -39,7 +39,7 @@ class InventoryService
 
     public function availableQuantity(ProductVariant $variant, ?Location $location = null): int
     {
-        return $this->stockItemFor($variant, $location)->availableQuantity();
+        return $this->stockItemFor($variant, $location)->availableQuantity() + $this->expiredReservedQuantity($variant);
     }
 
     public function stockStatus(ProductVariant $variant, ?Location $location = null): StockStatus
@@ -129,6 +129,14 @@ class InventoryService
 
             $this->logMovement($variant, $location, StockMovementType::Release, $quantity, $reference);
         }, 3);
+    }
+
+    private function expiredReservedQuantity(ProductVariant $variant): int
+    {
+        return (int) \App\Models\OrderItem::query()
+            ->where('product_variant_id', $variant->id)
+            ->whereHas('order', fn ($q) => $q->where('status', 'pending')->where('reservation_expires_at', '<', now()))
+            ->sum('quantity');
     }
 
     public function commit(ProductVariant $variant, int $quantity, ?Location $location = null, mixed $reference = null): void
