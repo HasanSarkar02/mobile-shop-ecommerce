@@ -9,6 +9,10 @@ use App\Enums\OrderFulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
+use App\Events\OrderCancelled;
+use App\Events\OrderPaymentRecorded;
+use App\Events\OrderPlaced;
+use App\Events\OrderStatusChanged;
 use App\Exceptions\CartAlreadyConvertedException;
 use App\Exceptions\InvalidOrderTransitionException;
 use App\Models\Cart;
@@ -17,12 +21,8 @@ use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Models\OrderPayment;
 use App\Models\PaymentMethod;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
-use App\Events\OrderCancelled;
-use App\Events\OrderPaymentRecorded;
-use App\Events\OrderPlaced;
-use App\Events\OrderStatusChanged;
-use App\Models\OrderItem;
 
 class OrderService
 {
@@ -30,11 +30,10 @@ class OrderService
         private readonly InventoryService $inventory,
         private readonly SequenceGenerator $sequences,
         private readonly CouponService $coupons,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array{shipping_address?: array, billing_address?: array, shipping_address_id?: int, billing_address_id?: int, shipping_method_id?: int, payment_method_id?: int, customer_note?: string} $orderData
+     * @param  array{shipping_address?: array, billing_address?: array, shipping_address_id?: int, billing_address_id?: int, shipping_method_id?: int, payment_method_id?: int, customer_note?: string}  $orderData
      */
     public function createFromCart(
         Cart $cart,
@@ -44,9 +43,10 @@ class OrderService
     ): Order {
         if (! $cart->customer_id
                 && (empty($orderData['guest_name']) || empty($orderData['guest_email']) || empty($orderData['guest_phone']))
-            ) {
-                throw new \InvalidArgumentException('Guest checkout requires guest_name, guest_email, and guest_phone.');
-            }
+        ) {
+            throw new \InvalidArgumentException('Guest checkout requires guest_name, guest_email, and guest_phone.');
+        }
+
         return DB::transaction(function () use ($cart, $orderData, $source): Order {
             // Lock the cart row for the remainder of this transaction so a
             // concurrent/duplicate checkout submission for the same cart blocks
@@ -240,12 +240,68 @@ class OrderService
         $this->logEvent($order, OrderEventType::NoteAdded, $note);
     }
 
+    /**
+     * Correct the order's own contact record without touching the customer
+     * profile. Only the order-level guest contact columns are updated.
+     *
+     * @param  Order  $order  an order already scoped to the current tenant
+     */
+    public function updateOrderContact(Order $order, string $name, ?string $email, ?string $phone): void
+    {
+        DB::transaction(function () use ($order, $name, $email, $phone): void {
+            $before = [
+                'name' => $order->guest_name,
+                'email' => $order->guest_email,
+                'phone' => $order->guest_phone,
+            ];
+
+            $order->update([
+                'guest_name' => $name,
+                'guest_email' => $email,
+                'guest_phone' => $phone,
+            ]);
+
+            $this->logEvent(
+                $order,
+                OrderEventType::ContactUpdated,
+                'Order contact corrected.',
+                metadata: ['before' => $before, 'after' => ['name' => $name, 'email' => $email, 'phone' => $phone]],
+            );
+        }, 3);
+    }
+
+    /**
+     * Correct the order's shipping address snapshot. The historical snapshot is
+     * replaced with the corrected array so the current order record reflects the
+     * accurate address. The customer's master Address record and
+     * shipping_address_id are deliberately left untouched.
+     *
+     * @param  Order  $order  an order already scoped to the current tenant
+     * @param  array{recipient_name: string, phone?: string, address_line_1: string, address_line_2?: string, city: string, area?: string, postal_code?: string, country?: string}  $address
+     */
+    public function updateOrderShippingAddress(Order $order, array $address): void
+    {
+        DB::transaction(function () use ($order, $address): void {
+            $before = $order->shipping_address_snapshot ?? [];
+
+            $order->update(['shipping_address_snapshot' => $address]);
+
+            $this->logEvent(
+                $order,
+                OrderEventType::AddressUpdated,
+                'Shipping address corrected.',
+                metadata: ['field' => 'shipping_address_snapshot', 'before' => $before, 'after' => $address],
+            );
+        }, 3);
+    }
+
     private function logEvent(
         Order $order,
         OrderEventType $type,
         string $description,
         ?OrderStatus $from = null,
         ?OrderStatus $to = null,
+        ?array $metadata = null,
     ): void {
         $order->events()->create([
             'tenant_id' => $order->tenant_id,
@@ -253,9 +309,11 @@ class OrderService
             'from_status' => $from?->value,
             'to_status' => $to?->value,
             'description' => $description,
+            'metadata' => $metadata,
             'created_by' => auth()->id(),
         ]);
     }
+
     public function releaseExpiredReservations(?ProductVariant $onlyVariant = null): int
     {
         $query = Order::query()

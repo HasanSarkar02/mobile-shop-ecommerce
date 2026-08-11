@@ -6,7 +6,7 @@
          inline and above @vite (localStorage/matchMedia aren't available at
          build time, and this needs to execute before first paint). --}}
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia(
+        if (localStorage.storefrontTheme === 'dark' || (!('storefrontTheme' in localStorage) && window.matchMedia(
                 '(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         }
@@ -29,11 +29,13 @@
 
     <header
         class="sticky top-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-b border-gray-200 dark:border-gray-800">
-        <x-storefront.desktop-header :header-menu="$headerMenu" :theme="$theme" :wishlist-count="$wishlistCount" />
+        <x-storefront.desktop-header :header-menu="$headerMenu" :header-categories="$headerCategories" :theme="$theme"
+            :wishlist-count="$wishlistCount" />
         <x-storefront.mobile-header :header-menu="$headerMenu" :theme="$theme" />
     </header>
 
     <main>
+        {{ $slot ?? '' }}
         @yield('content')
     </main>
 
@@ -41,8 +43,10 @@
 
     <x-storefront.mobile-bottom-nav :wishlist-count="$wishlistCount" />
 
+    <x-storefront.popup-banner />
+
     @stack('scripts')
-    @livewireScripts
+    @livewireScriptConfig
     @include('components.ui.toast-container')
 </body>
 

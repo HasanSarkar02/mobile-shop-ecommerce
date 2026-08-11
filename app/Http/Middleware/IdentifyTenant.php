@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Support\Tenancy\Tenancy;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 class IdentifyTenant
@@ -17,6 +18,11 @@ class IdentifyTenant
     {
         $host = strtolower(trim($request->getHost()));
         $central = strtolower(trim(config('tenancy.central_domain')));
+
+        // Always generate URLs from the requesting host, never config('app.url').
+        // Without this, post-login redirects (route()) resolve to the central
+        // domain, where there is no tenant context and any Customer query throws.
+        URL::forceRootUrl($request->getSchemeAndHttpHost());
 
         if ($host === $central || $host === "www.{$central}") {
             // Reset tenant for central domain

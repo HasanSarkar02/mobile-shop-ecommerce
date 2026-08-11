@@ -12,12 +12,27 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function show(Request $request, string $slug, FilterQueryParser $parser, ProductListingService $listing)
+    public function index()
     {
-        $category = Category::query()->where('slug', $slug)->firstOrFail();
-        $filters = $parser->fromRequest($request);
-        $result = $listing->paginate($category->products()->getQuery()->published(), $filters);
+        $categories = Category::query()
+            ->whereNull('parent_id')
+            ->withCount(['products' => fn ($query) => $query->published()])
+            ->orderBy('name')
+            ->get();
 
-        return view('storefront.categories.show', compact('category', 'result', 'filters'));
+        return view('storefront.categories.index', compact('categories'));
     }
+
+        public function show(Request $request, string $slug, FilterQueryParser $parser)
+
+    {
+
+        $category = Category::query()->where('slug', $slug)->firstOrFail();
+
+        $isFiltered = $parser->fromRequest($request)->isFiltered();
+        return view('storefront.categories.show', compact('category', 'isFiltered'));
+
+    }
+
+
 }

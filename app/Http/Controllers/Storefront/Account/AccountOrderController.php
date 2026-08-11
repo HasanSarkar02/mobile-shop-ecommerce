@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Storefront\Account;
 
+use App\Enums\OrderPaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
@@ -24,8 +25,12 @@ class AccountOrderController extends Controller
     {
         abort_unless($order->customer_id === Auth::guard('customer')->id(), 404);
 
-        $order->load('items', 'payments', 'fulfillments', 'events');
+        $order->load(['items.variant', 'payments.paymentMethod', 'fulfillments', 'events']);
 
-        return view('storefront.account.orders.show', compact('order'));
+        $amountPaid = (int) $order->payments
+            ->where('status', OrderPaymentStatus::Paid)
+            ->sum('amount');
+
+        return view('storefront.account.orders.show', compact('order', 'amountPaid'));
     }
 }

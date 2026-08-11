@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Storefront;
 
+use App\Models\Product;
 use App\Support\ProductFilterState;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -15,13 +17,11 @@ use Illuminate\Support\Facades\DB;
  */
 class ProductListingService
 {
-    public function __construct(private readonly FacetResolver $facets)
-    {
-    }
+    public function __construct(private readonly FacetResolver $facets) {}
 
     public function paginate(Builder $query, ProductFilterState $filters): array
     {
-        $query = $query->clone()->distinct();
+        $query = $query->clone();
 
         $this->applyStaticFilters($query, $filters);
         $this->applyAttributeFilters($query, $filters);
@@ -151,9 +151,9 @@ class ProductListingService
             ->orderByDesc('bs.bs_total');
     }
 
-    public function bestSelling(int $limit): \Illuminate\Support\Collection
+    public function bestSelling(int $limit): Collection
     {
-        $query = \App\Models\Product::published()->with(['translations', 'variants', 'media', 'emiPlans']);
+        $query = Product::published()->with(['translations', 'variants', 'media', 'emiPlans']);
         $this->applyBestSellingSort($query);
 
         return $query->limit($limit)->get();

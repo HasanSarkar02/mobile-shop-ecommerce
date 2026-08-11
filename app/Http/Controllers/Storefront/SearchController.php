@@ -13,29 +13,10 @@ use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
-    public function index(Request $request, FilterQueryParser $parser, ProductListingService $listing)
+    public function index(Request $request)
     {
         $term = (string) $request->query('q', '');
-        $filters = $parser->fromRequest($request);
+        return view('storefront.search.index', compact('term'));
 
-        $base = Product::query()->published();
-
-        if ($term !== '') {
-            $ids = Product::search($term)->keys();
-            $base->whereIn('id', $ids);
-        }
-
-        $result = $listing->paginate($base, $filters);
-
-        if ($term !== '') {
-            SearchQuery::query()->create([
-                'tenant_id' => tenant()->id,
-                'term' => $term,
-                'results_count' => $result['products']->total(),
-                'searched_at' => now(),
-            ]);
-        }
-
-        return view('storefront.search.index', compact('term', 'result', 'filters'));
     }
 }

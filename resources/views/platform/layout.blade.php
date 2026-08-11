@@ -16,8 +16,11 @@
 </head>
 
 <body class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 antialiased">
+    {{-- Supports both @extends/@yield pages (platform.home) and Livewire
+         #[Layout] components (TenantSignupForm), which inject via $slot. --}}
+    {{ $slot ?? '' }}
     @yield('content')
-    @livewireScripts
+    @livewireScriptConfig
 </body>
 
 </html>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\View\Composers;
 
 use App\Models\Announcement;
+use App\Models\Category;
 use App\Models\Menu;
 use App\Models\StaticPage;
 use App\Models\WishlistItem;
@@ -32,6 +33,12 @@ class StorefrontLayoutComposer
                 ->groupBy('footer_group'),
             'theme' => tenant()->themeSettings,
             'wishlistCount' => $this->wishlistCount(),
+            'headerCategories' => Category::query()
+                ->whereNull('parent_id')
+                ->with(['children' => fn ($query) => $query->orderBy('name')])
+                ->withCount(['products' => fn ($query) => $query->published()])
+                ->orderBy('name')
+                ->get(),
         ]);
     }
 

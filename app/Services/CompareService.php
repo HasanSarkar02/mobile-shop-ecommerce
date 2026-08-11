@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Session;
 class CompareService
 {
     private const SESSION_KEY = 'compare_product_ids';
+
     private const LIMIT = 4;
 
     public function ids(): array
@@ -40,8 +41,23 @@ class CompareService
         return true;
     }
 
+    public function remove(int $productId): void
+    {
+        Session::put(self::SESSION_KEY, array_values(array_diff($this->ids(), [$productId])));
+    }
+
     public function clear(): void
     {
         Session::forget(self::SESSION_KEY);
+    }
+
+    public function prune(array $validIds): void
+    {
+        Session::put(self::SESSION_KEY, array_values(array_intersect($this->ids(), $validIds)));
+    }
+
+    public function limit(): int
+    {
+        return self::LIMIT;
     }
 }

@@ -126,15 +126,24 @@ class CheckoutPage extends Component
         }
     }
 
-    public function render()
+    public function render(CartService $carts, \App\Services\CouponService $coupons)
     {
         $customer = Auth::guard('customer')->user();
+        $cart = $carts->getOrCreateCart($customer, request()->cookie('cart_token'));
+        $cart->load('items.variant.product.translations', 'items.variant.media');
+        $subtotal = $cart->items->sum(fn ($item) => $item->lineTotal());
+        $couponResult = $coupons->computeForCart($cart, $customer);
+        $shipping = ShippingMethod::query()->find($this->shippingMethodId);
 
         return view('livewire.checkout-page', [
             'customer' => $customer,
             'addresses' => $customer ? Address::query()->where('customer_id', $customer->id)->get() : collect(),
             'shippingMethods' => ShippingMethod::query()->where('is_active', true)->get(),
             'paymentMethods' => PaymentMethod::query()->where('is_active', true)->get(),
+            'cartItems' => $cart->items,
+            'subtotal' => $subtotal,
+            'discount' => $couponResult->valid ? $couponResult->discountAmount : 0,
+            'shippingCost' => $shipping?->cost ?? 0,
         ]);
     }
 }

@@ -4,30 +4,34 @@ use App\Http\Controllers\Storefront\Account\AccountAddressController;
 use App\Http\Controllers\Storefront\Account\AccountOrderController;
 use App\Http\Controllers\Storefront\Account\AccountProfileController;
 use App\Http\Controllers\Storefront\Auth\CustomerAuthController;
+use App\Http\Controllers\Storefront\AutoLoginController;
+use App\Http\Controllers\Storefront\BlogController;
 use App\Http\Controllers\Storefront\BrandController;
 use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CategoryController;
 use App\Http\Controllers\Storefront\CollectionController;
 use App\Http\Controllers\Storefront\CompareController;
+use App\Http\Controllers\Storefront\FaqController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\NewsletterController;
-use App\Http\Controllers\Storefront\ProductController;
-use App\Http\Controllers\Storefront\SearchController;
-use App\Http\Controllers\Storefront\SearchSuggestController;
-use App\Http\Controllers\Storefront\WishlistController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Storefront\BlogController;
-use App\Http\Controllers\Storefront\FaqController;
-use App\Http\Controllers\Storefront\ProductReviewController;
-use App\Http\Controllers\Storefront\RobotsController;
-use App\Http\Controllers\Storefront\SitemapController;
-use App\Http\Controllers\Storefront\StaticPageController;
 use App\Http\Controllers\Storefront\OrderTrackingController;
 use App\Http\Controllers\Storefront\PaymentController;
-use App\Http\Controllers\Storefront\AutoLoginController;
+use App\Http\Controllers\Storefront\ProductController;
+use App\Http\Controllers\Storefront\ProductReviewController;
+use App\Http\Controllers\Storefront\RobotsController;
+use App\Http\Controllers\Storefront\SearchController;
+use App\Http\Controllers\Storefront\SearchSuggestController;
+use App\Http\Controllers\Storefront\SitemapController;
+use App\Http\Controllers\Storefront\StaticPageController;
+use App\Http\Controllers\Storefront\WishlistController;
+use App\Livewire\CheckoutPage;
+use App\Models\Order;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('storefront.home');
+Route::get('/category', [CategoryController::class, 'index'])->name('storefront.categories.index');
 Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('storefront.category');
+Route::get('/brand', [BrandController::class, 'index'])->name('storefront.brands.index');
 Route::get('/brand/{slug}', [BrandController::class, 'show'])->name('storefront.brand');
 Route::get('/collection/{slug}', [CollectionController::class, 'show'])->name('storefront.collection');
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('storefront.product');
@@ -37,6 +41,8 @@ Route::get('/page/{slug}', [StaticPageController::class, 'show'])->name('storefr
 
 Route::get('/compare', [CompareController::class, 'show'])->name('storefront.compare');
 Route::post('/compare/toggle', [CompareController::class, 'toggle'])->name('storefront.compare.toggle');
+Route::post('/compare/remove', [CompareController::class, 'remove'])->name('storefront.compare.remove');
+Route::post('/compare/clear', [CompareController::class, 'clear'])->name('storefront.compare.clear');
 
 Route::get('/wishlist', [WishlistController::class, 'index'])->name('storefront.wishlist');
 Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('storefront.wishlist.toggle');
@@ -46,9 +52,15 @@ Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
 
 Route::post('/cart', [CartController::class, 'store'])->name('storefront.cart.store');
 Route::get('/cart', [CartController::class, 'show'])->name('storefront.cart');
-Route::get('/checkout', \App\Livewire\CheckoutPage::class)->name('storefront.checkout');
-Route::get('/checkout/confirmation/{orderNumber}', fn (string $orderNumber) => view('storefront.checkout.confirmation', compact('orderNumber')))
-    ->name('storefront.checkout.confirmation');
+Route::get('/checkout', CheckoutPage::class)->name('storefront.checkout');
+Route::get('/checkout/confirmation/{orderNumber}', function (string $orderNumber) {
+    $order = Order::query()
+        ->with('items')
+        ->where('order_number', $orderNumber)
+        ->first();
+
+    return view('storefront.checkout.confirmation', compact('orderNumber', 'order'));
+})->name('storefront.checkout.confirmation');
 
 Route::get('/track-order', [OrderTrackingController::class, 'form'])->name('storefront.track-order.form');
 Route::post('/track-order', [OrderTrackingController::class, 'show'])->name('storefront.track-order.show');

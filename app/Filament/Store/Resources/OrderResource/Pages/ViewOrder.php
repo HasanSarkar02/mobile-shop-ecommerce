@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace App\Filament\Store\Resources\OrderResource\Pages;
 
 use App\Enums\OrderFulfillmentStatus;
-use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Filament\Store\Resources\OrderResource;
-use App\Models\PaymentMethod;
 use App\Services\OrderService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -19,8 +17,6 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewOrder extends ViewRecord
 {
     protected static string $resource = OrderResource::class;
-
-    protected string $view = 'filament.store.resources.order-resource.pages.view-order';
 
     protected function getHeaderActions(): array
     {
@@ -35,29 +31,12 @@ class ViewOrder extends ViewRecord
                     Textarea::make('note')->rows(2),
                 ])
                 ->visible(fn (): bool => $this->record->status->allowedNextStatuses() !== [])
+                ->requiresConfirmation()
                 ->action(function (array $data): void {
                     app(OrderService::class)->updateStatus($this->record, OrderStatus::from($data['status']), $data['note'] ?? null);
                 }),
 
-            Action::make('recordPayment')
-                ->label('Record Payment')
-                ->schema([
-                    Select::make('payment_method_id')->options(fn () => PaymentMethod::query()->pluck('name', 'id'))->required(),
-                    TextInput::make('amount')->label('Amount (BDT)')->numeric()->required(),
-                    Select::make('status')
-                        ->options(collect(OrderPaymentStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
-                        ->required(),
-                    TextInput::make('transaction_reference'),
-                ])
-                ->action(function (array $data): void {
-                    app(OrderService::class)->recordPayment(
-                        $this->record,
-                        PaymentMethod::find($data['payment_method_id']),
-                        (int) round($data['amount'] * 100),
-                        OrderPaymentStatus::from($data['status']),
-                        $data['transaction_reference'] ?? null,
-                    );
-                }),
+            OrderResource::recordPaymentAction(),
 
             Action::make('updateFulfillment')
                 ->label('Update Fulfillment')
@@ -68,6 +47,7 @@ class ViewOrder extends ViewRecord
                     TextInput::make('tracking_number'),
                     TextInput::make('courier_name'),
                 ])
+                ->requiresConfirmation()
                 ->action(function (array $data): void {
                     $fulfillment = $this->record->fulfillments()->latest()->first();
 
@@ -86,6 +66,17 @@ class ViewOrder extends ViewRecord
                 ->schema([Textarea::make('note')->required()->rows(3)])
                 ->action(function (array $data): void {
                     app(OrderService::class)->addInternalNote($this->record, $data['note']);
+                }),
+
+            Action::make('cancelOrder')
+                ->label('Cancel Order')
+                ->color('danger')
+                ->icon('heroicon-o-x-circle')
+                ->requiresConfirmation()
+                ->modalDescription('This will cancel the order, release any reserved stock, and mark it as cancelled. This action cannot be undone.')
+                ->visible(fn (): bool => in_array(OrderStatus::Cancelled, $this->record->status->allowedNextStatuses(), true))
+                ->action(function (): void {
+                    app(OrderService::class)->updateStatus($this->record, OrderStatus::Cancelled, 'Order cancelled by staff.');
                 }),
         ];
     }

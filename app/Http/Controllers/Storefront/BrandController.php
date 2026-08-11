@@ -12,12 +12,23 @@ use Illuminate\Http\Request;
 
 class BrandController extends Controller
 {
-    public function show(Request $request, string $slug, FilterQueryParser $parser, ProductListingService $listing)
+    public function index()
+    {
+        $brands = Brand::query()
+            ->withCount(['products' => fn ($query) => $query->published()])
+            ->orderBy('name')
+            ->get();
+
+        return view('storefront.brands.index', compact('brands'));
+    }
+
+    public function show(Request $request, string $slug, FilterQueryParser $parser)
+
     {
         $brand = Brand::query()->where('slug', $slug)->firstOrFail();
-        $filters = $parser->fromRequest($request);
-        $result = $listing->paginate($brand->products()->getQuery()->published(), $filters);
+        $isFiltered = $parser->fromRequest($request)->isFiltered();
+        return view('storefront.brands.show', compact('brand', 'isFiltered'));
 
-        return view('storefront.brands.show', compact('brand', 'result', 'filters'));
     }
+
 }

@@ -15,7 +15,7 @@ class SubscriptionEvent extends Model
 
     public const UPDATED_AT = null;
 
-    protected $fillable = ['type', 'from_plan_id', 'to_plan_id', 'note'];
+    protected $fillable = ['tenant_id', 'type', 'from_plan_id', 'to_plan_id', 'note'];
 
     protected function casts(): array
     {

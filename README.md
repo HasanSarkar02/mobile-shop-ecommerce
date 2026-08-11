@@ -1,58 +1,188 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Mobile Shop E-commerce
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A multi-tenant **SaaS e-commerce platform** for selling mobile phones and accessories. Each store (tenant) gets its own subdomain, its own storefront, and its own admin panel. The platform operator manages plans and tenants.
 
-## About Laravel
+Built with **Laravel 13**, **Filament 5** (admin panels), **Livewire**, **Alpine.js**, and **Tailwind CSS 4**.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tech Stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Area       | Technology                                            |
+| ---------- | ----------------------------------------------------- |
+| Backend    | PHP ^8.3, Laravel ^13.8                               |
+| Admin      | Filament ^5.6 (Store + Platform panels)               |
+| Frontend   | Livewire, Alpine.js ^3, Tailwind CSS ^4, Vite ^8      |
+| Database   | MySQL (default), Eloquent, 91 migrations, 60 models   |
+| Search     | Laravel Scout (database driver)                       |
+| Sanitizer  | mews/purifier (HTMLPurifier) — extended for storefront |
+| Media      | Spatie Media Library                                  |
+| Logging    | Spatie Activity Log                                   |
+| Tests      | Pest ^4 (Feature + Unit)                              |
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Architecture
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+The app is one codebase running **three surfaces**:
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+┌─────────────────────────────────────────────────────────────┐
+│  PLATFORM (central)                                          │
+│  • Marketing home + signup (Livewire)                        │
+│  • Filament "Platform" panel: tenants, plans, plan changes   │
+├─────────────────────────────────────────────────────────────┤
+│  STORE ADMIN (per tenant, Filament "Store" panel)            │
+│  • Products, inventory, orders, coupons, content, ...        │
+├─────────────────────────────────────────────────────────────┤
+│  STOREFRONT (public, per tenant subdomain)                   │
+│  • Catalog, search, cart, checkout, account, payments        │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+- **Multi-tenancy** is subdomain-based. `routes/web.php` has a `central` middleware group and a `tenant` group that loads `routes/tenant.php`.
+- Tenant context is resolved via `App\Support\Tenancy\Tenancy` and every tenant-scoped model is filtered by `tenant_id`.
+- Admin panels enforce owner-only access through `RestrictsToOwner`.
+- The storefront is theme-driven: the homepage is built from editable **homepage sections** (banner carousel, category grid, product grid, custom HTML, newsletter CTA, trust badges).
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Setup
 
-## Code of Conduct
+Requirements: PHP ^8.3, Composer, Node 20+, MySQL.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+# 1. Install dependencies
+composer install
+npm install
 
-## Security Vulnerabilities
+# 2. Environment
+cp .env.example .env
+php artisan key:generate
+# edit .env (DB_*, APP_URL=http://mobile-shop-ecommerce.test)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 3. Database
+php artisan migrate
+php artisan db:seed
 
-## License
+# 4. Build assets
+npm run build          # or npm run dev
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# 5. Serve (dev convenience)
+composer dev           # runs server, queue worker, pail logs, vite
+```
+
+The seeder creates a **Demo Store** on subdomain `demo` with sample data:
+
+| Role              | Email                 | Password  |
+| ----------------- | --------------------- | --------- |
+| Platform admin    | `admin@hasanmobileshop.com` | `password` |
+| Store owner       | `owner@demo.test`     | `password` |
+| Store customer    | `customer@demo.test`  | `password` |
+
+Add `demo.mobile-shop-ecommerce.test` (and your `APP_URL` host) to your hosts file / local resolver, then open the storefront.
+
+> The seeder also wires a live-like `/auto-login/{user}` route for quick storefront testing.
+
+---
+
+## What's Completed
+
+### Platform / SaaS (central)
+- [x] Tenant management (subdomains, custom domains, status)
+- [x] Plans, subscriptions, trials (14-day), plan change requests
+- [x] Billing page per tenant, subscription events/logging
+- [x] Platform marketing home + signup flow (`TenantSignupForm`)
+- [x] Filament Platform panel: Tenants, Plans, Plan Change Requests, stats widget
+- [x] `TenantRegistrationService`, `SubscriptionService`
+
+### Store Admin (Filament Store panel)
+- [x] Catalog: products, variants (SKU, price, cost, regions, fulfillment strategies, expected availability), attributes & options, tags, translations, relations, EMI plans, media
+- [x] Inventory: locations, stock items, stock movements, serial numbers (IMEI), restock, low-stock widget
+- [x] Orders: order lifecycle, payments, fulfillments, order events, reservation expiry, double-submission protection
+- [x] Customers & staff, with owner-only scoping (`RestrictsToOwner`)
+- [x] Coupons: scopes, customer eligibility, redemptions, currency-consistent validation
+- [x] Payment methods (gateway-driver based), shipping methods
+- [x] Content: brands, categories, collections, banners, campaigns, announcements, menus, homepage sections, static pages, redirects, FAQs, blog posts, product reviews
+- [x] Notifications: templates + logs (wiring for delivery is pending — see TODO)
+- [x] Theme settings, store settings, global store settings
+- [x] Dashboard widgets (stats, recent orders, low stock)
+
+### Storefront (public)
+- [x] Homepage builder rendering (banner carousel, category grid, product grid, custom HTML, trust badges, newsletter CTA)
+- [x] Catalog: categories list/detail, brands list/detail, collections, product pages (variants, reviews, related products)
+- [x] Product listing with facets/filters (brand, price range, attributes), sorting, filter chips, `ProductListingService` + `FacetResolver`
+- [x] Search with live suggestions (`/search/suggest`)
+- [x] Cart (session cart, price/stock validation), MiniCart Livewire, cart page
+- [x] Checkout (Livewire), order confirmation
+- [x] Payments: pay/success/fail/cancel/IPN flow with idempotent callbacks; **SSLCommerz driver**
+- [x] Compare list, wishlist, recently viewed products
+- [x] Customer auth (login/register/logout), account dashboard, orders, addresses, profile & password
+- [x] Order tracking, FAQ, blog, static pages, sitemap.xml, robots.txt
+- [x] Newsletter subscription endpoint + CTA section
+- [x] SEO meta partial, theme toggle, desktop/header layout components
+
+### Services & infrastructure
+- [x] `OrderService`, `CartService`, `InventoryService`, `CouponService`, `PaymentGatewayService` (+ driver interface), `WishlistService`, `CompareService`, `RecentlyViewedService`, `ProductListingService`, `NotificationService`, `RedirectService`, `SequenceGenerator`, `ProductService`, `ProductAttributeValueService`
+- [x] 91 migrations / 60 models covering the full domain
+- [x] Tests: order service, inventory, coupon (incl. currency), payment gateway, checkout double-submission, payment callback idempotency, owner-only authorization, deletion protection, tenancy fail-closed, queue-after-commit
+
+---
+
+## What's Left (summary)
+
+See **[TODO.md](./TODO.md)** for the full task list.
+
+- Commit the in-progress storefront work (product catalog Livewire, brands/categories index pages, newsletter section, custom-HTML sanitizer fix).
+- Run the full test suite and fix any failures.
+- Add more payment gateways (only SSLCommerz is implemented).
+- Wire notification templates to real email/SMS delivery; add subscriber management + double opt-in.
+- Move search from the database driver to Meilisearch/Algolia for production.
+- Production hardening: queue/cache drivers, config caching, HTTPS, deployment.
+
+---
+
+## Project Structure (key folders)
+
+```
+app/
+├─ Filament/
+│  ├─ Platform/          # Platform admin panel
+│  └─ Store/             # Per-tenant store admin panel
+├─ Http/Controllers/Storefront/   # Public storefront controllers
+├─ Livewire/             # CartPage, CheckoutPage, MiniCart, ProductCatalog, TenantSignupForm
+├─ Models/               # 60 Eloquent models
+├─ Services/             # Business logic services
+│  └─ Storefront/        # Listing, facets, homepage rendering
+├─ Support/              # Tenancy, Purifier (SafeCssValue, StorefrontPurifier), ...
+└─ Filament/.../Resources # Admin CRUD resources
+routes/
+├─ web.php               # central + tenant groups
+└─ tenant.php            # storefront routes
+resources/views/
+├─ platform/             # central marketing/signup
+├─ storefront/           # public store
+├─ filament/             # admin panel views
+└─ livewire/             # Livewire component views
+tests/
+├─ Feature/              # service + tenancy + authorization tests
+└─ Unit/
+```
+
+---
+
+## Testing
+
+```bash
+composer test        # config:clear + pest
+# or
+php artisan test
+```
+
+---
+
+## Notes & Conventions
+
+- Money is stored as **integers** (minor units) to avoid float precision issues; coupon validation is currency-consistent (`CouponConCurrencyTest`).
+- Storefront custom HTML is sanitized by `App\Support\Purifier\StorefrontPurifier`, which registers modern CSS properties (flex, grid, gap, shadows, transforms) onto HTMLPurifier's CSS definition while rejecting injection tokens (`url(...)`, `expression`, `-moz-binding`, etc.).
+- Check `phpstan.neon`, `pint.json` for static analysis / style tooling.

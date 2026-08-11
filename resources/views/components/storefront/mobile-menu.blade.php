@@ -73,6 +73,11 @@
                     <x-ui.icon name="heart" class="w-5 h-5 text-gray-400" />
                     Wishlist
                 </a>
+                <a href="{{ route('storefront.compare') }}"
+                    class="flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-gray-800 dark:text-gray-100">
+                    <x-ui.icon name="grid" class="w-5 h-5 text-gray-400" />
+                    Compare
+                </a>
                 <div class="px-2 py-1">
                     <x-storefront.theme-toggle :show-label="true"
                         class="w-full flex items-center px-2 py-3 rounded-lg text-[15px] font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 transition" />

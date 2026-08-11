@@ -85,8 +85,15 @@ class ProductController extends Controller
             ])->all(),
         ] : null;
 
+        $relatedProducts = $product->relatedProducts()
+            ->with(['translations', 'variants', 'media', 'emiPlans'])
+            ->published()
+            ->limit(4)
+            ->get();
+
         return view('storefront.products.show', compact(
             'product', 'variantsData', 'productImages', 'specifications', 'productJsonLd', 'faqJsonLd', 'isWishlisted', 'isComparing',
+            'relatedProducts',
         ));
     }
 }

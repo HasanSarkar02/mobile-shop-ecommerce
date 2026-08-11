@@ -3,7 +3,7 @@
     @click="
         dark = !dark;
         document.documentElement.classList.toggle('dark', dark);
-        localStorage.theme = dark ? 'dark' : 'light';
+        localStorage.storefrontTheme = dark ? 'dark' : 'light';
     "
     {{ $attributes->merge(['class' => $class]) }} aria-label="Toggle dark mode">
     <span x-show="!dark" x-cloak class="flex items-center gap-3">
