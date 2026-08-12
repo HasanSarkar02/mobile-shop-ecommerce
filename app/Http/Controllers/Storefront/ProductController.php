@@ -4,17 +4,70 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Storefront;
 
+use App\Enums\BackorderPolicy;
+use App\Enums\FulfillmentStrategy;
+use App\Enums\StaticPageStatus;
+use App\Enums\StockStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\IncrementProductViewCount;
+use App\Models\EmiPlan;
 use App\Models\Product;
 use App\Models\ProductAttributeValue;
+use App\Models\StaticPage;
 use App\Services\CompareService;
+use App\Services\InventoryService;
 use App\Services\RecentlyViewedService;
 use App\Services\WishlistService;
 
 class ProductController extends Controller
 {
-    public function show(string $slug, RecentlyViewedService $recentlyViewed, WishlistService $wishlists, CompareService $compare)
+    /**
+     * Known policy-page slugs (the storefront.page route renders by slug). A
+     * link is rendered only when a published page with this slug exists — see
+     * resolvePolicyLinks(). This is a display-side convention; it never
+     * creates or invents pages.
+     */
+    private const POLICY_SLUGS = [
+        'Delivery' => ['delivery-policy'],
+        'Warranty' => ['warranty-policy'],
+        'Payment / EMI' => ['payment-policy', 'emi-payment-policy'],
+        'Return / Exchange' => ['return-policy', 'exchange-policy'],
+        'Authenticity' => ['authenticity-policy'],
+    ];
+
+    /**
+     * Resolves the policy links shown near the buy box. One tenant-scoped
+     * query for the whole set, so there is no per-link N+1. Categories that
+     * have no matching published page are silently skipped.
+     *
+     * @return array<int, array{label: string, slug: string}>
+     */
+    private function resolvePolicyLinks(): array
+    {
+        $slugs = array_values(array_unique(array_merge(...array_values(self::POLICY_SLUGS))));
+
+        $pages = StaticPage::query()
+            ->whereIn('slug', $slugs)
+            ->where('status', StaticPageStatus::Published)
+            ->get()
+            ->keyBy('slug');
+
+        $links = [];
+
+        foreach (self::POLICY_SLUGS as $label => $candidates) {
+            foreach ($candidates as $slug) {
+                if ($pages->has($slug)) {
+                    $links[] = ['label' => $label, 'slug' => $slug];
+
+                    break;
+                }
+            }
+        }
+
+        return $links;
+    }
+
+    public function show(string $slug, RecentlyViewedService $recentlyViewed, WishlistService $wishlists, CompareService $compare, InventoryService $inventory)
     {
         $product = Product::published()
             ->whereHas('translations', fn ($query) => $query->where('slug', $slug))
@@ -42,7 +95,8 @@ class ProductController extends Controller
         $isComparing = in_array($product->id, $compare->ids(), true);
 
         $dimensions = [];
-        $variantsData = $product->variants->map(function ($variant) use (&$dimensions) {
+        $purchaseStates = $inventory->resolvePurchaseStates($product->variants);
+        $variantsData = $product->variants->map(function ($variant) use (&$dimensions, $purchaseStates) {
             $dims = [];
             $meta = [];
 
@@ -81,12 +135,32 @@ class ProductController extends Controller
                 $dimensions[$code] ??= $definition;
             }
 
+            $state = $purchaseStates->get($variant->id) ?? [
+                'stock_status' => StockStatus::OutOfStock,
+                'available_quantity' => 0,
+                'low_stock_threshold' => null,
+            ];
+
+            // Mirrors InventoryService::isPurchasable() so the PDP never lets a
+            // shopper attempt an action the server would reject.
+            $purchasable = match (true) {
+                $variant->availability->value === 'discontinued' => false,
+                $variant->fulfillment_strategy !== FulfillmentStrategy::Stock => true,
+                $variant->backorder_policy !== null && $variant->backorder_policy !== BackorderPolicy::Deny => true,
+                default => $state['available_quantity'] >= 1,
+            };
+
             return [
                 'id' => $variant->id,
                 'price' => $variant->price,
                 'compare_at_price' => $variant->compare_at_price,
                 'availability' => $variant->availability->value,
                 'fulfillment_strategy' => $variant->fulfillment_strategy->value,
+                'purchase_state' => $state['stock_status']->value,
+                'available_quantity' => $state['available_quantity'],
+                'backorder_policy' => $variant->backorder_policy?->value,
+                'expected_available_at' => $variant->expected_available_at?->format('M j, Y'),
+                'purchasable' => $purchasable,
                 'images' => $variant->getMedia('images')->map(fn ($media) => $media->getUrl('large'))->all(),
                 'dims' => $dims,
             ];
@@ -154,9 +228,22 @@ class ProductController extends Controller
             ->limit(4)
             ->get();
 
+        $policyLinks = $this->resolvePolicyLinks();
+
+        // EMI plans (active-only, loaded above) serialized for the client-side
+        // recompute. Only rates + tenures are sent; no bank-specific logic.
+        $emiData = $product->emiPlans
+            ->map(fn (EmiPlan $plan) => [
+                'bank_name' => $plan->bank_name,
+                'tenure' => $plan->tenure_months,
+                'rate' => (float) $plan->interest_rate,
+            ])
+            ->values()
+            ->all();
+
         return view('storefront.products.show', compact(
             'product', 'variantsData', 'dimensions', 'productImages', 'specificationGroups', 'productJsonLd', 'faqJsonLd', 'isWishlisted', 'isComparing',
-            'relatedProducts',
+            'relatedProducts', 'policyLinks', 'emiData',
         ));
     }
 }

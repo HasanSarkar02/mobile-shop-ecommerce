@@ -7,20 +7,34 @@
         $productDescription = $product->translation('en')?->sanitizedDescription();
         $showSpecifications = $specificationGroups->isNotEmpty();
         $showDescription = filled($productDescription);
+        $showWarranty = filled($product->translation('en')?->warranty_info);
         $showReviews = $product->reviews_count > 0;
         $showFaqs = $product->faqs->isNotEmpty();
         $navSections = collect([
             'specifications' => $showSpecifications,
             'description' => $showDescription,
+            'warranty' => $showWarranty,
             'reviews' => $showReviews,
             'faq' => $showFaqs,
         ])->filter()->keys()->values();
         $navLabels = [
             'specifications' => 'Specifications',
             'description' => 'Description',
+            'warranty' => 'Warranty',
             'reviews' => 'Reviews',
             'faq' => 'FAQ',
         ];
+        $policyLinks = collect($policyLinks ?? []);
+        $warrantyPolicyLink = $policyLinks->first(fn ($link) => $link['label'] === 'Warranty');
+
+        // Server-rendered EMI figures (progressive enhancement baseline). Uses
+        // the first variant's price — the same variant Alpine starts on — and
+        // mirrors the client formula exactly: round(price * (1 + rate/100) / tenure).
+        $emiBasePrice = $product->variants->first()?->price ?? 0;
+        $emiFromMonthly = $product->emiPlans->isNotEmpty()
+            ? $product->emiPlans->map(fn ($plan) => round($emiBasePrice * (1 + (float) $plan->interest_rate / 100) / $plan->tenure_months))->min()
+            : null;
+        $emiHasZero = $product->emiPlans->contains(fn ($plan) => (float) $plan->interest_rate === 0.0);
     @endphp
 
     @include('storefront.partials.seo-meta', [
@@ -37,16 +51,22 @@
             html {
                 scroll-behavior: smooth;
             }
+            .pdp-sticky-cta {
+                transition: transform .25s ease, opacity .25s ease;
+            }
             @media (prefers-reduced-motion: reduce) {
                 html {
                     scroll-behavior: auto;
+                }
+                .pdp-sticky-cta {
+                    transition: none;
                 }
             }
         </style>
     @endpush
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8"
-        x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), {{ $product->variants->first()?->id ?? 'null' }}, @js($isWishlisted), @js($isComparing))"
+        x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), {{ $product->variants->first()?->id ?? 'null' }}, @js($isWishlisted), @js($isComparing), @js($emiData))"
         x-init="init()">
         <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
             <a href="{{ route('storefront.home') }}" class="hover:text-[var(--brand)]">Home</a>
@@ -113,7 +133,7 @@
             </template>
 
             {{-- Details --}}
-            <div>
+            <div x-ref="buyBox">
                 <div class="flex justify-between items-start">
                     <div>
                         <div class="flex items-center gap-2 flex-wrap">
@@ -167,13 +187,13 @@
                             </template>
                         </div>
 
-                        <p class="text-sm mt-2 font-medium"
-                            :class="current().availability === 'out_of_stock' ? 'text-red-500' : (current()
-                                .fulfillment_strategy === 'preorder' ? 'text-amber-600' : 'text-green-600')"
-                            x-text="availabilityLabel()"></p>
-                        <template x-if="current().low_stock_remaining">
+                        <p class="text-sm mt-2 font-medium" :class="availabilityTone()" x-text="availabilityLabel()"></p>
+                        <template x-if="current().purchase_state === 'low_stock' && current().available_quantity > 0">
                             <p class="text-sm mt-0.5 text-amber-600 font-medium"
-                                x-text="'Only ' + current().low_stock_remaining + ' left in stock'"></p>
+                                x-text="'Only ' + current().available_quantity + ' left in stock'"></p>
+                        </template>
+                        <template x-if="restockMessage()">
+                            <p class="text-sm mt-0.5 text-gray-500" x-text="restockMessage()"></p>
                         </template>
                     </div>
                 </template>
@@ -195,19 +215,75 @@
                 </template>
 
                 @if ($product->emiPlans->isNotEmpty())
-                    <template x-if="current()">
-                        <x-ui.alert variant="info" class="mt-6">
-                            <p class="font-medium mb-2">EMI Available</p>
-                            <ul class="space-y-1">
-                                @foreach ($product->emiPlans as $plan)
-                                    <li>
-                                        {{ $plan->bank_name }} — {{ $plan->tenure_months }} months
-                                        (~<span
-                                            x-text="formatPrice(Math.round(current().price * (1 + {{ $plan->interest_rate }} / 100) / {{ $plan->tenure_months }}))"></span>/mo)
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </x-ui.alert>
+                    <div class="mt-6 flex items-center justify-between gap-4 rounded-xl border border-gray-200 dark:border-gray-800 p-3">
+                        <div class="min-w-0">
+                            <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
+                                <span class="text-gray-900 dark:text-gray-100">EMI from</span>
+                                <span class="font-bold text-gray-900 dark:text-gray-100 tabular-nums"
+                                    x-text="emiHeadline()">৳{{ number_format(($emiFromMonthly ?? 0) / 100) }}/month</span>
+                            </p>
+                            @if ($emiHasZero)
+                                <p class="mt-1 text-xs text-green-600 dark:text-green-400 font-medium">0% EMI available</p>
+                            @endif
+                        </div>
+                        <button type="button" @click="openEmi()" aria-haspopup="dialog"
+                            class="flex-shrink-0 text-sm font-medium text-[var(--brand)] hover:underline underline-offset-4">
+                            View plans
+                        </button>
+                    </div>
+
+                    {{-- EMI modal --}}
+                    <template x-teleport="body">
+                        <div x-show="emiOpen" x-cloak
+                            class="fixed inset-0 z-[80] bg-black/60 flex items-center justify-center p-4 sm:p-6"
+                            role="dialog" aria-modal="true" aria-labelledby="emi-modal-title"
+                            @keydown.escape.window="closeEmi()" @click="closeEmi()">
+                            <div class="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden"
+                                x-ref="emiPanel" @click.stop>
+                                <header class="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-gray-800 p-5">
+                                    <div>
+                                        <h2 id="emi-modal-title" class="text-lg font-bold text-gray-900 dark:text-gray-100">EMI Plans</h2>
+                                        <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                                            <span x-text="emiHeadline()">৳{{ number_format(($emiFromMonthly ?? 0) / 100) }}/month</span>
+                                        </p>
+                                    </div>
+                                    <button type="button" x-ref="emiClose" @click="closeEmi()"
+                                        class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                                        aria-label="Close EMI plans">
+                                        <x-ui.icon name="close" class="w-5 h-5" />
+                                    </button>
+                                </header>
+
+                                <div class="overflow-y-auto p-5 space-y-3">
+                                    @foreach ($product->emiPlans as $plan)
+                                        @php $planRate = (float) $plan->interest_rate; @endphp
+                                        <div class="flex items-center justify-between gap-4 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+                                            <div class="min-w-0">
+                                                <p class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-gray-900 dark:text-gray-100">
+                                                    {{ $plan->bank_name }}
+                                                    @if ($planRate === 0.0)
+                                                        <x-ui.badge variant="success">0% EMI</x-ui.badge>
+                                                    @endif
+                                                </p>
+                                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                                    <span class="tabular-nums"
+                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}))">৳{{ number_format(round($emiBasePrice * (1 + $planRate / 100) / $plan->tenure_months) / 100) }}</span>/month
+                                                    for {{ $plan->tenure_months }} months
+                                                </p>
+                                            </div>
+                                            <div class="text-right flex-shrink-0">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $planRate }}% interest</p>
+                                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 tabular-nums">
+                                                    <span
+                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}) * {{ $plan->tenure_months }})">৳{{ number_format(round($emiBasePrice * (1 + $planRate / 100) / $plan->tenure_months) * $plan->tenure_months / 100) }}</span>
+                                                    total
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
                     </template>
                 @endif
 
@@ -220,36 +296,79 @@
                         <button @click="quantity++" class="w-10 h-11 flex items-center justify-center text-lg"
                             aria-label="Increase quantity">+</button>
                     </div>
-                    <x-ui.button variant="primary" size="lg" class="flex-1" @click="addToCart()"
-                        x-bind:disabled="cartLoading || !current() || current().availability === 'out_of_stock'">
-                        <span
-                            x-text="cartLoading ? 'Adding…' : (!current() ? 'Unavailable' : (current().availability === 'out_of_stock' ? 'Out of Stock' : (current().fulfillment_strategy === 'preorder' ? 'Pre-Order Now' : 'Add to Cart')))"></span>
+                    <form method="POST" action="{{ route('storefront.buy-now') }}" class="flex-1"
+                        x-data="{ pending: false }"
+                        @submit="if (!current() || !current().purchasable) { $event.preventDefault(); return; } pending = true">
+                        @csrf
+                        <input type="hidden" name="product_variant_id" :value="currentVariantId || ''">
+                        <input type="hidden" name="quantity" :value="quantity">
+                        <x-ui.button variant="primary" size="lg" class="w-full" type="submit"
+                            x-bind:disabled="pending || cartLoading || !current() || !current().purchasable">
+                            Buy Now
+                        </x-ui.button>
+                    </form>
+                </div>
+                <div class="mt-3">
+                    <x-ui.button variant="secondary" size="lg" class="w-full" @click="addToCart()"
+                        x-bind:disabled="cartLoading || !current() || !current().purchasable">
+                        <span x-text="ctaLabel()"></span>
                     </x-ui.button>
                 </div>
             </div>
         </div>
 
-        {{-- Sticky mobile add-to-cart bar — sits above the persistent mobile
-             bottom nav (bottom-16 ≈ its height), not overlapping it. Only the
-             bottom nav itself needs safe-area padding, since it's the
-             bottommost fixed element on the page. --}}
+        {{-- Sticky mobile purchase bar — sits above the persistent mobile bottom nav
+             (bottom-16 ≈ its height) so it never overlaps it; the bottom nav keeps
+             the --safe-bottom padding as the bottommost fixed element. It appears
+             only after the main buy box leaves the viewport (IntersectionObserver,
+             see setupStickyCta in productDetail) and retracts near the end of the
+             page so it never covers the footer. Motion respects reduced-motion via
+             the .pdp-sticky-cta transition rule. --}}
         <template x-if="current()">
-            <div
-                class="lg:hidden fixed bottom-16 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center gap-3">
-                <div class="min-w-0 flex-shrink-0">
-                    <p class="font-bold text-lg leading-none" x-text="formatPrice(current().price)"></p>
-                    <template x-if="current().compare_at_price && current().compare_at_price > current().price">
-                        <p class="text-xs text-gray-400 line-through leading-none mt-1"
-                            x-text="formatPrice(current().compare_at_price)"></p>
-                    </template>
+            <div class="pdp-sticky-cta lg:hidden fixed bottom-16 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 px-4 py-3"
+                :class="stickyCtaVisible ? 'translate-y-0 opacity-100 shadow-soft' : 'translate-y-full opacity-0 pointer-events-none'"
+                :aria-hidden="stickyCtaVisible ? 'false' : 'true'">
+                <div class="flex items-center gap-3">
+                    <div class="min-w-0 flex-shrink-0">
+                        <p class="font-bold text-lg leading-none" x-text="formatPrice(current().price)"></p>
+                        <template x-if="current().compare_at_price && current().compare_at_price > current().price">
+                            <p class="text-xs text-gray-400 line-through leading-none mt-1"
+                                x-text="formatPrice(current().compare_at_price)"></p>
+                        </template>
+                    </div>
+                    <form method="POST" action="{{ route('storefront.buy-now') }}" class="flex-1"
+                        x-data="{ pending: false }"
+                        @submit="if (!current() || !current().purchasable) { $event.preventDefault(); return; } pending = true">
+                        @csrf
+                        <input type="hidden" name="product_variant_id" :value="currentVariantId || ''">
+                        <input type="hidden" name="quantity" :value="quantity">
+                        <x-ui.button variant="primary" size="lg" class="w-full" type="submit"
+                            x-bind:disabled="pending || cartLoading || !current().purchasable">
+                            Buy Now
+                        </x-ui.button>
+                    </form>
                 </div>
-                <x-ui.button variant="primary" size="lg" class="flex-1" @click="addToCart()"
-                    x-bind:disabled="cartLoading || current().availability === 'out_of_stock'">
-                    <span
-                        x-text="cartLoading ? 'Adding…' : (current().availability === 'out_of_stock' ? 'Out of Stock' : (current().fulfillment_strategy === 'preorder' ? 'Pre-Order Now' : 'Add to Cart'))"></span>
-                </x-ui.button>
+                <div class="mt-2">
+                    <x-ui.button variant="secondary" size="lg" class="w-full" @click="addToCart()"
+                        x-bind:disabled="cartLoading || !current().purchasable">
+                        <span x-text="ctaLabel()"></span>
+                    </x-ui.button>
+                </div>
             </div>
         </template>
+
+        @if ($policyLinks->isNotEmpty())
+            <div class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
+                <ul aria-label="Store policies" class="flex flex-wrap gap-x-5 gap-y-2">
+                    @foreach ($policyLinks as $link)
+                        <li>
+                            <a href="{{ route('storefront.page', $link['slug']) }}"
+                                class="text-xs text-gray-500 dark:text-gray-400 hover:text-[var(--brand)]">{{ $link['label'] }}</a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         @if ($navSections->isNotEmpty())
             <nav x-data="productSections(@js($navSections))" x-init="init()" aria-label="Product sections"
@@ -306,12 +425,20 @@
         @endif
 
         {{-- Warranty --}}
-        @if ($product->translation('en')?->warranty_info)
+        @if ($showWarranty)
             <section id="warranty" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="warranty-heading">
                 <h2 id="warranty-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Warranty</h2>
                 <div class="prose dark:prose-invert max-w-none mt-5">
                     {!! nl2br(e($product->translation('en')->warranty_info)) !!}
                 </div>
+                @if ($warrantyPolicyLink)
+                    <div class="mt-5">
+                        <a href="{{ route('storefront.page', $warrantyPolicyLink['slug']) }}"
+                            class="text-sm font-medium text-[var(--brand)] hover:underline">
+                            View Warranty Policy &rarr;
+                        </a>
+                    </div>
+                @endif
             </section>
         @endif
 
@@ -394,6 +521,10 @@
                 </div>
             </section>
         @endif
+
+        {{-- Sentinel for the sticky CTA: once the end of the product content
+             scrolls into view, the bar retracts so it never covers the footer. --}}
+        <div x-ref="pdpEnd" class="h-px" aria-hidden="true"></div>
     </div>
 @endsection
 
@@ -432,7 +563,7 @@
             };
         }
 
-        function productDetail(variants, productImages, dimensions, initialId, initialWishlisted, initialComparing) {
+        function productDetail(variants, productImages, dimensions, initialId, initialWishlisted, initialComparing, emiPlans) {
             return {
                 variants,
                 productImages,
@@ -448,6 +579,12 @@
                 cartLoading: false,
                 wishlistLoading: false,
                 compareLoading: false,
+                stickyCtaVisible: false,
+                buyBoxObserver: null,
+                endObserver: null,
+                emiPlans,
+                emiOpen: false,
+                emiTrigger: null,
 
                 init() {
                     const first = this.current();
@@ -467,6 +604,41 @@
                     });
 
                     this.activeImage = this.currentImages()[0] ?? null;
+                    this.setupStickyCta();
+                },
+                setupStickyCta() {
+                    if (!('IntersectionObserver' in window)) return;
+
+                    const buyBox = this.$refs.buyBox;
+                    if (! buyBox) return;
+
+                    // Show the sticky bar once the main purchase area has left
+                    // the viewport (a little past the bottom so it does not
+                    // flash while the user is still reading the buy box).
+                    this.buyBoxObserver = new IntersectionObserver((entries) => {
+                        entries.forEach((entry) => {
+                            this.stickyCtaVisible = !entry.isIntersecting;
+                        });
+                    }, { rootMargin: '0px 0px -15% 0px' });
+                    this.buyBoxObserver.observe(buyBox);
+
+                    // Retract near the end of the product content so the bar
+                    // never sits on top of the footer / related products.
+                    const end = this.$refs.pdpEnd;
+                    if (end) {
+                        this.endObserver = new IntersectionObserver((entries) => {
+                            entries.forEach((entry) => {
+                                if (entry.isIntersecting) {
+                                    this.stickyCtaVisible = false;
+                                }
+                            });
+                        }, { rootMargin: '0px 0px -15% 0px' });
+                        this.endObserver.observe(end);
+                    }
+                },
+                destroy() {
+                    this.buyBoxObserver?.disconnect();
+                    this.endObserver?.disconnect();
                 },
                 current() {
                     if (this.unavailable) {
@@ -508,16 +680,70 @@
                 availabilityLabel() {
                     const v = this.current();
                     if (! v) return '';
-                    if (v.fulfillment_strategy === 'preorder') return 'Pre-Order';
-                    if (v.fulfillment_strategy === 'dropship') return 'Available';
-                    return {
-                        in_stock: 'In Stock',
-                        out_of_stock: 'Out of Stock',
-                        discontinued: 'Discontinued'
-                    } [v.availability] ?? '';
+                    if (v.purchase_state === 'preorder') return 'Pre-Order';
+                    if (v.purchase_state === 'dropship') return 'Available';
+                    if (v.purchase_state === 'discontinued') return 'Discontinued';
+                    if (v.purchase_state === 'out_of_stock') return v.backorder_policy ? 'Backorder' : 'Out of Stock';
+                    return 'In Stock';
+                },
+                availabilityTone() {
+                    const v = this.current();
+                    if (! v) return 'text-gray-500';
+                    const state = v.purchase_state;
+                    if (state === 'discontinued' || state === 'out_of_stock') return 'text-red-500';
+                    if (state === 'preorder' || state === 'low_stock') return 'text-amber-600';
+                    return 'text-green-600';
+                },
+                restockMessage() {
+                    const v = this.current();
+                    if (! v || ! v.expected_available_at) return '';
+                    if (v.purchase_state === 'preorder') return 'Expected availability ' + v.expected_available_at;
+                    if (v.purchase_state === 'out_of_stock' && !v.backorder_policy) return 'Back in stock ' + v.expected_available_at;
+                    return '';
+                },
+                ctaLabel() {
+                    const v = this.current();
+                    if (this.cartLoading) return 'Adding…';
+                    if (! v) return 'Unavailable';
+                    if (! v.purchasable) {
+                        return v.purchase_state === 'discontinued' ? 'Discontinued' : 'Out of Stock';
+                    }
+                    if (v.purchase_state === 'preorder') return 'Pre-Order Now';
+                    if (v.purchase_state === 'out_of_stock') {
+                        return v.backorder_policy === 'notify' ? 'Backorder Now' : 'Add to Cart';
+                    }
+                    return 'Add to Cart';
                 },
                 formatPrice(cents) {
                     return '৳' + Math.round(cents / 100).toLocaleString();
+                },
+                // Mirrors the original PDP formula exactly:
+                // round(price * (1 + rate/100) / tenure) in cents.
+                emiMonthly(price, rate, tenure) {
+                    return Math.round(price * (1 + rate / 100) / tenure);
+                },
+                emiFrom() {
+                    const v = this.current();
+                    if (! v || ! this.emiPlans.length) return null;
+                    return Math.min(...this.emiPlans.map(p => this.emiMonthly(v.price, p.rate, p.tenure)));
+                },
+                emiHeadline() {
+                    const from = this.emiFrom();
+                    return from === null ? '' : this.formatPrice(from) + '/month';
+                },
+                openEmi() {
+                    this.emiTrigger = document.activeElement;
+                    this.emiOpen = true;
+                    document.body.style.overflow = 'hidden';
+                    this.$nextTick(() => this.$refs.emiClose?.focus());
+                },
+                closeEmi() {
+                    this.emiOpen = false;
+                    document.body.style.overflow = '';
+                    if (this.emiTrigger) {
+                        this.$nextTick(() => this.emiTrigger?.focus?.());
+                        this.emiTrigger = null;
+                    }
                 },
                 toast(message, type = 'success') {
                     window.dispatchEvent(new CustomEvent('toast', {
@@ -531,7 +757,8 @@
                     return document.querySelector('meta[name="csrf-token"]').content;
                 },
                 addToCart() {
-                    if (! this.current()) return;
+                    const v = this.current();
+                    if (! v || ! v.purchasable) return;
                     this.cartLoading = true;
                     fetch('{{ route('storefront.cart.store') }}', {
                             method: 'POST',

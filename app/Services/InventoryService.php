@@ -14,6 +14,7 @@ use App\Models\Location;
 use App\Models\ProductVariant;
 use App\Models\StockItem;
 use App\Models\StockMovement;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -68,6 +69,82 @@ class InventoryService
             ?? (int) config('inventory.default_low_stock_threshold', 5);
 
         return $available <= $threshold ? StockStatus::LowStock : StockStatus::InStock;
+    }
+
+    /**
+     * Batch resolver for storefront display state. Mirrors stockStatus() and
+     * availableQuantity() but reads stock from a single pre-loaded stock-item
+     * map keyed by variant id, so a tracked variant that has no stock_item row
+     * resolves as out-of-stock instead of throwing (stockItemFor uses
+     * firstOrFail). Never call this per variant in a loop — pass the full
+     * collection once.
+     *
+     * @param  Collection<int, ProductVariant>  $variants
+     * @return Collection<int, array{stock_status: StockStatus, available_quantity: int, low_stock_threshold: ?int}> keyed by variant id
+     */
+    public function resolvePurchaseStates(Collection $variants): Collection
+    {
+        $ids = $variants->pluck('id')->values()->all();
+
+        $location = Location::query()->where('is_default', true)->first();
+
+        $stockItems = collect();
+        if ($location !== null && $ids !== []) {
+            $stockItems = StockItem::query()
+                ->whereIn('product_variant_id', $ids)
+                ->where('location_id', $location->id)
+                ->get()
+                ->keyBy('product_variant_id');
+        }
+
+        $expiredByVariant = collect();
+        if ($ids !== []) {
+            $expiredByVariant = \App\Models\OrderItem::query()
+                ->whereIn('product_variant_id', $ids)
+                ->whereHas('order', fn ($query) => $query
+                    ->where('status', 'pending')
+                    ->where('reservation_expires_at', '<', now()))
+                ->selectRaw('product_variant_id, SUM(quantity) as total')
+                ->groupBy('product_variant_id')
+                ->pluck('total', 'product_variant_id')
+                ->mapWithKeys(fn ($total, $variantId) => [(int) $variantId => (int) $total]);
+        }
+
+        $defaultThreshold = (int) config('inventory.default_low_stock_threshold', 5);
+
+        return $variants->mapWithKeys(function (ProductVariant $variant) use ($stockItems, $expiredByVariant, $defaultThreshold): array {
+            if ($variant->availability->value === 'discontinued') {
+                return [$variant->id => ['stock_status' => StockStatus::Discontinued, 'available_quantity' => 0, 'low_stock_threshold' => null]];
+            }
+
+            if ($variant->fulfillment_strategy === FulfillmentStrategy::Preorder) {
+                return [$variant->id => ['stock_status' => StockStatus::Preorder, 'available_quantity' => 0, 'low_stock_threshold' => null]];
+            }
+
+            if ($variant->fulfillment_strategy === FulfillmentStrategy::Dropship) {
+                return [$variant->id => ['stock_status' => StockStatus::Dropship, 'available_quantity' => 0, 'low_stock_threshold' => null]];
+            }
+
+            $stockItem = $stockItems->get($variant->id);
+            $rawAvailable = $stockItem?->availableQuantity() ?? 0;
+            $available = $rawAvailable + (int) ($expiredByVariant->get($variant->id) ?? 0);
+
+            if ($rawAvailable <= 0) {
+                return [$variant->id => [
+                    'stock_status' => StockStatus::OutOfStock,
+                    'available_quantity' => $available,
+                    'low_stock_threshold' => $stockItem?->low_stock_threshold,
+                ]];
+            }
+
+            $threshold = $stockItem?->low_stock_threshold ?? $variant->low_stock_threshold ?? $defaultThreshold;
+
+            return [$variant->id => [
+                'stock_status' => $rawAvailable <= $threshold ? StockStatus::LowStock : StockStatus::InStock,
+                'available_quantity' => $available,
+                'low_stock_threshold' => $stockItem?->low_stock_threshold,
+            ]];
+        });
     }
 
     public function isPurchasable(ProductVariant $variant, int $quantity = 1, ?Location $location = null): bool

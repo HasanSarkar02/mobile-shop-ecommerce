@@ -51,6 +51,7 @@ Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
     ->name('storefront.newsletter.subscribe');
 
 Route::post('/cart', [CartController::class, 'store'])->name('storefront.cart.store');
+Route::post('/buy-now', [CartController::class, 'buyNow'])->name('storefront.buy-now');
 Route::get('/cart', [CartController::class, 'show'])->name('storefront.cart');
 Route::get('/checkout', CheckoutPage::class)->name('storefront.checkout');
 Route::get('/checkout/confirmation/{orderNumber}', function (string $orderNumber) {
