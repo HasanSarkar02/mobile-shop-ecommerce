@@ -24,17 +24,18 @@ use Mews\Purifier\Facades\Purifier;
  */
 class StorefrontPurifier
 {
-    /**
-     * @param string|null $html
+/**
+     * @param  string|null  $html
+     * @param  string  $profile  Purifier profile name, defaults to 'storefront'.
      * @return string
      */
-    public static function clean(?string $html): string
+    public static function clean(?string $html, string $profile = 'storefront'): string
     {
         if ($html === null || $html === '') {
             return '';
         }
 
-        return (string) Purifier::clean($html, 'storefront', function ($config) {
+        return (string) Purifier::clean($html, $profile, function ($config) {
             \App\Support\Purifier\StorefrontPurifier::configure($config);
         });
     }

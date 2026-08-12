@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Jobs\IncrementProductViewCount;
 use App\Models\Product;
+use App\Models\ProductAttributeValue;
 use App\Services\CompareService;
 use App\Services\RecentlyViewedService;
 use App\Services\WishlistService;
@@ -22,6 +23,8 @@ class ProductController extends Controller
                 'brand',
                 'category',
                 'variants.media',
+                'variants.attributeValues.attributeDefinition',
+                'variants.attributeValues.attributeOption',
                 'media',
                 'attributeValues.attributeDefinition',
                 'attributeValues.attributeOption',
@@ -38,20 +41,80 @@ class ProductController extends Controller
         $isWishlisted = $wishlist->items()->where('product_id', $product->id)->exists();
         $isComparing = in_array($product->id, $compare->ids(), true);
 
-        $variantsData = $product->variants->map(fn ($variant) => [
-            'id' => $variant->id,
-            'color' => $variant->color,
-            'storage_gb' => $variant->storage_gb,
-            'region' => $variant->region,
-            'price' => $variant->price,
-            'compare_at_price' => $variant->compare_at_price,
-            'availability' => $variant->availability->value,
-            'fulfillment_strategy' => $variant->fulfillment_strategy->value,
-            'images' => $variant->getMedia('images')->map(fn ($media) => $media->getUrl('large'))->all(),
-        ])->values();
+        $dimensions = [];
+        $variantsData = $product->variants->map(function ($variant) use (&$dimensions) {
+            $dims = [];
+            $meta = [];
+
+            // Native phone/electronics columns: source of truth when populated.
+            if ($variant->color !== null) {
+                $dims['color'] = (string) $variant->color;
+                $meta['color'] ??= ['code' => 'color', 'label' => 'Color', 'suffix' => ''];
+            }
+            if ($variant->storage_gb !== null) {
+                $dims['storage'] = (string) $variant->storage_gb;
+                $meta['storage'] ??= ['code' => 'storage', 'label' => 'Storage', 'suffix' => 'GB'];
+            }
+            if ($variant->region !== null) {
+                $dims['region'] = (string) $variant->region;
+                $meta['region'] ??= ['code' => 'region', 'label' => 'Region', 'suffix' => ''];
+            }
+
+            // Generic variant-defining attributes (Size, Weight, Shade, ...).
+            foreach ($variant->attributeValues as $value) {
+                if ($value->product_variant_id === null
+                    || $value->attributeDefinition === null
+                    || ! $value->attributeDefinition->is_variant_defining) {
+                    continue;
+                }
+
+                $code = $value->attributeDefinition->code;
+                $dims[$code] ??= $value->displayValue() ?? (string) ($value->attributeOption?->value ?? '');
+                $meta[$code] ??= [
+                    'code' => $code,
+                    'label' => $value->attributeDefinition->label,
+                    'suffix' => (string) ($value->attributeDefinition->unit ?? ''),
+                ];
+            }
+
+            foreach ($meta as $code => $definition) {
+                $dimensions[$code] ??= $definition;
+            }
+
+            return [
+                'id' => $variant->id,
+                'price' => $variant->price,
+                'compare_at_price' => $variant->compare_at_price,
+                'availability' => $variant->availability->value,
+                'fulfillment_strategy' => $variant->fulfillment_strategy->value,
+                'images' => $variant->getMedia('images')->map(fn ($media) => $media->getUrl('large'))->all(),
+                'dims' => $dims,
+            ];
+        })->values();
+
+        $dimensions = array_values($dimensions);
 
         $productImages = $product->getMedia('images')->map(fn ($media) => $media->getUrl('large'))->all();
-        $specifications = $product->attributeValues->whereNull('product_variant_id');
+
+        // Product-level specifications grouped by attribute group, ordered by
+        // group_sort_order (groups) then sort_order (attributes within a group).
+        // Definitions without a group fall back to the generic "General" group,
+        // so legacy products keep rendering without any data migration.
+        $specificationGroups = $product->attributeValues
+            ->whereNull('product_variant_id')
+            ->filter(fn (ProductAttributeValue $value) => $value->attributeDefinition !== null)
+            ->groupBy(fn (ProductAttributeValue $value) => $value->attributeDefinition->group ?: 'General')
+            ->map(function ($items, string $group): array {
+                return [
+                    'group' => $group,
+                    'group_sort_order' => $items->min(fn (ProductAttributeValue $value) => $value->attributeDefinition->group_sort_order ?? 0),
+                    'items' => $items
+                        ->sortBy(fn (ProductAttributeValue $value) => $value->attributeDefinition->sort_order ?? 0)
+                        ->values(),
+                ];
+            })
+            ->sortBy(fn (array $group): array => [$group['group_sort_order'], $group['group']])
+            ->values();
         $translation = $product->translation('en');
 
         $productJsonLd = array_filter([
@@ -92,7 +155,7 @@ class ProductController extends Controller
             ->get();
 
         return view('storefront.products.show', compact(
-            'product', 'variantsData', 'productImages', 'specifications', 'productJsonLd', 'faqJsonLd', 'isWishlisted', 'isComparing',
+            'product', 'variantsData', 'dimensions', 'productImages', 'specificationGroups', 'productJsonLd', 'faqJsonLd', 'isWishlisted', 'isComparing',
             'relatedProducts',
         ));
     }

@@ -40,12 +40,13 @@ class FacetResolver
             $options = ProductAttributeValue::query()
                 ->where('attribute_definition_id', $definition->id)
                 ->whereIn('product_id', $productIds)
-                ->whereNull('product_variant_id')
                 ->with('attributeOption')
                 ->get()
                 ->groupBy(fn (ProductAttributeValue $value) => $value->displayValue())
                 ->filter(fn ($group, $label) => filled($label))
-                ->map(fn ($group, $label) => ['value' => $label, 'count' => $group->count()])
+                // Count distinct products per option so variant-scoped values
+                // (one row per variant) do not inflate the facet count.
+                ->map(fn ($group, $label) => ['value' => $label, 'count' => $group->pluck('product_id')->unique()->count()])
                 ->values();
 
             if ($options->isNotEmpty()) {

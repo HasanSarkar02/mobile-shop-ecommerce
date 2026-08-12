@@ -143,6 +143,7 @@ class Product extends Model implements HasMedia
     public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')->width(300)->height(300)->fit(Fit::Contain, 300, 300)->format('webp');
+        $this->addMediaConversion('small')->width(240)->height(240)->fit(Fit::Contain, 240, 240)->format('webp');
         $this->addMediaConversion('large')->width(1200)->format('webp');
     }
 

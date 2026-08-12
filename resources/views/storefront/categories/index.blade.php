@@ -24,11 +24,11 @@
                     <a href="{{ route('storefront.category', $category->slug) }}"
                         class="group flex flex-col items-center gap-2.5 text-center">
                         <div
-                            class="w-full aspect-square rounded-2xl overflow-hidden bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex items-center justify-center transition group-hover:border-[var(--brand)] group-hover:shadow-soft">
+                            class="w-full aspect-square rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex items-center justify-center transition group-hover:border-[var(--brand)] group-hover:shadow-soft">
                             @if ($category->image_path)
                                 <img src="{{ asset('storage/' . $category->image_path) }}" alt="{{ $category->name }}"
                                     loading="lazy" decoding="async"
-                                    class="w-full h-full object-contain p-4">
+                                    class="w-full h-full object-contain">
                             @else
                                 <span
                                     class="text-2xl font-semibold text-gray-300 dark:text-gray-700">{{ mb_substr($category->name, 0, 1) }}</span>

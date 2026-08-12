@@ -140,7 +140,7 @@
                     <a href="{{ route('storefront.category', $item->slug) }}"
                         class="group flex flex-col items-center gap-2.5 text-center">
                         <div
-                            class="relative w-full aspect-square rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 flex items-center justify-center transition-all duration-300 group-hover:border-[var(--brand)] group-hover:shadow-soft group-hover:-translate-y-0.5 bg-gray-50 dark:bg-gray-900">
+                            class="relative w-full aspect-square rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 flex items-center justify-center transition-all duration-300 group-hover:border-[var(--brand)] group-hover:shadow-soft group-hover:-translate-y-0.5 bg-white dark:bg-gray-900">
 
                             {{-- Fallback: always in DOM, shown by default, hidden by JS if the image loads --}}
                             <div id="{{ $domId }}-fallback"
@@ -153,7 +153,7 @@
                             @if ($item->image_path)
                                 <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}" loading="lazy"
                                     decoding="async"
-                                    class="relative w-full h-full object-contain p-4 opacity-0 transition-all duration-500 ease-out scale-95 group-hover:scale-100"
+                                    class="relative w-full h-full object-contain opacity-0 transition-all duration-500 ease-out scale-95 group-hover:scale-100"
                                     onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';"
                                     onerror="this.remove();">
                             @endif

@@ -16,6 +16,12 @@
  * @link http://htmlpurifier.org/live/configdoc/plain.html
  */
 
+// Shared CSS allow-list for storefront HTML (including the modern properties
+// registered at runtime by App\Support\Purifier\StorefrontPurifier). Both the
+// 'storefront' and 'product' profiles must agree here so admin-authored rich
+// content renders predictably.
+$richAllowedCss = 'font,font-family,font-size,font-weight,font-style,line-height,letter-spacing,text-align,text-decoration,text-transform,text-indent,color,background,background-color,background-position,background-size,background-repeat,margin,margin-top,margin-right,margin-bottom,margin-left,padding,padding-top,padding-right,padding-bottom,padding-left,border,border-top,border-right,border-bottom,border-left,border-color,border-style,border-width,border-radius,border-top-left-radius,border-top-right-radius,border-bottom-left-radius,border-bottom-right-radius,width,height,min-width,min-height,max-width,max-height,display,visibility,flex,flex-flow,flex-direction,flex-wrap,flex-grow,flex-shrink,flex-basis,justify-content,align-items,align-content,align-self,gap,row-gap,column-gap,grid,grid-template,grid-template-columns,grid-template-rows,grid-template-areas,grid-auto-columns,grid-auto-rows,grid-auto-flow,grid-column,grid-column-start,grid-column-end,grid-row,grid-row-start,grid-row-end,grid-area,position,top,right,bottom,left,z-index,overflow,overflow-x,overflow-y,opacity,box-sizing,box-shadow,text-shadow,vertical-align,white-space,word-break,overflow-wrap,text-overflow,cursor,object-fit,object-position,transform,transform-origin,transition,aspect-ratio';
+
 return [
     'encoding'           => 'UTF-8',
     'finalize'           => true,
@@ -33,12 +39,25 @@ return [
         'storefront' => [
             'HTML.Doctype'             => 'XHTML 1.0 Transitional',
             'HTML.Allowed'             => 'section[style],div[style],span[style],p[style],h1[style],h2[style],h3[style],h4[style],h5[style],h6[style],a[href|title|target|rel|style],img[src|alt|width|height|style],ul[style],ol[style],li[style],br,strong,b,em,i,u,blockquote[style],hr[style],figure[style],figcaption[style]',
-            'CSS.AllowedProperties'    => 'font,font-family,font-size,font-weight,font-style,line-height,letter-spacing,text-align,text-decoration,text-transform,text-indent,color,background,background-color,background-position,background-size,background-repeat,margin,margin-top,margin-right,margin-bottom,margin-left,padding,padding-top,padding-right,padding-bottom,padding-left,border,border-top,border-right,border-bottom,border-left,border-color,border-style,border-width,border-radius,border-top-left-radius,border-top-right-radius,border-bottom-left-radius,border-bottom-right-radius,width,height,min-width,min-height,max-width,max-height,display,visibility,flex,flex-flow,flex-direction,flex-wrap,flex-grow,flex-shrink,flex-basis,justify-content,align-items,align-content,align-self,gap,row-gap,column-gap,grid,grid-template,grid-template-columns,grid-template-rows,grid-template-areas,grid-auto-columns,grid-auto-rows,grid-auto-flow,grid-column,grid-column-start,grid-column-end,grid-row,grid-row-start,grid-row-end,grid-area,position,top,right,bottom,left,z-index,overflow,overflow-x,overflow-y,opacity,box-sizing,box-shadow,text-shadow,vertical-align,white-space,word-break,overflow-wrap,text-overflow,cursor,object-fit,object-position,transform,transform-origin,transition,aspect-ratio',
+            'CSS.AllowedProperties'    => $richAllowedCss,
+            'Attr.AllowedRel'          => ['nofollow', 'noopener', 'noreferrer', 'ugc', 'sponsored'],
             'URI.AllowedSchemes'       => ['http' => true, 'https' => true, 'mailto' => true, 'tel' => true, 'ftp' => true],
             'Cache.DefinitionImpl'     => null,
             'CSS.AllowTricky'          => false,
             'CSS.Trusted'              => false,
             'AutoFormat.AutoParagraph' => false,
+            'AutoFormat.RemoveEmpty'   => false,
+        ],
+        'product' => [
+            'HTML.Doctype'             => 'XHTML 1.0 Transitional',
+            'HTML.Allowed'             => 'section[style],div[style],span[style],p[style],h1[style],h2[style],h3[style],h4[style],h5[style],h6[style],a[href|title|target|rel|style],img[src|alt|width|height|style],ul[style],ol[style],li[style],br,strong,b,em,i,u,blockquote[style],hr[style],figure[style],figcaption[style],table[summary|style],thead,tbody,tfoot,caption[style],tr,th[scope|colspan|rowspan],td[colspan|rowspan],col,colgroup[span]',
+            'CSS.AllowedProperties'    => $richAllowedCss,
+            'Attr.AllowedRel'          => ['nofollow', 'noopener', 'noreferrer', 'ugc', 'sponsored'],
+            'URI.AllowedSchemes'       => ['http' => true, 'https' => true, 'mailto' => true, 'tel' => true, 'ftp' => true],
+            'Cache.DefinitionImpl'     => null,
+            'CSS.AllowTricky'          => false,
+            'CSS.Trusted'              => false,
+            'AutoFormat.AutoParagraph' => true,
             'AutoFormat.RemoveEmpty'   => false,
         ],
         'test'    => [

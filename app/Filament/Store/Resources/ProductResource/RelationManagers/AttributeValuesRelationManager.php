@@ -12,8 +12,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -27,6 +27,12 @@ class AttributeValuesRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
+            Select::make('product_variant_id')
+                ->label('Variant')
+                ->options(fn () => $this->getOwnerRecord()?->variants()->pluck('sku', 'id')->all() ?? [])
+                ->searchable()
+                ->placeholder('Product-level attribute')
+                ->helperText('Assign to a variant when this value describes a specific variation (e.g. Size, Color, Weight). Leave empty for product-level specifications.'),
             Select::make('attribute_definition_id')
                 ->label('Attribute')
                 ->options(fn () => AttributeDefinition::query()->pluck('label', 'id'))
@@ -63,6 +69,7 @@ class AttributeValuesRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('id')
             ->columns([
+                TextColumn::make('variant.sku')->label('Variant')->placeholder('Product'),
                 TextColumn::make('attributeDefinition.label')->label('Attribute'),
                 TextColumn::make('value_string')->label('Value'),
             ])

@@ -3,6 +3,26 @@
 @section('title', ($product->translation('en')?->name ?? 'Product') . ' - ' . tenant()->name)
 
 @section('content')
+    @php
+        $productDescription = $product->translation('en')?->sanitizedDescription();
+        $showSpecifications = $specificationGroups->isNotEmpty();
+        $showDescription = filled($productDescription);
+        $showReviews = $product->reviews_count > 0;
+        $showFaqs = $product->faqs->isNotEmpty();
+        $navSections = collect([
+            'specifications' => $showSpecifications,
+            'description' => $showDescription,
+            'reviews' => $showReviews,
+            'faq' => $showFaqs,
+        ])->filter()->keys()->values();
+        $navLabels = [
+            'specifications' => 'Specifications',
+            'description' => 'Description',
+            'reviews' => 'Reviews',
+            'faq' => 'FAQ',
+        ];
+    @endphp
+
     @include('storefront.partials.seo-meta', [
         'description' => $product->translation('en')?->meta_description,
         'canonical' => route('storefront.product', $product->translation('en')?->slug),
@@ -13,10 +33,20 @@
         @if ($faqJsonLd)
             <script type="application/ld+json">{!! json_encode($faqJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
         @endif
+        <style>
+            html {
+                scroll-behavior: smooth;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                html {
+                    scroll-behavior: auto;
+                }
+            }
+        </style>
     @endpush
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8"
-        x-data="productDetail(@js($variantsData), @js($productImages), {{ $product->variants->first()?->id ?? 'null' }}, @js($isWishlisted), @js($isComparing))"
+        x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), {{ $product->variants->first()?->id ?? 'null' }}, @js($isWishlisted), @js($isComparing))"
         x-init="init()">
         <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
             <a href="{{ route('storefront.home') }}" class="hover:text-[var(--brand)]">Home</a>
@@ -148,49 +178,17 @@
                     </div>
                 </template>
 
-                <template x-if="colors().length">
-                    <div class="mt-6">
-                        <p class="text-sm font-medium mb-2">Color</p>
-                        <div class="flex flex-wrap gap-2">
-                            <template x-for="color in colors()" :key="color">
-                                <button @click="selected.color = color; updateVariant()"
-                                    class="px-3 py-1.5 rounded-full border text-sm transition"
-                                    :class="selected.color === color ?
-                                        'border-[var(--brand)] text-[var(--brand)] bg-[var(--brand)]/10' :
-                                        'border-gray-300 dark:border-gray-700 hover:border-gray-400'"
-                                    x-text="color"></button>
-                            </template>
-                        </div>
-                    </div>
-                </template>
-
-                <template x-if="storages().length">
+                <template x-for="dimension in dimensions" :key="dimension.code">
                     <div class="mt-4">
-                        <p class="text-sm font-medium mb-2">Storage</p>
+                        <p class="text-sm font-medium mb-2" x-text="dimension.label"></p>
                         <div class="flex flex-wrap gap-2">
-                            <template x-for="storage in storages()" :key="storage">
-                                <button @click="selected.storage = storage; updateVariant()"
+                            <template x-for="option in dimensionOptions(dimension.code)" :key="dimension.code + '-' + option">
+                                <button @click="selected[dimension.code] = option; updateVariant()"
                                     class="px-3 py-1.5 rounded-full border text-sm transition"
-                                    :class="selected.storage === storage ?
+                                    :class="selected[dimension.code] === option ?
                                         'border-[var(--brand)] text-[var(--brand)] bg-[var(--brand)]/10' :
                                         'border-gray-300 dark:border-gray-700 hover:border-gray-400'"
-                                    x-text="storage + 'GB'"></button>
-                            </template>
-                        </div>
-                    </div>
-                </template>
-
-                <template x-if="regions().length">
-                    <div class="mt-4">
-                        <p class="text-sm font-medium mb-2">Region</p>
-                        <div class="flex flex-wrap gap-2">
-                            <template x-for="region in regions()" :key="region">
-                                <button @click="selected.region = region; updateVariant()"
-                                    class="px-3 py-1.5 rounded-full border text-sm transition"
-                                    :class="selected.region === region ?
-                                        'border-[var(--brand)] text-[var(--brand)] bg-[var(--brand)]/10' :
-                                        'border-gray-300 dark:border-gray-700 hover:border-gray-400'"
-                                    x-text="region"></button>
+                                    x-text="option + (dimension.suffix || '')"></button>
                             </template>
                         </div>
                     </div>
@@ -253,74 +251,79 @@
             </div>
         </template>
 
-        {{-- Tabs --}}
-        <div class="mt-16" x-data="{ tab: 'spec' }">
-            <div class="flex gap-2 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
-                <button @click="tab = 'spec'"
-                    :class="tab === 'spec' ? 'border-b-2 border-[var(--brand)] text-[var(--brand)]' : 'text-gray-500'"
-                    class="px-4 py-2 text-sm font-medium flex-shrink-0">Specification</button>
-                <button @click="tab = 'desc'"
-                    :class="tab === 'desc' ? 'border-b-2 border-[var(--brand)] text-[var(--brand)]' : 'text-gray-500'"
-                    class="px-4 py-2 text-sm font-medium flex-shrink-0">Description</button>
-                @if ($product->translation('en')?->warranty_info)
-                    <button @click="tab = 'warranty'"
-                        :class="tab === 'warranty' ? 'border-b-2 border-[var(--brand)] text-[var(--brand)]' : 'text-gray-500'"
-                        class="px-4 py-2 text-sm font-medium flex-shrink-0">Warranty</button>
-                @endif
-                @if ($product->faqs->isNotEmpty())
-                    <button @click="tab = 'faq'"
-                        :class="tab === 'faq' ? 'border-b-2 border-[var(--brand)] text-[var(--brand)]' : 'text-gray-500'"
-                        class="px-4 py-2 text-sm font-medium flex-shrink-0">FAQ</button>
-                @endif
-            </div>
+        @if ($navSections->isNotEmpty())
+            <nav x-data="productSections(@js($navSections))" x-init="init()" aria-label="Product sections"
+                class="sticky top-16 lg:top-28 z-30 -mx-4 sm:mx-0 mt-8 lg:mt-12 border-y border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur">
+                <div class="flex items-center gap-1 overflow-x-auto px-4 sm:px-0 py-2">
+                    @foreach ($navSections as $sectionId)
+                        <a href="#{{ $sectionId }}"
+                            class="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition text-gray-600 dark:text-gray-300 hover:text-[var(--brand)] hover:bg-[var(--brand)]/10"
+                            :class="isActive('{{ $sectionId }}') ? 'text-[var(--brand)] bg-[var(--brand)]/10 font-semibold' : ''"
+                            :aria-current="isActive('{{ $sectionId }}') ? 'location' : null">
+                            {{ $navLabels[$sectionId] ?? ucfirst($sectionId) }}
+                        </a>
+                    @endforeach
+                </div>
+            </nav>
+        @endif
 
-            <div x-show="tab === 'spec'" class="mt-6">
-                @forelse($specifications as $value)
-                    <div class="flex border-b border-gray-100 dark:border-gray-800 py-2.5 text-sm">
-                        <span class="w-1/3 text-gray-500">{{ $value->attributeDefinition->label }}</span>
-                        <span>{{ $value->displayValue() }}</span>
+        {{-- Specifications --}}
+        <section id="specifications" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="specifications-heading">
+            <h2 id="specifications-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Specifications</h2>
+            <div class="mt-5">
+                @forelse($specificationGroups as $group)
+                    <div class="mb-8 last:mb-0">
+                        <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
+                            {{ $group['group'] }}
+                        </h3>
+                        <dl class="divide-y divide-gray-100 dark:divide-gray-800 rounded-xl border border-gray-100 dark:border-gray-800">
+                            @foreach ($group['items'] as $value)
+                                <div class="flex py-2.5 text-sm gap-4 px-4">
+                                    <dt class="w-1/3 flex-shrink-0 text-gray-500">{{ $value->attributeDefinition->label }}</dt>
+                                    <dd class="text-gray-800 dark:text-gray-200">{{ $value->displayValue() }}
+                                        @if ($value->attributeDefinition->unit)
+                                            <span class="text-gray-500">{{ $value->attributeDefinition->unit }}</span>
+                                        @endif
+                                    </dd>
+                                </div>
+                            @endforeach
+                        </dl>
                     </div>
                 @empty
                     <p class="text-sm text-gray-400">No specifications listed yet.</p>
                 @endforelse
             </div>
+        </section>
 
-            <div x-show="tab === 'desc'" class="mt-6 prose dark:prose-invert max-w-none">
-                {!! $product->translation('en')?->sanitizedDescription() !!}
-            </div>
+        {{-- Description --}}
+        @if ($showDescription)
+            <section id="description" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="description-heading">
+                <h2 id="description-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Description</h2>
+                <div class="prose dark:prose-invert max-w-none mt-5">
+                    {!! $productDescription !!}
+                </div>
+            </section>
+        @endif
 
-            @if ($product->translation('en')?->warranty_info)
-                <div x-show="tab === 'warranty'" class="mt-6 prose dark:prose-invert max-w-none">
+        {{-- Warranty --}}
+        @if ($product->translation('en')?->warranty_info)
+            <section id="warranty" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="warranty-heading">
+                <h2 id="warranty-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Warranty</h2>
+                <div class="prose dark:prose-invert max-w-none mt-5">
                     {!! nl2br(e($product->translation('en')->warranty_info)) !!}
                 </div>
-            @endif
-
-            @if ($product->faqs->isNotEmpty())
-                <div x-show="tab === 'faq'" class="mt-6 space-y-3">
-                    @foreach ($product->faqs as $faq)
-                        <div x-data="{ expanded: false }" class="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-                            <button @click="expanded = !expanded"
-                                class="w-full text-left font-medium flex justify-between items-center">
-                                {{ $faq->question }}
-                                <span x-text="expanded ? '−' : '+'" class="text-gray-400"></span>
-                            </button>
-                            <div x-show="expanded" x-collapse class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                {{ $faq->answer }}</div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </div>
+            </section>
+        @endif
 
         {{-- Reviews --}}
-        <div class="mt-16">
-            <x-ui.section-heading title="Reviews ({{ $product->reviews_count }})" />
+        <section id="reviews" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="reviews-heading">
+            <h2 id="reviews-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Reviews ({{ $product->reviews_count }})</h2>
 
             @if ($product->reviews_count > 0)
-                <div class="mb-6"><x-ui.rating-stars :rating="$product->average_rating" :count="$product->reviews_count" /></div>
+                <div class="mb-6 mt-5"><x-ui.rating-stars :rating="$product->average_rating" :count="$product->reviews_count" /></div>
             @endif
 
-            <div class="space-y-4">
+            <div class="space-y-4 mt-5">
                 @forelse($product->approvedReviews as $review)
                     <div class="border border-gray-100 dark:border-gray-800 rounded-xl p-4">
                         <div class="flex justify-between items-start">
@@ -358,27 +361,82 @@
                 <p class="text-sm text-gray-500 mt-6"><a href="{{ route('storefront.login') }}"
                         class="text-[var(--brand)] font-medium">Log in</a> to write a review.</p>
             @endauth
-        </div>
+        </section>
 
+        {{-- FAQ --}}
+        @if ($showFaqs)
+            <section id="faq" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="faq-heading">
+                <h2 id="faq-heading" class="text-xl lg:text-2xl font-bold tracking-tight">FAQ</h2>
+                <div class="mt-5 space-y-3">
+                    @foreach ($product->faqs as $faq)
+                        <div x-data="{ expanded: false }" class="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+                            <button @click="expanded = !expanded"
+                                class="w-full text-left font-medium flex justify-between items-center">
+                                {{ $faq->question }}
+                                <span x-text="expanded ? '−' : '+'" class="text-gray-400"></span>
+                            </button>
+                            <div x-show="expanded" x-collapse class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                {{ $faq->answer }}</div>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- Related --}}
         @if ($relatedProducts->isNotEmpty())
-            <div class="mt-16">
-                <x-ui.section-heading title="You May Also Like" />
+            <section id="related" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="related-heading">
+                <h2 id="related-heading" class="text-xl lg:text-2xl font-bold tracking-tight">You May Also Like</h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
                     @foreach ($relatedProducts as $related)
                         @include('storefront.partials.product-card', ['product' => $related])
                     @endforeach
                 </div>
-            </div>
+            </section>
         @endif
     </div>
 @endsection
 
 @push('scripts')
     <script>
-        function productDetail(variants, productImages, initialId, initialWishlisted, initialComparing) {
+        /**
+         * Scrollspy for the sticky product-section navigation. Tracks the
+         * section currently crossing the middle of the viewport and reflects it
+         * via aria-current + the active link styling. Degrades gracefully: with
+         * JS disabled the plain anchors still jump to the server-rendered
+         * sections.
+         */
+        function productSections(ids) {
+            return {
+                ids,
+                activeId: ids.length ? ids[0] : '',
+                init() {
+                    if (!('IntersectionObserver' in window)) return;
+
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach((entry) => {
+                            if (entry.isIntersecting) {
+                                this.activeId = entry.target.id;
+                            }
+                        });
+                    }, { rootMargin: '-45% 0px -50% 0px' });
+
+                    this.ids.forEach((id) => {
+                        const el = document.getElementById(id);
+                        if (el) observer.observe(el);
+                    });
+                },
+                isActive(id) {
+                    return this.activeId === id;
+                },
+            };
+        }
+
+        function productDetail(variants, productImages, dimensions, initialId, initialWishlisted, initialComparing) {
             return {
                 variants,
                 productImages,
+                dimensions,
                 selected: {},
                 activeImage: null,
                 lightboxOpen: false,
@@ -402,9 +460,12 @@
                         return;
                     }
 
-                    this.selected.color = first.color;
-                    this.selected.storage = first.storage_gb;
-                    this.selected.region = first.region;
+                    dimensions.forEach(d => {
+                        if (first.dims[d.code] !== undefined && first.dims[d.code] !== null) {
+                            this.selected[d.code] = first.dims[d.code];
+                        }
+                    });
+
                     this.activeImage = this.currentImages()[0] ?? null;
                 },
                 current() {
@@ -416,9 +477,7 @@
                 },
                 updateVariant() {
                     const match = this.variants.find(v =>
-                        (!this.selected.color || v.color === this.selected.color) &&
-                        (!this.selected.storage || v.storage_gb === this.selected.storage) &&
-                        (!this.selected.region || v.region === this.selected.region)
+                        this.dimensions.every(d => !this.selected[d.code] || v.dims[d.code] === this.selected[d.code])
                     );
 
                     if (match) {
@@ -431,14 +490,8 @@
                         this.activeImage = this.productImages[0] ?? null;
                     }
                 },
-                colors() {
-                    return [...new Set(this.variants.map(v => v.color).filter(Boolean))];
-                },
-                storages() {
-                    return [...new Set(this.variants.map(v => v.storage_gb).filter(Boolean))];
-                },
-                regions() {
-                    return [...new Set(this.variants.map(v => v.region).filter(Boolean))];
+                dimensionOptions(code) {
+                    return [...new Set(this.variants.map(v => v.dims[code]).filter(v => v !== undefined && v !== null))];
                 },
                 currentImages() {
                     const variant = this.current();

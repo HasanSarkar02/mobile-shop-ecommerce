@@ -14,7 +14,7 @@ class AttributeDefinition extends Model
 {
     use BelongsToTenant;
 
-    protected $fillable = ['code', 'label', 'data_type', 'unit', 'is_global', 'is_filterable', 'is_variant_defining', 'sort_order'];
+    protected $fillable = ['code', 'label', 'data_type', 'unit', 'group', 'group_sort_order', 'is_global', 'is_filterable', 'is_variant_defining', 'sort_order'];
 
     protected function casts(): array
     {
@@ -23,6 +23,8 @@ class AttributeDefinition extends Model
             'is_global' => 'boolean',
             'is_filterable' => 'boolean',
             'is_variant_defining' => 'boolean',
+            'sort_order' => 'integer',
+            'group_sort_order' => 'integer',
         ];
     }
 

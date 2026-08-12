@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Support\Purifier\StorefrontPurifier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ProductTranslation extends Model
 {
     use BelongsToTenant, HasFactory;
 
-    protected $fillable = ['product_id', 'locale', 'name', 'slug', 'description', 'meta_title', 'meta_description'];
+    protected $fillable = ['product_id', 'locale', 'name', 'slug', 'description', 'warranty_info', 'meta_title', 'meta_description'];
 
     protected static function booted(): void
     {
@@ -28,8 +30,29 @@ class ProductTranslation extends Model
         return $this->belongsTo(Product::class);
     }
 
+    /**
+     * Sanitizes the product description for storefront rendering.
+     *
+     * Uses the dedicated 'product' purifier profile so admin-authored rich
+     * content (headings, lists, links, images, safe tables, callouts) survives
+     * while any injected script/style is stripped. The result is cached under a
+     * content-derived key, so editing the description naturally invalidates it
+     * without requiring explicit cache flushing.
+     */
     public function sanitizedDescription(): ?string
     {
-        return $this->description ? \Mews\Purifier\Facades\Purifier::clean($this->description) : null;
+        if ($this->description === null || $this->description === '') {
+            return null;
+        }
+
+        return Cache::rememberForever(
+            $this->sanitizedDescriptionCacheKey(),
+            fn (): string => StorefrontPurifier::clean($this->description, 'product'),
+        );
+    }
+
+    private function sanitizedDescriptionCacheKey(): string
+    {
+        return 'product-description:'.$this->product_id.':'.$this->locale.':'.md5($this->description);
     }
 }
