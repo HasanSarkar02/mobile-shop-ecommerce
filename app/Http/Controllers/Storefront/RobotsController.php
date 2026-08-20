@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
+use App\Support\Tenancy\TenantUrlGenerator;
 
 class RobotsController extends Controller
 {
-    public function index()
+    public function index(TenantUrlGenerator $urls)
     {
         $lines = [
             'User-agent: *',
@@ -18,7 +19,7 @@ class RobotsController extends Controller
             'Disallow: /account',
             'Disallow: /wishlist',
             'Disallow: /compare',
-            'Sitemap: '.url('/sitemap.xml'),
+            'Sitemap: '.$urls->canonicalPath(tenant(), '/sitemap.xml'),
         ];
 
         if ($extra = tenant()->settings->robots_txt_extra) {

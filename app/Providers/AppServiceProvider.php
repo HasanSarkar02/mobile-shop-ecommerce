@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\DnsTxtResolver;
 use App\Events\OrderCancelled;
 use App\Events\OrderPaymentRecorded;
 use App\Events\OrderPlaced;
@@ -14,6 +15,7 @@ use App\Models\BlogPost;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Collection;
+use App\Models\Plan;
 use App\Models\Product;
 use App\Models\ProductAttributeValue;
 use App\Models\ProductReview;
@@ -26,6 +28,7 @@ use App\Observers\BlogPostObserver;
 use App\Observers\BrandObserver;
 use App\Observers\CategoryObserver;
 use App\Observers\CollectionObserver;
+use App\Observers\PlanObserver;
 use App\Observers\ProductAttributeValueObserver;
 use App\Observers\ProductObserver;
 use App\Observers\ProductReviewObserver;
@@ -34,6 +37,7 @@ use App\Observers\ProductVariantObserver;
 use App\Observers\SerialNumberObserver;
 use App\Observers\StaticPageObserver;
 use App\Observers\TenantObserver;
+use App\Support\Dns\NativeDnsTxtResolver;
 use App\Support\Tenancy\Tenancy;
 use App\View\Composers\StorefrontLayoutComposer;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -56,6 +60,7 @@ class AppServiceProvider extends ServiceProvider
         // starts from a clean (no tenant) state and must explicitly restore its own
         // tenant context (see App\Jobs\SendNotificationJob for the pattern).
         $this->app->scoped(Tenancy::class);
+        $this->app->bind(DnsTxtResolver::class, NativeDnsTxtResolver::class);
     }
 
     /**
@@ -85,6 +90,7 @@ class AppServiceProvider extends ServiceProvider
         StaticPage::observe(StaticPageObserver::class);
         ProductTranslation::observe(ProductTranslationObserver::class);
         ProductAttributeValue::observe(ProductAttributeValueObserver::class);
+        Plan::observe(PlanObserver::class);
 
         Event::listen(OrderPlaced::class, SendOrderPlacedNotifications::class);
         Event::listen(OrderStatusChanged::class, SendOrderStatusChangedNotifications::class);

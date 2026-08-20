@@ -16,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class StaffResource extends Resource
 {
@@ -31,7 +32,10 @@ class StaffResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')->required(),
-            TextInput::make('email')->email()->required()->unique(ignoreRecord: true),
+            TextInput::make('email')->email()->required()->scopedUnique(
+                ignoreRecord: true,
+                modifyQueryUsing: fn (Builder $query) => $query->where('tenant_id', tenant()?->id),
+            ),
             TextInput::make('password')
                 ->password()
                 ->required(fn (string $operation): bool => $operation === 'create')
@@ -53,7 +57,26 @@ class StaffResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('role', 'staff');
+        return parent::getEloquentQuery()
+            ->where('role', 'staff')
+            ->where('tenant_id', tenant()?->id);
+    }
+
+    public static function canView(Model $record): bool
+    {
+        return $record instanceof User
+            && auth()->user()?->isOwner()
+            && (int) $record->tenant_id === (int) tenant()?->id;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::canView($record);
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::canView($record);
     }
 
     public static function getPages(): array

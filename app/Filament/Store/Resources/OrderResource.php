@@ -9,11 +9,14 @@ use App\Enums\OrderStatus;
 use App\Filament\Store\Resources\OrderResource\Pages;
 use App\Models\Order;
 use App\Models\PaymentMethod;
+use App\Models\ProductVariant;
+use App\Models\ShippingMethod;
 use App\Services\OrderService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -85,181 +88,220 @@ class OrderResource extends Resource
                         ->label('Reservation Expires'),
                 ]),
 
-            Grid::make(['default' => 1, 'xl' => 3])
+            Section::make('Order Summary')
+                ->icon('heroicon-o-tag')
+                ->columnSpanFull()
+                ->columns(['default' => 1, 'sm' => 2, 'xl' => 4])
+                ->headerActions([
+                    self::applyOrderDiscountAction(),
+                    self::editShippingAction(),
+                ])
+                ->schema([
+                    TextEntry::make('subtotal')->money('BDT', divideBy: 100),
+                    TextEntry::make('discount_total')
+                        ->label('Discount')
+                        ->money('BDT', divideBy: 100),
+                    TextEntry::make('shipping_cost')
+                        ->label('Shipping')
+                        ->money('BDT', divideBy: 100),
+                    TextEntry::make('tax_total')
+                        ->label('Tax')
+                        ->money('BDT', divideBy: 100),
+                    TextEntry::make('grand_total')
+                        ->money('BDT', divideBy: 100)
+                        ->weight('bold')
+                        ->size('lg')
+                        ->columnSpanFull(),
+                    TextEntry::make('amount_paid')
+                        ->state(fn (Order $record): int => self::amountPaid($record))
+                        ->money('BDT', divideBy: 100)
+                        ->label('Amount Paid')
+                        ->columnSpan(['xl' => 2]),
+                    TextEntry::make('amount_due')
+                        ->state(fn (Order $record): int => max(0, $record->grand_total - self::amountPaid($record)))
+                        ->money('BDT', divideBy: 100)
+                        ->label('Amount Due')
+                        ->color(fn (int $state): string => $state > 0 ? 'danger' : 'success')
+                        ->columnSpan(['xl' => 2]),
+                    TextEntry::make('refund_required')
+                        ->label('')
+                        ->icon('heroicon-o-exclamation-triangle')
+                        ->color('danger')
+                        ->weight('semibold')
+                        ->state(fn (Order $record): string => 'Refund required — this cancelled order already has ৳'.number_format(self::amountPaid($record) / 100, 2).' paid. Issue the refund in the payment reconciliation phase.')
+                        ->hidden(fn (Order $record): bool => $record->status !== OrderStatus::Cancelled || self::amountPaid($record) <= 0)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('Shipping Address')
+                ->icon('heroicon-o-map-pin')
+                ->columnSpanFull()
+                ->headerActions([self::editShippingAddressAction()])
+                ->columns(['default' => 1, 'sm' => 2, 'xl' => 4])
+                ->schema([
+                    ...self::addressEntities('shipping_address_snapshot'),
+                ]),
+
+            Grid::make(['default' => 1, 'xl' => 1])
                 ->columnSpanFull()
                 ->schema([
-                Group::make()->columnSpan(2)->schema([
-                    Section::make('Customer')
-                        ->icon('heroicon-o-user-circle')
-                        ->headerActions([
-                            self::customerLinkAction(),
-                            self::editContactAction(),
-                        ])
-                        ->columns(['sm' => 3])
-                        ->schema([
-                            TextEntry::make('customer.name')
-                                ->hidden(fn (Order $record): bool => $record->customer_id === null)
-                                ->label('Name')
-                                ->weight('semibold'),
-                            TextEntry::make('customer.email')
-                                ->hidden(fn (Order $record): bool => $record->customer_id === null)
-                                ->label('Email')
-                                ->copyable(),
-                            TextEntry::make('customer.phone')
-                                ->hidden(fn (Order $record): bool => $record->customer_id === null)
-                                ->label('Phone')
-                                ->copyable(),
-                            TextEntry::make('_guest')
-                                ->hidden(fn (Order $record): bool => $record->customer_id !== null)
-                                ->state('Guest')
-                                ->badge()
-                                ->color('gray')
-                                ->icon('heroicon-o-user')
-                                ->label('User Type'),
-                            TextEntry::make('guest_name')
-                                ->hidden(fn (Order $record): bool => $record->customer_id !== null)
-                                ->label('Name'),
-                            TextEntry::make('guest_email')
-                                ->hidden(fn (Order $record): bool => $record->customer_id !== null)
-                                ->label('Email')
-                                ->copyable(),
-                            TextEntry::make('guest_phone')
-                                ->hidden(fn (Order $record): bool => $record->customer_id !== null)
-                                ->label('Phone')
-                                ->copyable(),
-                        ]),
+                    Group::make()->columnSpanFull()->schema([
+                        Section::make('Customer')
+                            ->icon('heroicon-o-user-circle')
+                            ->headerActions([
+                                self::customerLinkAction(),
+                                self::editContactAction(),
+                            ])
+                            ->columns(['sm' => 3])
+                            ->schema([
+                                TextEntry::make('customer.name')
+                                    ->hidden(fn (Order $record): bool => $record->customer_id === null)
+                                    ->label('Name')
+                                    ->weight('semibold'),
+                                TextEntry::make('customer.email')
+                                    ->hidden(fn (Order $record): bool => $record->customer_id === null)
+                                    ->label('Email')
+                                    ->copyable(),
+                                TextEntry::make('customer.phone')
+                                    ->hidden(fn (Order $record): bool => $record->customer_id === null)
+                                    ->label('Phone')
+                                    ->copyable(),
+                                TextEntry::make('_guest')
+                                    ->hidden(fn (Order $record): bool => $record->customer_id !== null)
+                                    ->state('Guest')
+                                    ->badge()
+                                    ->color('gray')
+                                    ->icon('heroicon-o-user')
+                                    ->label('User Type'),
+                                TextEntry::make('guest_name')
+                                    ->hidden(fn (Order $record): bool => $record->customer_id !== null)
+                                    ->label('Name'),
+                                TextEntry::make('guest_email')
+                                    ->hidden(fn (Order $record): bool => $record->customer_id !== null)
+                                    ->label('Email')
+                                    ->copyable(),
+                                TextEntry::make('guest_phone')
+                                    ->hidden(fn (Order $record): bool => $record->customer_id !== null)
+                                    ->label('Phone')
+                                    ->copyable(),
+                            ]),
 
-                    Section::make('Order Items')
-                        ->icon('heroicon-o-squares-2x2')
-                        ->schema([
-                            ViewEntry::make('items')
-                                ->state(fn (Order $record) => $record->items)
-                                ->view('filament.store.resources.order-resource.order-items'),
-                        ]),
+                        Section::make('Order Items')
+                            ->icon('heroicon-o-squares-2x2')
+                            ->headerActions([
+                                self::addItemAction(),
+                                self::changeItemQuantityAction(),
+                                self::changeItemVariantAction(),
+                                self::adjustItemPriceAction(),
+                                self::removeItemAction(),
+                            ])
+                            ->schema([
+                                ViewEntry::make('items')
+                                    ->state(fn (Order $record) => $record->items)
+                                    ->view('filament.store.resources.order-resource.order-items'),
+                            ]),
 
-                    Section::make('Payments')
-                        ->icon('heroicon-o-banknotes')
-                        ->description(fn (Order $record): string => self::paymentSummary($record))
-                        ->headerActions([
-                            self::recordPaymentAction(),
-                        ])
-                        ->schema([
-                            RepeatableEntry::make('payments')
-                                ->hidden(fn (Order $record): bool => $record->payments()->count() === 0)
-                                ->schema([
-                                    Grid::make(['default' => 1, 'md' => 5])->schema([
-                                        TextEntry::make('paymentMethod.name')->label('Method'),
-                                        TextEntry::make('status')
-                                            ->badge()
-                                            ->color(fn (OrderPaymentStatus $state): string => self::paymentStatusColor($state->value))
-                                            ->label('Status'),
-                                        TextEntry::make('amount')->money('BDT', divideBy: 100)->label('Amount'),
-                                        TextEntry::make('transaction_reference')->label('Reference')->placeholder('—'),
-                                        TextEntry::make('paid_at')->dateTime()->label('Paid At'),
+                        Section::make('Payments')
+                            ->icon('heroicon-o-banknotes')
+                            ->description(fn (Order $record): string => self::paymentSummary($record))
+                            ->headerActions([
+                                self::recordPaymentAction(),
+                            ])
+                            ->schema([
+                                RepeatableEntry::make('payments')
+                                    ->hidden(fn (Order $record): bool => $record->payments()->count() === 0)
+                                    ->schema([
+                                        Grid::make(['default' => 1, 'md' => 5])->schema([
+                                            TextEntry::make('paymentMethod.name')->label('Method'),
+                                            TextEntry::make('status')
+                                                ->badge()
+                                                ->color(fn (OrderPaymentStatus $state): string => self::paymentStatusColor($state->value))
+                                                ->label('Status'),
+                                            TextEntry::make('amount')->money('BDT', divideBy: 100)->label('Amount'),
+                                            TextEntry::make('transaction_reference')->label('Reference')->placeholder('—'),
+                                            TextEntry::make('paid_at')->dateTime()->label('Paid At'),
+                                        ]),
                                     ]),
-                                ]),
-                            TextEntry::make('_no_payments')
-                                ->label('')
-                                ->icon('heroicon-o-banknotes')
-                                ->state('No payments recorded yet.')
-                                ->color('gray')
-                                ->hidden(fn (Order $record): bool => $record->payments()->count() > 0),
-                        ]),
+                                TextEntry::make('_no_payments')
+                                    ->label('')
+                                    ->icon('heroicon-o-banknotes')
+                                    ->state('No payments recorded yet.')
+                                    ->color('gray')
+                                    ->hidden(fn (Order $record): bool => $record->payments()->count() > 0),
+                            ]),
 
-                    Section::make('Fulfillment')
-                        ->icon('heroicon-o-truck')
-                        ->hidden(fn (Order $record): bool => $record->fulfillments()->count() === 0)
-                        ->columns(['sm' => 2, 'xl' => 3])
-                        ->schema([
-                            TextEntry::make('shipping_method')
-                                ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->shippingMethod?->name)
-                                ->label('Shipping Method'),
-                            TextEntry::make('fulfillment_status')
-                                ->state(fn (Order $record): ?string => self::fulfillmentStatusFor($record))
-                                ->badge()
-                                ->color(fn (string $state): string => self::fulfillmentStatusColor($state))
-                                ->label('Status'),
-                            TextEntry::make('fulfillment_location')
-                                ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->location?->name)
-                                ->label('Location')
-                                ->placeholder('—'),
-                            TextEntry::make('fulfillment_courier_name')
-                                ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->courier_name)
-                                ->label('Courier')
-                                ->placeholder('—'),
-                            TextEntry::make('fulfillment_tracking_number')
-                                ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->tracking_number)
-                                ->label('Tracking Number')
-                                ->placeholder('—'),
-                            TextEntry::make('fulfillment_shipped_at')
-                                ->state(fn (Order $record) => $record->fulfillments()->latest()->first()?->shipped_at)
-                                ->dateTime()
-                                ->placeholder('—')
-                                ->label('Shipped At'),
-                            TextEntry::make('fulfillment_delivered_at')
-                                ->state(fn (Order $record) => $record->fulfillments()->latest()->first()?->delivered_at)
-                                ->dateTime()
-                                ->placeholder('—')
-                                ->label('Delivered At'),
-                        ]),
+                        Section::make('Fulfillment')
+                            ->icon('heroicon-o-truck')
+                            ->hidden(fn (Order $record): bool => $record->fulfillments()->count() === 0)
+                            ->columns(['sm' => 2, 'xl' => 3])
+                            ->schema([
+                                TextEntry::make('shipping_method')
+                                    ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->shippingMethod?->name)
+                                    ->label('Shipping Method'),
+                                TextEntry::make('fulfillment_status')
+                                    ->state(fn (Order $record): ?string => self::fulfillmentStatusFor($record))
+                                    ->badge()
+                                    ->color(fn (string $state): string => self::fulfillmentStatusColor($state))
+                                    ->label('Status'),
+                                TextEntry::make('fulfillment_location')
+                                    ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->location?->name)
+                                    ->label('Location')
+                                    ->placeholder('—'),
+                                TextEntry::make('fulfillment_courier_name')
+                                    ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->courier_name)
+                                    ->label('Courier')
+                                    ->placeholder('—'),
+                                TextEntry::make('fulfillment_tracking_number')
+                                    ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->tracking_number)
+                                    ->label('Tracking Number')
+                                    ->placeholder('—'),
+                                TextEntry::make('fulfillment_shipped_at')
+                                    ->state(fn (Order $record) => $record->fulfillments()->latest()->first()?->shipped_at)
+                                    ->dateTime()
+                                    ->placeholder('—')
+                                    ->label('Shipped At'),
+                                TextEntry::make('fulfillment_delivered_at')
+                                    ->state(fn (Order $record) => $record->fulfillments()->latest()->first()?->delivered_at)
+                                    ->dateTime()
+                                    ->placeholder('—')
+                                    ->label('Delivered At'),
+                            ]),
 
-                    Section::make('Timeline')
-                        ->icon('heroicon-o-clock')
-                        ->schema([
-                            ViewEntry::make('events')
-                                ->state(fn (Order $record) => $record->events()->get()->reverse())
-                                ->view('filament.store.resources.order-resource.order-timeline'),
-                        ]),
+                        Section::make('Inventory Movements')
+                            ->icon('heroicon-o-cube')
+                            ->schema([
+                                ViewEntry::make('stock_movements')
+                                    ->state(fn (Order $record) => $record->stockMovements()->with('variant')->orderByDesc('created_at')->get())
+                                    ->view('filament.store.resources.order-resource.order-inventory'),
+                            ]),
+
+                        Section::make('Timeline')
+                            ->icon('heroicon-o-clock')
+                            ->schema([
+                                ViewEntry::make('events')
+                                    ->state(fn (Order $record) => $record->events()->with('actor')->get())
+                                    ->view('filament.store.resources.order-resource.order-timeline'),
+                            ]),
+                    ]),
+
+                    Group::make()->columnSpanFull()->schema([
+                        Section::make('Billing Address')
+                            ->icon('heroicon-o-credit-card')
+                            ->hidden(fn (Order $record): bool => $record->billing_address_snapshot === null)
+                            ->headerActions([self::editBillingAddressAction()])
+                            ->columns(['default' => 1, 'sm' => 2, 'xl' => 4])
+                            ->schema([
+                                ...self::addressEntities('billing_address_snapshot'),
+                            ]),
+
+                        Section::make('Internal Note')
+                            ->icon('heroicon-o-chat-bubble-bottom-center-text')
+                            ->hidden(fn (Order $record): bool => blank($record->internal_note))
+                            ->schema([
+                                TextEntry::make('internal_note')->prose(),
+                            ]),
+                    ]),
                 ]),
-
-                Group::make()->columnSpan(1)->schema([
-                    Section::make('Order Summary')
-                        ->icon('heroicon-o-tag')
-                        ->schema([
-                            TextEntry::make('subtotal')->money('BDT', divideBy: 100),
-                            TextEntry::make('discount_total')->money('BDT', divideBy: 100),
-                            TextEntry::make('shipping_cost')->money('BDT', divideBy: 100),
-                            TextEntry::make('tax_total')->money('BDT', divideBy: 100),
-                            TextEntry::make('grand_total')
-                                ->money('BDT', divideBy: 100)
-                                ->weight('bold')
-                                ->size('lg')
-                                ->columnSpanFull(),
-                            TextEntry::make('amount_paid')
-                                ->state(fn (Order $record): int => self::amountPaid($record))
-                                ->money('BDT', divideBy: 100)
-                                ->label('Amount Paid'),
-                            TextEntry::make('amount_due')
-                                ->state(fn (Order $record): int => max(0, $record->grand_total - self::amountPaid($record)))
-                                ->money('BDT', divideBy: 100)
-                                ->label('Amount Due')
-                                ->color(fn (int $state): string => $state > 0 ? 'danger' : 'success'),
-                        ]),
-
-                    Section::make('Shipping Address')
-                        ->icon('heroicon-o-map-pin')
-                        ->headerActions([self::editShippingAddressAction()])
-                        ->columns(['default' => 1, 'sm' => 2])
-                        ->schema([
-                            ...self::addressEntities('shipping_address_snapshot'),
-                        ]),
-
-                    Section::make('Billing Address')
-                        ->icon('heroicon-o-credit-card')
-                        ->hidden(fn (Order $record): bool => $record->billing_address_snapshot === null)
-                        ->columns(['default' => 1, 'sm' => 2])
-                        ->schema([
-                            ...self::addressEntities('billing_address_snapshot'),
-                        ]),
-
-                    Section::make('Internal Note')
-                        ->icon('heroicon-o-chat-bubble-bottom-center-text')
-                        ->hidden(fn (Order $record): bool => blank($record->internal_note))
-                        ->schema([
-                            TextEntry::make('internal_note')->prose(),
-                        ]),
-                ]),
-            ]),
         ]);
     }
 
@@ -283,7 +325,10 @@ class OrderResource extends Resource
                     ->numeric()
                     ->required(),
                 Select::make('status')
-                    ->options(collect(OrderPaymentStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                    ->options(collect(OrderPaymentStatus::cases())
+                        ->reject(fn (OrderPaymentStatus $case): bool => $case === OrderPaymentStatus::Refunded)
+                        ->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                    ->helperText('Refunds are not yet supported and cannot be recorded from this screen.')
                     ->required(),
                 TextInput::make('transaction_reference'),
             ])
@@ -361,17 +406,283 @@ class OrderResource extends Resource
             });
     }
 
+    private static function editBillingAddressAction(): Action
+    {
+        return Action::make('editBillingAddress')
+            ->label('Edit Address')
+            ->icon('heroicon-o-pencil-square')
+            ->color('gray')
+            ->form([
+                TextInput::make('recipient_name')->label('Recipient Name')->required(),
+                TextInput::make('phone')->label('Phone')->tel(),
+                TextInput::make('address_line_1')->label('Address Line 1')->required(),
+                TextInput::make('address_line_2')->label('Address Line 2'),
+                TextInput::make('city')->label('City')->required(),
+                TextInput::make('area')->label('Area'),
+                TextInput::make('postal_code')->label('Postal Code'),
+                TextInput::make('country')->label('Country'),
+            ])
+            ->fillForm(fn (Order $record): array => $record->billing_address_snapshot ?? [])
+            ->action(function (Order $record, array $data): void {
+                $snapshot = $record->billing_address_snapshot ?? [];
+
+                app(OrderService::class)->updateOrderBillingAddress($record, array_merge($snapshot, array_filter($data, fn ($value) => $value !== null)));
+            });
+    }
+
+    private static function addItemAction(): Action
+    {
+        return Action::make('addItem')
+            ->label('Add Item')
+            ->icon('heroicon-o-plus')
+            ->color('primary')
+            ->visible(fn (Order $record): bool => $record->status === OrderStatus::Pending)
+            ->form([
+                Select::make('product_variant_id')
+                    ->label('Variant')
+                    ->options(self::variantOptions())
+                    ->searchable()
+                    ->required(),
+                TextInput::make('quantity')
+                    ->label('Quantity')
+                    ->numeric()
+                    ->default(1)
+                    ->minValue(1)
+                    ->required(),
+            ])
+            ->action(function (Order $record, array $data): void {
+                app(OrderService::class)->addItem(
+                    $record,
+                    ProductVariant::findOrFail($data['product_variant_id']),
+                    (int) $data['quantity'],
+                );
+            });
+    }
+
+    private static function changeItemQuantityAction(): Action
+    {
+        return Action::make('changeItemQuantity')
+            ->label('Change Quantity')
+            ->icon('heroicon-o-adjustments-horizontal')
+            ->color('gray')
+            ->visible(fn (Order $record): bool => $record->status === OrderStatus::Pending)
+            ->form([
+                Select::make('order_item_id')
+                    ->label('Item')
+                    ->options(fn (Order $record): array => self::itemOptions($record))
+                    ->required(),
+                TextInput::make('quantity')
+                    ->label('Quantity')
+                    ->numeric()
+                    ->minValue(1)
+                    ->required(),
+            ])
+            ->fillForm(fn (Order $record): array => ['order_item_id' => $record->items->first()?->id])
+            ->action(function (Order $record, array $data): void {
+                app(OrderService::class)->updateItemQuantity(
+                    $record,
+                    $record->items()->findOrFail($data['order_item_id']),
+                    (int) $data['quantity'],
+                );
+            });
+    }
+
+    private static function changeItemVariantAction(): Action
+    {
+        return Action::make('changeItemVariant')
+            ->label('Change Variant')
+            ->icon('heroicon-o-arrows-right-left')
+            ->color('gray')
+            ->visible(fn (Order $record): bool => $record->status === OrderStatus::Pending)
+            ->form([
+                Select::make('order_item_id')
+                    ->label('Item')
+                    ->options(fn (Order $record): array => self::itemOptions($record))
+                    ->required(),
+                Select::make('product_variant_id')
+                    ->label('New Variant')
+                    ->options(self::variantOptions())
+                    ->searchable()
+                    ->required(),
+            ])
+            ->fillForm(fn (Order $record): array => ['order_item_id' => $record->items->first()?->id])
+            ->action(function (Order $record, array $data): void {
+                app(OrderService::class)->changeItemVariant(
+                    $record,
+                    $record->items()->findOrFail($data['order_item_id']),
+                    ProductVariant::findOrFail($data['product_variant_id']),
+                );
+            });
+    }
+
+    private static function adjustItemPriceAction(): Action
+    {
+        return Action::make('adjustItemPrice')
+            ->label('Adjust Price')
+            ->icon('heroicon-o-currency-dollar')
+            ->color('warning')
+            ->visible(fn (Order $record): bool => $record->status === OrderStatus::Pending)
+            ->form([
+                Select::make('order_item_id')
+                    ->label('Item')
+                    ->options(fn (Order $record): array => self::itemOptions($record))
+                    ->required(),
+                TextInput::make('unit_price')
+                    ->label('New Unit Price (BDT)')
+                    ->numeric()
+                    ->minValue(0)
+                    ->required(),
+                Textarea::make('reason')
+                    ->label('Reason')
+                    ->required()
+                    ->rows(2),
+            ])
+            ->fillForm(fn (Order $record): array => [
+                'order_item_id' => $record->items->first()?->id,
+                'unit_price' => $record->items->first() ? $record->items->first()->unit_price / 100 : null,
+            ])
+            ->action(function (Order $record, array $data): void {
+                app(OrderService::class)->adjustItemUnitPrice(
+                    $record,
+                    $record->items()->findOrFail($data['order_item_id']),
+                    (int) round($data['unit_price'] * 100),
+                    $data['reason'],
+                );
+            });
+    }
+
+    private static function removeItemAction(): Action
+    {
+        return Action::make('removeItem')
+            ->label('Remove Item')
+            ->icon('heroicon-o-trash')
+            ->color('danger')
+            ->visible(fn (Order $record): bool => $record->status === OrderStatus::Pending)
+            ->requiresConfirmation()
+            ->form([
+                Select::make('order_item_id')
+                    ->label('Item')
+                    ->options(fn (Order $record): array => self::itemOptions($record))
+                    ->required(),
+                TextInput::make('reason')->label('Reason (optional)'),
+            ])
+            ->fillForm(fn (Order $record): array => ['order_item_id' => $record->items->first()?->id])
+            ->action(function (Order $record, array $data): void {
+                app(OrderService::class)->removeItem(
+                    $record,
+                    $record->items()->findOrFail($data['order_item_id']),
+                    $data['reason'] ?? null,
+                );
+            });
+    }
+
+    private static function applyOrderDiscountAction(): Action
+    {
+        return Action::make('applyOrderDiscount')
+            ->label('Apply Discount')
+            ->icon('heroicon-o-ticket')
+            ->color('primary')
+            ->visible(fn (Order $record): bool => $record->status === OrderStatus::Pending)
+            ->form([
+                TextInput::make('discount')
+                    ->label('Discount Amount (BDT)')
+                    ->numeric()
+                    ->minValue(0)
+                    ->required(),
+                Textarea::make('reason')
+                    ->label('Reason')
+                    ->required()
+                    ->rows(2),
+            ])
+            ->fillForm(fn (Order $record): array => ['discount' => $record->discount_total / 100])
+            ->action(function (Order $record, array $data): void {
+                app(OrderService::class)->applyOrderDiscount($record, (int) round($data['discount'] * 100), $data['reason']);
+            });
+    }
+
+    private static function editShippingAction(): Action
+    {
+        return Action::make('editShipping')
+            ->label('Edit Shipping')
+            ->icon('heroicon-o-truck')
+            ->color('gray')
+            ->visible(fn (Order $record): bool => $record->status === OrderStatus::Pending)
+            ->form([
+                Select::make('shipping_method_id')
+                    ->label('Shipping Method')
+                    ->options(fn () => ShippingMethod::query()->where('is_active', true)->pluck('name', 'id'))
+                    ->nullable(),
+                TextInput::make('shipping_cost')
+                    ->label('Shipping Cost (BDT)')
+                    ->numeric()
+                    ->minValue(0)
+                    ->required(),
+            ])
+            ->fillForm(fn (Order $record): array => [
+                'shipping_method_id' => $record->shipping_method_id,
+                'shipping_cost' => $record->shipping_cost / 100,
+            ])
+            ->action(function (Order $record, array $data): void {
+                app(OrderService::class)->updateShipping(
+                    $record,
+                    (int) round($data['shipping_cost'] * 100),
+                    $data['shipping_method_id'] ?? null,
+                    'Updated from the order screen',
+                );
+            });
+    }
+
+    private static function variantOptions(): array
+    {
+        return ProductVariant::query()
+            ->with('product')
+            ->where('is_active', true)
+            ->get()
+            ->mapWithKeys(fn (ProductVariant $variant): array => [$variant->id => $variant->sku.' — '.($variant->product->name ?? '')])
+            ->all();
+    }
+
+    private static function itemOptions(Order $record): array
+    {
+        return $record->items
+            ->mapWithKeys(fn ($item): array => [$item->id => $item->variant_sku_snapshot.' — ৳'.number_format($item->unit_price / 100, 2).' × '.$item->quantity])
+            ->all();
+    }
+
     private static function addressEntities(string $column): array
     {
         return [
-            TextEntry::make($column.'.recipient_name')->label('Recipient')->placeholder('—')->columnSpanFull(),
-            TextEntry::make($column.'.phone')->label('Phone')->placeholder('—')->columnSpanFull(),
+            TextEntry::make($column.'.recipient_name')
+                ->label('Recipient')
+                ->placeholder('—')
+                ->columnSpan(['default' => 1, 'sm' => 1, 'xl' => 2]),
+            TextEntry::make($column.'.phone')
+                ->label('Phone')
+                ->placeholder('—')
+                ->columnSpan(['default' => 1, 'sm' => 1, 'xl' => 2])
+                ->hidden(fn (Order $record): bool => blank(data_get($record, $column.'.phone'))),
             TextEntry::make($column.'.address_line_1')->label('Address Line 1')->placeholder('—')->columnSpanFull(),
-            TextEntry::make($column.'.address_line_2')->label('Address Line 2')->placeholder('—')->columnSpanFull(),
-            TextEntry::make($column.'.city')->label('City')->placeholder('—'),
-            TextEntry::make($column.'.area')->label('Area')->placeholder('—'),
-            TextEntry::make($column.'.postal_code')->label('Postal Code')->placeholder('—'),
-            TextEntry::make($column.'.country')->label('Country')->placeholder('—'),
+            TextEntry::make($column.'.address_line_2')
+                ->label('Address Line 2')
+                ->placeholder('—')
+                ->columnSpanFull()
+                ->hidden(fn (Order $record): bool => blank(data_get($record, $column.'.address_line_2'))),
+            TextEntry::make($column.'.city')
+                ->label('City')
+                ->placeholder('—')
+                ->hidden(fn (Order $record): bool => blank(data_get($record, $column.'.city'))),
+            TextEntry::make($column.'.area')
+                ->label('Area')
+                ->placeholder('—')
+                ->hidden(fn (Order $record): bool => blank(data_get($record, $column.'.area'))),
+            TextEntry::make($column.'.postal_code')
+                ->label('Postal Code')
+                ->placeholder('—')
+                ->hidden(fn (Order $record): bool => blank(data_get($record, $column.'.postal_code'))),
+            TextEntry::make($column.'.country')
+                ->label('Country')
+                ->placeholder('—')
+                ->hidden(fn (Order $record): bool => blank(data_get($record, $column.'.country'))),
         ];
     }
 

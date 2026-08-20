@@ -11,13 +11,19 @@ use App\Enums\StockStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\IncrementProductViewCount;
 use App\Models\EmiPlan;
+use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\ProductAttributeValue;
+use App\Models\ShippingMethod;
 use App\Models\StaticPage;
 use App\Services\CompareService;
 use App\Services\InventoryService;
 use App\Services\RecentlyViewedService;
+use App\Services\Storefront\ProductCardData;
 use App\Services\WishlistService;
+use App\Support\Tenancy\TenantUrlGenerator;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 
 class ProductController extends Controller
 {
@@ -67,7 +73,7 @@ class ProductController extends Controller
         return $links;
     }
 
-    public function show(string $slug, RecentlyViewedService $recentlyViewed, WishlistService $wishlists, CompareService $compare, InventoryService $inventory)
+    public function show(string $slug, RecentlyViewedService $recentlyViewed, WishlistService $wishlists, CompareService $compare, InventoryService $inventory, ProductCardData $cards, TenantUrlGenerator $urls)
     {
         $product = Product::published()
             ->whereHas('translations', fn ($query) => $query->where('slug', $slug))
@@ -96,7 +102,17 @@ class ProductController extends Controller
 
         $dimensions = [];
         $purchaseStates = $inventory->resolvePurchaseStates($product->variants);
-        $variantsData = $product->variants->map(function ($variant) use (&$dimensions, $purchaseStates) {
+        $imageAltFallback = $product->translation('en')?->name ?: '';
+
+        // A product needs explicit option selection only when more than one
+        // ACTIVE variant exists. A single active variant is auto-resolved on
+        // load so its buy box is immediately usable. Inactive variants never
+        // participate in selection (they are not purchasable surfaces).
+        $activeVariants = $product->variants->where('is_active', true)->values();
+        $requiresSelection = $activeVariants->count() > 1;
+        $initialVariantId = $activeVariants->count() === 1 ? $activeVariants->first()->id : null;
+
+        $variantsData = $product->variants->map(function ($variant) use (&$dimensions, $purchaseStates, $imageAltFallback) {
             $dims = [];
             $meta = [];
 
@@ -161,14 +177,24 @@ class ProductController extends Controller
                 'backorder_policy' => $variant->backorder_policy?->value,
                 'expected_available_at' => $variant->expected_available_at?->format('M j, Y'),
                 'purchasable' => $purchasable,
-                'images' => $variant->getMedia('images')->map(fn ($media) => $media->getUrl('large'))->all(),
+                'is_active' => (bool) $variant->is_active,
+                'images' => $variant->getMedia('images')->map(fn ($media) => [
+                    'src' => $media->getUrl('large'),
+                    'alt' => media_alt($media, $imageAltFallback),
+                ])->all(),
                 'dims' => $dims,
             ];
         })->values();
 
         $dimensions = array_values($dimensions);
 
-        $productImages = $product->getMedia('images')->map(fn ($media) => $media->getUrl('large'))->all();
+        $productImages = $product->getMedia('images')
+            ->map(fn ($media) => [
+                'src' => $media->getUrl('large'),
+                'alt' => media_alt($media, $imageAltFallback),
+            ])
+            ->values()
+            ->all();
 
         // Product-level specifications grouped by attribute group, ordered by
         // group_sort_order (groups) then sort_order (attributes within a group).
@@ -190,12 +216,16 @@ class ProductController extends Controller
             ->sortBy(fn (array $group): array => [$group['group_sort_order'], $group['group']])
             ->values();
         $translation = $product->translation('en');
+        $canonicalProductUrl = $translation?->slug
+            ? $urls->canonicalRoute(tenant(), 'storefront.product', [$translation->slug])
+            : null;
 
         $productJsonLd = array_filter([
             '@context' => 'https://schema.org',
             '@type' => 'Product',
+            'url' => $canonicalProductUrl,
             'name' => $translation?->name,
-            'image' => $productImages,
+            'image' => array_map(fn ($image) => $image['src'], $productImages),
             'description' => $translation?->description ? strip_tags($translation->description) : null,
             'sku' => $product->variants->first()?->sku,
             'brand' => $product->brand ? ['@type' => 'Brand', 'name' => $product->brand->name] : null,
@@ -215,6 +245,7 @@ class ProductController extends Controller
         $faqJsonLd = $product->faqs->isNotEmpty() ? [
             '@context' => 'https://schema.org',
             '@type' => 'FAQPage',
+            'url' => $canonicalProductUrl,
             'mainEntity' => $product->faqs->map(fn ($faq) => [
                 '@type' => 'Question',
                 'name' => $faq->question,
@@ -227,6 +258,14 @@ class ProductController extends Controller
             ->published()
             ->limit(4)
             ->get();
+
+        // Merchandising rails. Each relation is tenant-scoped through the
+        // Product BelongsToTenant global scope, ordered by the admin-defined
+        // pivot sort_order, and capped at 4 items.
+        $crossSells = $this->merchandiseRail($product->crossSells());
+        $upsells = $this->merchandiseRail($product->upsells());
+        $frequentlyBought = $this->merchandiseRail($product->frequentlyBoughtWith());
+        $compatibleAccessories = $this->merchandiseRail($product->compatibleAccessories());
 
         $policyLinks = $this->resolvePolicyLinks();
 
@@ -241,9 +280,71 @@ class ProductController extends Controller
             ->values()
             ->all();
 
+        // Variant-agnostic trust strip: active shipping + payment methods the
+        // store actually accepts. Never invents settings — rendered only from
+        // tenant-scoped rows that exist.
+        $shippingMethods = ShippingMethod::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        $paymentMethods = PaymentMethod::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        // Recently-viewed rail: reuses the existing tracking pipeline, keeps
+        // its most-recent-first ordering, and never queries when empty.
+        $recentlyViewedProducts = collect();
+        $recentIds = $recentlyViewed->recentProductIds(auth('customer')->user());
+        $recentIds = array_values(array_filter($recentIds, fn (int $id) => $id !== $product->id));
+
+        if ($recentIds !== []) {
+            $recentlyViewedProducts = Product::published()
+                ->whereIn('id', $recentIds)
+                ->with(['translations', 'variants', 'media', 'emiPlans'])
+                ->get()
+                ->sortBy(fn (Product $recent) => array_search($recent->id, $recentIds, true))
+                ->values()
+                ->take(8);
+        }
+
+        // All rail products share one wishlist-membership lookup so card state
+        // is correct on first paint for every rail (homepage/PDP/recently-viewed).
+        $railProducts = collect([$relatedProducts, $crossSells, $upsells, $frequentlyBought, $compatibleAccessories, $recentlyViewedProducts])
+            ->flatMap(fn (Collection $rail) => $rail);
+        $wishlistedProductIds = $wishlists->wishlistedProductIds($railProducts->pluck('id'));
+
+        $relatedCards = $cards->forMany($relatedProducts, $wishlistedProductIds);
+        $crossSellCards = $cards->forMany($crossSells, $wishlistedProductIds);
+        $upsellCards = $cards->forMany($upsells, $wishlistedProductIds);
+        $frequentlyBoughtCards = $cards->forMany($frequentlyBought, $wishlistedProductIds);
+        $compatibleAccessoryCards = $cards->forMany($compatibleAccessories, $wishlistedProductIds);
+        $recentlyViewedCards = $cards->forMany($recentlyViewedProducts, $wishlistedProductIds);
+
         return view('storefront.products.show', compact(
             'product', 'variantsData', 'dimensions', 'productImages', 'specificationGroups', 'productJsonLd', 'faqJsonLd', 'isWishlisted', 'isComparing',
-            'relatedProducts', 'policyLinks', 'emiData',
+            'relatedCards', 'crossSellCards', 'upsellCards', 'frequentlyBoughtCards', 'compatibleAccessoryCards', 'recentlyViewedCards', 'policyLinks', 'emiData', 'shippingMethods', 'paymentMethods',
+            'requiresSelection', 'initialVariantId',
         ));
+    }
+
+    /**
+     * Loads one product-relation merchandising rail for the storefront PDP.
+     * Only published products are shown, the current product is excluded, and
+     * the BelongsToTenant global scope keeps the rail tenant-isolated. Ordering
+     * follows the admin-defined pivot sort_order; the rail is capped at 4.
+     */
+    private function merchandiseRail(BelongsToMany $relation): Collection
+    {
+        $currentProductId = $relation->getParent()->id;
+
+        return $relation
+            ->with(['translations', 'variants', 'media', 'emiPlans'])
+            ->where('products.id', '!=', $currentProductId)
+            ->published()
+            ->orderByPivot('sort_order')
+            ->limit(4)
+            ->get();
     }
 }

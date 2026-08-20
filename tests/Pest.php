@@ -1,11 +1,34 @@
 <?php
 
+use App\Models\Cart;
+use App\Models\Customer;
+use App\Models\Plan;
+use App\Models\Product;
+use App\Models\ProductTranslation;
+use App\Models\ProductVariant;
 use App\Models\Tenant;
+use App\Services\InventoryService;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class)->in('Feature');
+
+function seedBootstrapPlans(): void
+{
+    Plan::query()->create([
+        'name' => 'Free Trial', 'slug' => 'trial', 'price' => 0, 'billing_period' => 'monthly',
+        'max_products' => 50, 'max_staff' => 2, 'custom_domain_allowed' => false, 'is_active' => true, 'sort_order' => 1,
+    ]);
+    Plan::query()->create([
+        'name' => 'Starter', 'slug' => 'starter', 'price' => 99000, 'billing_period' => 'monthly',
+        'max_products' => 500, 'max_staff' => 5, 'custom_domain_allowed' => true, 'is_active' => true, 'sort_order' => 2,
+    ]);
+    Plan::query()->create([
+        'name' => 'Growth', 'slug' => 'growth', 'price' => 249000, 'billing_period' => 'monthly',
+        'max_products' => null, 'max_staff' => null, 'custom_domain_allowed' => true, 'is_active' => true, 'sort_order' => 3,
+    ]);
+}
 
 function actingAsTenant(array $overrides = []): Tenant
 {
@@ -15,20 +38,20 @@ function actingAsTenant(array $overrides = []): Tenant
     return $tenant;
 }
 
-function createTestVariant(array $overrides = []): \App\Models\ProductVariant
+function createTestVariant(array $overrides = []): ProductVariant
 {
-    $product = \App\Models\Product::factory()->create(['status' => 'published']);
-    \App\Models\ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
+    $product = Product::factory()->create(['status' => 'published']);
+    ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
 
-    return \App\Models\ProductVariant::factory()->for($product)->create($overrides);
+    return ProductVariant::factory()->for($product)->create($overrides);
 }
 
-function createCartWithVariant(int $quantity = 1, ?\App\Models\Customer $customer = null): array
+function createCartWithVariant(int $quantity = 1, ?Customer $customer = null): array
 {
     $variant = createTestVariant();
-    app(\App\Services\InventoryService::class)->restock($variant, 10);
+    app(InventoryService::class)->restock($variant, 10);
 
-    $cart = \App\Models\Cart::query()->create([
+    $cart = Cart::query()->create([
         'tenant_id' => tenant()->id,
         'customer_id' => $customer?->id,
         'currency_code' => 'BDT',

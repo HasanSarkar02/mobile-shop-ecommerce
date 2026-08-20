@@ -6,12 +6,15 @@ namespace App\Filament\Platform\Resources;
 
 use App\Filament\Platform\Resources\PlanResource\Pages;
 use App\Models\Plan;
+use App\Models\PlanChangeRequest;
+use App\Models\TenantSubscription;
 use BackedEnum;
-use Filament\Actions\DeleteAction;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
@@ -56,7 +59,33 @@ class PlanResource extends Resource
                 IconColumn::make('is_active')->boolean(),
             ])
             ->reorderable('sort_order')
-            ->recordActions([EditAction::make(), DeleteAction::make()]);
+            ->recordActions([
+                EditAction::make(),
+                Action::make('delete')
+                    ->color('danger')
+                    ->action(function (Plan $record): void {
+                        if (self::isPlanReferenced($record)) {
+                            Notification::make()
+                                ->title('Cannot delete plan')
+                                ->body('This plan is referenced by existing subscriptions or pending plan-change requests.')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        $record->delete();
+                    }),
+            ]);
+    }
+
+    public static function isPlanReferenced(Plan $plan): bool
+    {
+        return TenantSubscription::query()->where('plan_id', $plan->id)->exists()
+            || PlanChangeRequest::query()
+                ->withoutGlobalScope('tenant')
+                ->where('requested_plan_id', $plan->id)
+                ->exists();
     }
 
     public static function getPages(): array

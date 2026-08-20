@@ -148,7 +148,7 @@ it('keeps CTA state consistent across desktop and sticky mobile bars', function 
 
     // Both primary CTAs now gate on the derived purchasable state.
     expect($html)->toContain('x-bind:disabled="cartLoading || !current() || !current().purchasable"');
-    expect($html)->toContain('x-bind:disabled="cartLoading || !current().purchasable"');
+    expect(substr_count($html, 'cartLoading || !current() || !current().purchasable'))->toBeGreaterThanOrEqual(2);
     // Neither references the old raw availability/discontinued shortcut anymore.
     expect($html)->not->toContain("current().availability === 'out_of_stock'");
 });

@@ -32,7 +32,7 @@ class CampaignResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')->required(),
-            TextInput::make('slug')->required()->unique(ignoreRecord: true),
+            TextInput::make('slug')->required()->scopedUnique(ignoreRecord: true),
             Textarea::make('description')->rows(3),
             Select::make('status')
                 ->options(collect(CampaignStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))

@@ -6,17 +6,46 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Support\Purifier\StorefrontPurifier;
+use Filament\Forms\Components\RichEditor\FileAttachmentProviders\SpatieMediaLibraryFileAttachmentProvider;
+use Filament\Forms\Components\RichEditor\Models\Concerns\InteractsWithRichContent;
+use Filament\Forms\Components\RichEditor\Models\Contracts\HasRichContent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class ProductTranslation extends Model
+class ProductTranslation extends Model implements HasMedia, HasRichContent
 {
-    use BelongsToTenant, HasFactory;
+    use BelongsToTenant, HasFactory, InteractsWithMedia, InteractsWithRichContent;
 
     protected $fillable = ['product_id', 'locale', 'name', 'slug', 'description', 'warranty_info', 'meta_title', 'meta_description'];
+
+    protected function setUpRichContent(): void
+    {
+        $this->registerRichContent('description')
+            ->fileAttachmentsVisibility('public')
+            ->fileAttachmentProvider(
+                SpatieMediaLibraryFileAttachmentProvider::make()->collection('description_images'),
+            );
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('description_images');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('large')
+            ->width(1200)
+            ->fit(Fit::Contain, 1200, 1200)
+            ->format('webp');
+    }
 
     protected static function booted(): void
     {

@@ -8,10 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Services\CartService;
 use App\Services\WishlistService;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class CustomerAuthController extends Controller
 {
@@ -54,7 +56,11 @@ class CustomerAuthController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:customers,email'],
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('customers')->where(fn (Builder $query) => $query->where('tenant_id', tenant()?->id)),
+            ],
             'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['required', 'string', 'min:8'],
         ]);

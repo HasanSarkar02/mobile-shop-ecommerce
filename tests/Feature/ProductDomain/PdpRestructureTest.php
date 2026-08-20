@@ -7,8 +7,8 @@ use App\Models\AttributeDefinition;
 use App\Models\Customer;
 use App\Models\Faq;
 use App\Models\Product;
-use App\Models\ProductReview;
 use App\Models\ProductTranslation;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 
 /**
@@ -191,4 +191,33 @@ it('exposes the section content without JavaScript', function (): void {
 
     // Description markup is baked into the page, not fetched client-side.
     expect($html)->toContain('<h2>Key Features</h2>');
+});
+
+it('renders sanitized inline description images with src and alt on the storefront', function (): void {
+    [$product, $translation, $tenant] = pdpStructureProduct();
+
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+
+    $media = $translation
+        ->addMediaFromString($png)
+        ->usingFileName('pixel.png')
+        ->toMediaCollection('description_images');
+
+    $translation->update([
+        'description' => '<h2>Key Features</h2><p>All-day battery.</p>'
+            .'<p><img src="'.$media->getUrl().'" alt="Inline shot" data-id="'.$media->uuid.'" loading="lazy"></p>',
+    ]);
+
+    $html = pdpStructureGet($translation->slug, $tenant)->assertOk()->getContent();
+
+    $descriptionSection = (string) Str::of($html)
+        ->between('<section id="description"', '</section>')
+        ->toString();
+
+    expect($html)->toContain('id="description"');
+    expect($descriptionSection)->toContain('<h2>Key Features</h2>');
+    expect($descriptionSection)->toContain($media->getUrl());
+    expect($descriptionSection)->toContain('alt="Inline shot"');
+    expect($descriptionSection)->not->toContain('data-id');
+    expect($descriptionSection)->not->toContain('loading=');
 });

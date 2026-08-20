@@ -8,11 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\Tenancy\TenantUrlGenerator;
 use Illuminate\Http\Request;
 
 class SearchSuggestController extends Controller
 {
-    public function __invoke(Request $request)
+    public function __invoke(Request $request, TenantUrlGenerator $urls)
     {
         $term = (string) $request->query('q', '');
 
@@ -24,18 +25,18 @@ class SearchSuggestController extends Controller
         $products = Product::query()->published()->whereIn('id', $productIds)->with('translations')->get()
             ->map(fn (Product $p) => [
                 'name' => $p->name,
-                'url' => route('storefront.product', $p->translation('en')?->slug),
+                'url' => $urls->canonicalRoute(tenant(), 'storefront.product', [$p->translation('en')?->slug]),
                 'thumb' => $p->getFirstMediaUrl('images', 'thumb'),
                 'price' => $p->base_price / 100,
             ]);
 
         $categories = Category::query()->where('name', 'like', "%{$term}%")->limit(4)
             ->get(['name', 'slug'])
-            ->map(fn (Category $c) => ['name' => $c->name, 'url' => route('storefront.category', $c->slug)]);
+            ->map(fn (Category $c) => ['name' => $c->name, 'url' => $urls->canonicalRoute(tenant(), 'storefront.category', [$c->slug])]);
 
         $brands = Brand::query()->where('name', 'like', "%{$term}%")->limit(4)
             ->get(['name', 'slug'])
-            ->map(fn (Brand $b) => ['name' => $b->name, 'url' => route('storefront.brand', $b->slug)]);
+            ->map(fn (Brand $b) => ['name' => $b->name, 'url' => $urls->canonicalRoute(tenant(), 'storefront.brand', [$b->slug])]);
 
         return response()->json(compact('products', 'categories', 'brands'));
     }

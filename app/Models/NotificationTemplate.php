@@ -11,10 +11,13 @@ class NotificationTemplate extends Model
 {
     use BelongsToTenant;
 
-    protected $fillable = ['tenant_id','event_key', 'channel', 'subject', 'body', 'is_active'];
+    protected $fillable = ['tenant_id', 'event_key', 'channel', 'subject', 'body', 'is_active', 'is_platform_managed'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+            'is_platform_managed' => 'boolean',
+        ];
     }
 }

@@ -11,13 +11,18 @@ use App\Models\Category;
 use App\Models\Collection;
 use App\Models\Product;
 use App\Models\StaticPage;
+use App\Support\Tenancy\TenantUrlGenerator;
 use Illuminate\Support\Facades\Cache;
 
 class SitemapController extends Controller
 {
-    public function index()
+    public function index(TenantUrlGenerator $urls)
     {
-        $xml = Cache::remember('sitemap:'.tenant()->id, 3600, function () {
+        $tenant = tenant();
+        $canonicalHost = $urls->canonicalHost($tenant);
+        $cacheKey = 'sitemap:'.$tenant->id.':'.sha1($canonicalHost);
+
+        $xml = Cache::remember($cacheKey, 3600, function () use ($urls, $tenant) {
             $products = Product::published()->with('translations')->get();
             $categories = Category::query()->get();
             $brands = Brand::query()->get();
@@ -25,7 +30,9 @@ class SitemapController extends Controller
             $pages = StaticPage::query()->where('status', 'published')->get();
             $posts = BlogPost::query()->where('status', 'published')->get();
 
-            return view('storefront.sitemap', compact('products', 'categories', 'brands', 'collections', 'pages', 'posts'))->render();
+            return view('storefront.sitemap', compact(
+                'products', 'categories', 'brands', 'collections', 'pages', 'posts', 'urls', 'tenant',
+            ))->render();
         });
 
         return response($xml, 200)->header('Content-Type', 'text/xml');

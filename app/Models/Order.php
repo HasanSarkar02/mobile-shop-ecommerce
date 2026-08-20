@@ -8,11 +8,21 @@ use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\PreventsDeletion;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * @property-read OrderStatus $status
+ * @property-read Collection<int, OrderItem> $items
+ * @property-read Collection<int, OrderPayment> $payments
+ * @property-read Collection<int, OrderFulfillment> $fulfillments
+ * @property-read Collection<int, OrderEvent> $events
+ * @property-read Collection<int, StockMovement> $stockMovements
+ */
 class Order extends Model
 {
     use BelongsToTenant;
@@ -24,7 +34,8 @@ class Order extends Model
         'status', 'order_source', 'sales_channel', 'payment_method_id', 'shipping_method_id',
         'currency_code', 'currency_rate', 'subtotal', 'shipping_cost', 'discount_total', 'tax_total', 'grand_total',
         'shipping_address_id', 'shipping_address_snapshot', 'billing_address_id', 'billing_address_snapshot',
-        'customer_note', 'internal_note', 'placed_at','reservation_expires_at',
+        'customer_note', 'internal_note', 'placed_at', 'reservation_expires_at',
+        'active_reservation_key',
     ];
 
     protected function casts(): array
@@ -60,6 +71,7 @@ class Order extends Model
         return $this->belongsTo(ShippingMethod::class);
     }
 
+    /** @return HasMany<OrderItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
@@ -78,6 +90,12 @@ class Order extends Model
     public function events(): HasMany
     {
         return $this->hasMany(OrderEvent::class)->latest('created_at');
+    }
+
+    /** @return MorphMany<StockMovement, $this> */
+    public function stockMovements(): MorphMany
+    {
+        return $this->morphMany(StockMovement::class, 'reference');
     }
 
     public function customerDisplayName(): string

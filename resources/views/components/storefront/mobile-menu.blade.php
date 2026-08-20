@@ -1,4 +1,4 @@
-@props(['headerMenu', 'theme'])
+@props(['headerMenu', 'theme', 'wishlistCount' => 0])
 <template x-teleport="body">
     <div x-show="$store.ui.mobileMenuOpen" x-cloak class="lg:hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true"
         aria-label="Menu">
@@ -72,6 +72,9 @@
                     class="flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-gray-800 dark:text-gray-100">
                     <x-ui.icon name="heart" class="w-5 h-5 text-gray-400" />
                     Wishlist
+                    <span x-data x-init="$store.wishlist.seedCount({{ $wishlistCount }})"
+                        x-show="$store.wishlist.count > 0" x-cloak x-text="$store.wishlist.count"
+                        class="ml-auto text-xs font-semibold bg-[var(--brand)] text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{{ $wishlistCount }}</span>
                 </a>
                 <a href="{{ route('storefront.compare') }}"
                     class="flex items-center gap-3 px-4 py-3 text-[15px] font-medium text-gray-800 dark:text-gray-100">

@@ -3,6 +3,9 @@
 @section('title', 'Blog - ' . tenant()->name)
 
 @section('content')
+    @include('storefront.partials.seo-meta', [
+        'canonical' => app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalPath(tenant(), '/blog'),
+    ])
     <div class="max-w-5xl mx-auto px-4 py-8">
         <h1 class="text-2xl font-bold mb-6">Blog</h1>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

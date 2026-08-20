@@ -19,7 +19,7 @@ class AttributeDefinitionForm
             ->components([
                 TextInput::make('code')
                     ->required()
-                    ->unique(ignoreRecord: true)
+                    ->scopedUnique(ignoreRecord: true)
                     ->alphaDash(),
 
                 TextInput::make('label')

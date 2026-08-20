@@ -1,5 +1,5 @@
 {{-- resources/views/components/storefront/mobile-header.blade.php --}}
-@props(['theme', 'headerMenu'])
+@props(['theme', 'headerMenu', 'wishlistCount' => 0])
 <div class="lg:hidden" x-data="{ mobileSearchOpen: false }">
     <div class="flex items-center gap-2 h-16 px-4">
         <button type="button" @click="$store.ui.mobileMenuOpen = true"
@@ -36,5 +36,5 @@
         </form>
     </div>
 
-    <x-storefront.mobile-menu :header-menu="$headerMenu ?? null" :theme="$theme" />
+    <x-storefront.mobile-menu :header-menu="$headerMenu ?? null" :theme="$theme" :wishlist-count="$wishlistCount ?? 0" />
 </div>

@@ -39,7 +39,7 @@ class SerialNumberResource extends Resource
                 ->options(fn () => ProductVariant::query()->pluck('sku', 'id'))
                 ->searchable()
                 ->required(),
-            TextInput::make('imei_or_serial')->required()->unique(ignoreRecord: true),
+            TextInput::make('imei_or_serial')->required()->scopedUnique(ignoreRecord: true),
             Select::make('status')
                 ->options(collect(SerialNumberStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                 ->default(SerialNumberStatus::Available->value)

@@ -6,28 +6,39 @@ namespace App\Livewire;
 
 use App\Enums\OrderSource;
 use App\Exceptions\CartAlreadyConvertedException;
+use App\Exceptions\ReservationLimitExceededException;
 use App\Models\Address;
 use App\Models\PaymentMethod;
 use App\Models\ShippingMethod;
 use App\Services\CartService;
+use App\Services\CouponService;
 use App\Services\OrderService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use Illuminate\Support\Facades\RateLimiter;
 
 #[Layout('storefront.layout')]
 class CheckoutPage extends Component
 {
     public array $issues = [];
+
     public ?int $selectedAddressId = null;
+
     public array $guestAddress = ['recipient_name' => '', 'phone' => '', 'address_line_1' => '', 'city' => ''];
+
     public string $guestName = '';
+
     public string $guestEmail = '';
+
     public string $guestPhone = '';
+
     public ?int $shippingMethodId = null;
+
     public ?int $paymentMethodId = null;
+
     public ?string $customerNote = null;
+
     // Secondary, UX-only guard against a rapid double-click sending two
     // near-simultaneous requests before the wire:loading disabled state (see
     // the checkout button markup) takes effect. The authoritative protection
@@ -113,6 +124,10 @@ class CheckoutPage extends Component
                 $this->redirect(route('storefront.checkout'), navigate: false);
 
                 return;
+            } catch (ReservationLimitExceededException $e) {
+                $this->issues = [$e->getMessage()];
+
+                return;
             }
 
             if ($order->paymentMethod?->gateway_driver) {
@@ -126,7 +141,7 @@ class CheckoutPage extends Component
         }
     }
 
-    public function render(CartService $carts, \App\Services\CouponService $coupons)
+    public function render(CartService $carts, CouponService $coupons)
     {
         $customer = Auth::guard('customer')->user();
         $cart = $carts->getOrCreateCart($customer, request()->cookie('cart_token'));

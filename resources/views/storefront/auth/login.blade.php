@@ -8,9 +8,9 @@
         <form method="POST" action="{{ route('storefront.login') }}" class="space-y-4">
             @csrf
             <input type="email" name="email" placeholder="Email"
-                class="w-full rounded border-gray-300 dark:bg-gray-800 dark:border-gray-700" required>
+                class="w-full rounded border border-gray-300 dark:bg-gray-800 dark:border-gray-700" required>
             <input type="password" name="password" placeholder="Password"
-                class="w-full rounded border-gray-300 dark:bg-gray-800 dark:border-gray-700" required>
+                class="w-full rounded border border-gray-300 dark:bg-gray-800 dark:border-gray-700" required>
             @error('email')
                 <p class="text-red-500 text-sm">{{ $message }}</p>
             @enderror

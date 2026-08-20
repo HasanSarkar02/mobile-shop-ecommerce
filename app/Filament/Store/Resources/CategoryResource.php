@@ -18,6 +18,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use UnitEnum;
+
 class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
@@ -30,7 +31,7 @@ class CategoryResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')->required(),
-            TextInput::make('slug')->required()->unique(ignoreRecord: true),
+            TextInput::make('slug')->required()->scopedUnique(ignoreRecord: true),
             Select::make('parent_id')
                 ->label('Parent category')
                 ->options(fn () => Category::query()->pluck('name', 'id'))

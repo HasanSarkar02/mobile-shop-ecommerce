@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use UnitEnum;
+
 class BrandResource extends Resource
 {
     protected static ?string $model = Brand::class;
@@ -29,7 +30,7 @@ class BrandResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')->required(),
-            TextInput::make('slug')->required()->unique(ignoreRecord: true),
+            TextInput::make('slug')->required()->scopedUnique(ignoreRecord: true),
             FileUpload::make('logo_path')->image()->directory('brand-logos'),
             TextInput::make('meta_title'),
             Textarea::make('meta_description')->rows(2),

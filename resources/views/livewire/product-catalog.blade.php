@@ -101,11 +101,8 @@
             @else
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-6" wire:loading.remove
                     wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,attr,clearFilters">
-                    @foreach ($result['products'] as $product)
-                        @include('storefront.partials.product-card', [
-                            'product' => $product,
-                            'wishlistedProductIds' => $wishlistedProductIds,
-                        ])
+                    @foreach ($cards as $card)
+                        @include('storefront.partials.product-card', ['card' => $card])
                     @endforeach
                 </div>
 

@@ -1,15 +1,27 @@
 <x-filament-panels::page>
     @php($subscription = $this->getSubscription())
+    @php($latestRequest = $this->getLatestPlanChangeRequest())
 
     <div class="rounded-xl border border-gray-200 dark:border-gray-800 p-6 mb-6">
-        <p class="font-semibold text-lg">Current Plan: {{ $subscription?->plan?->name ?? 'None' }}</p>
+        <p class="font-semibold text-lg">Current Plan: {{ $subscription?->entitlement('plan_name') ?? 'None' }}</p>
         <p class="text-sm text-gray-500">Status: {{ $subscription?->status?->label() }}</p>
         @if ($subscription?->isTrialing())
             <p class="text-sm text-amber-600 mt-1">{{ $subscription->daysRemaining() }} day(s) left in your trial.</p>
         @endif
+        @if ($latestRequest !== null)
+            @if ($latestRequest->status === \App\Enums\PlanChangeRequestStatus::Pending)
+                <p class="text-sm text-amber-600 mt-1">Plan change request pending: {{ $latestRequest->requestedPlan?->name }}</p>
+            @else
+                <p class="text-sm text-red-600 mt-1">Your request for {{ $latestRequest->requestedPlan?->name }} was declined.
+                    @if ($latestRequest->rejection_reason)
+                        Reason: {{ $latestRequest->rejection_reason }}.
+                    @endif
+                </p>
+            @endif
+        @endif
         <p class="text-sm mt-2">Products used: {{ $this->getProductUsage() }} /
-            {{ $subscription?->plan?->max_products ?? '∞' }}</p>
-        <p class="text-sm">Staff used: {{ $this->getStaffUsage() }} / {{ $subscription?->plan?->max_staff ?? '∞' }}</p>
+            {{ $subscription?->entitlement('max_products') ?? '∞' }}</p>
+        <p class="text-sm">Staff used: {{ $this->getStaffUsage() }} / {{ $subscription?->entitlement('max_staff') ?? '∞' }}</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

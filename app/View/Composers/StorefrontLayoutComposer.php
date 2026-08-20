@@ -8,9 +8,8 @@ use App\Models\Announcement;
 use App\Models\Category;
 use App\Models\Menu;
 use App\Models\StaticPage;
-use App\Models\WishlistItem;
+use App\Services\WishlistService;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Auth;
 
 /**
  * Supplies the data every storefront page needs for its chrome (header nav,
@@ -20,6 +19,8 @@ use Illuminate\Support\Facades\Auth;
  */
 class StorefrontLayoutComposer
 {
+    public function __construct(private readonly WishlistService $wishlists) {}
+
     public function compose(View $view): void
     {
         $view->with([
@@ -32,7 +33,7 @@ class StorefrontLayoutComposer
                 ->get()
                 ->groupBy('footer_group'),
             'theme' => tenant()->themeSettings,
-            'wishlistCount' => $this->wishlistCount(),
+            'wishlistCount' => $this->wishlists->wishlistCount(),
             'headerCategories' => Category::query()
                 ->whereNull('parent_id')
                 ->with(['children' => fn ($query) => $query->orderBy('name')])
@@ -40,29 +41,5 @@ class StorefrontLayoutComposer
                 ->orderBy('name')
                 ->get(),
         ]);
-    }
-
-    /**
-     * Deliberately does NOT call WishlistService::getOrCreateWishlist() —
-     * that creates a Wishlist row as a side effect, which would happen on
-     * every single page view (this composer runs on every storefront page)
-     * for every anonymous visitor who has never touched the wishlist
-     * feature. Only counts an existing wishlist; never creates one.
-     */
-    private function wishlistCount(): int
-    {
-        if ($customer = Auth::guard('customer')->user()) {
-            return WishlistItem::query()
-                ->whereHas('wishlist', fn ($q) => $q->where('customer_id', $customer->id)->where('is_default', true))
-                ->count();
-        }
-
-        if ($token = request()->cookie('wishlist_token')) {
-            return WishlistItem::query()
-                ->whereHas('wishlist', fn ($q) => $q->where('guest_token', $token)->where('is_default', true))
-                ->count();
-        }
-
-        return 0;
     }
 }

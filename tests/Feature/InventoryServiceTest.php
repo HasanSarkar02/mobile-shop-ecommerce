@@ -100,9 +100,21 @@ it('commits serialized stock by marking specific serials sold', function () {
     $variant = createTestVariant(['inventory_type' => 'serialized']);
     SerialNumber::factory()->count(3)->for($variant, 'variant')->create(['status' => 'available']);
 
-    app(InventoryService::class)->commit($variant, 2);
+    $order = Order::factory()->create(['status' => 'pending']);
+    $item = $order->items()->create([
+        'tenant_id' => $order->tenant_id,
+        'product_variant_id' => $variant->id,
+        'product_name_snapshot' => 'Test',
+        'variant_sku_snapshot' => $variant->sku,
+        'unit_price' => $variant->price,
+        'quantity' => 2,
+        'line_total' => $variant->price * 2,
+    ]);
+
+    app(InventoryService::class)->commit($variant, 2, null, null, $item);
 
     expect(SerialNumber::query()->where('product_variant_id', $variant->id)->where('status', 'sold')->count())->toBe(2);
+    expect(SerialNumber::query()->where('product_variant_id', $variant->id)->where('status', 'sold')->where('order_item_id', $item->id)->count())->toBe(2);
     expect(SerialNumber::query()->where('product_variant_id', $variant->id)->where('status', 'available')->count())->toBe(1);
 });
 
@@ -110,14 +122,32 @@ it('throws when committing more serials than are available', function () {
     $variant = createTestVariant(['inventory_type' => 'serialized']);
     SerialNumber::factory()->count(1)->for($variant, 'variant')->create(['status' => 'available']);
 
-    app(InventoryService::class)->commit($variant, 2);
+    $order = Order::factory()->create(['status' => 'pending']);
+    $item = $order->items()->create([
+        'tenant_id' => $order->tenant_id,
+        'product_variant_id' => $variant->id,
+        'product_name_snapshot' => 'Test',
+        'variant_sku_snapshot' => $variant->sku,
+        'unit_price' => $variant->price,
+        'quantity' => 2,
+        'line_total' => $variant->price * 2,
+    ]);
+
+    app(InventoryService::class)->commit($variant, 2, null, null, $item);
 })->throws(InsufficientStockException::class);
 
-it('treats stock held by an expired pending order as available again', function () {
+it('requires an order item to commit serialized stock', function () {
+    $variant = createTestVariant(['inventory_type' => 'serialized']);
+    SerialNumber::factory()->count(1)->for($variant, 'variant')->create(['status' => 'available']);
+
+    app(InventoryService::class)->commit($variant, 1);
+})->throws(InvalidArgumentException::class);
+
+it('does not treat stock held by an expired pending order as available before release', function () {
     $variant = createTestVariant();
     $service = app(InventoryService::class);
-    $service->restock($variant, 5);
-    $service->reserve($variant, 5);
+    $service->restock($variant, 1);
+    $service->reserve($variant, 1);
 
     expect($service->availableQuantity($variant))->toBe(0);
 
@@ -128,9 +158,22 @@ it('treats stock held by an expired pending order as available again', function 
         'product_name_snapshot' => 'Test',
         'variant_sku_snapshot' => $variant->sku,
         'unit_price' => $variant->price,
-        'quantity' => 5,
-        'line_total' => $variant->price * 5,
+        'quantity' => 1,
+        'line_total' => $variant->price,
     ]);
 
-    expect($service->availableQuantity($variant))->toBe(5);
+    expect($service->availableQuantity($variant))->toBe(0);
+    expect($service->resolvePurchaseStates(collect([$variant]))->get($variant->id)['available_quantity'])->toBe(0);
+    expect(fn () => $service->reserve($variant, 1))->toThrow(InsufficientStockException::class);
+});
+
+it('reports active reservations as unavailable and rejects another reservation', function () {
+    $variant = createTestVariant();
+    $service = app(InventoryService::class);
+    $service->restock($variant, 1);
+    $service->reserve($variant, 1);
+
+    expect($service->availableQuantity($variant))->toBe(0);
+    expect($service->resolvePurchaseStates(collect([$variant]))->get($variant->id)['available_quantity'])->toBe(0);
+    expect(fn () => $service->reserve($variant, 1))->toThrow(InsufficientStockException::class);
 });

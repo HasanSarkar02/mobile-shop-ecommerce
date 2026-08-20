@@ -8,13 +8,14 @@ namespace App\Livewire;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Collection;
 use App\Models\Product;
 use App\Models\SearchQuery;
-use App\Models\WishlistItem;
+use App\Services\Storefront\ProductCardData;
 use App\Services\Storefront\ProductListingService;
+use App\Services\WishlistService;
 use App\Support\ProductFilterState;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -128,44 +129,19 @@ class ProductCatalog extends Component
             || array_filter($this->attr) !== [];
     }
 
-    public function render(ProductListingService $listing)
+    public function render(ProductListingService $listing, ProductCardData $cards, WishlistService $wishlists)
     {
         $baseQuery = $this->resolveBaseQuery();
         $filters = $this->buildFilterState();
         $result = $listing->paginate($baseQuery, $filters);
 
+        $wishlistedProductIds = $wishlists->wishlistedProductIds($result['products']->pluck('id'));
+
         return view('livewire.product-catalog', [
             'result' => $result,
-            'wishlistedProductIds' => $this->wishlistedProductIds($result['products']->pluck('id')),
+            'cards' => $cards->forMany($result['products'], $wishlistedProductIds),
+            'wishlistedProductIds' => $wishlistedProductIds,
         ]);
-    }
-
-    /**
-     * Computed once per render against just the product IDs on this page,
-     * not the customer's whole wishlist — and only queries an EXISTING
-     * wishlist, same reasoning as StorefrontLayoutComposer::wishlistCount():
-     * never force-create one just to check membership.
-     */
-    private function wishlistedProductIds(Collection $productIds): Collection
-    {
-        if ($productIds->isEmpty()) {
-            return collect();
-        }
-
-        $customer = auth('customer')->user();
-        $guestToken = request()->cookie('wishlist_token');
-
-        if (! $customer && ! $guestToken) {
-            return collect();
-        }
-
-        return WishlistItem::query()
-            ->whereIn('product_id', $productIds)
-            ->whereHas('wishlist', function ($q) use ($customer, $guestToken): void {
-                $q->where('is_default', true);
-                $customer ? $q->where('customer_id', $customer->id) : $q->where('guest_token', $guestToken);
-            })
-            ->pluck('product_id');
     }
 
     private function resolveBaseQuery(): Builder
@@ -173,7 +149,7 @@ class ProductCatalog extends Component
         return match ($this->mode) {
             'category' => $this->categoryWithDescendantsQuery(),
             'brand' => Brand::query()->where('slug', $this->slug)->firstOrFail()->products()->getQuery()->published(),
-            'collection' => \App\Models\Collection::query()->where('slug', $this->slug)->where('is_active', true)->firstOrFail()->products()->getQuery()->published(),
+            'collection' => Collection::query()->where('slug', $this->slug)->where('is_active', true)->firstOrFail()->products()->getQuery()->published(),
             'search' => $this->searchBaseQuery(),
         };
     }

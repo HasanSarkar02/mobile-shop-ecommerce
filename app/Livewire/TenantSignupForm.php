@@ -6,19 +6,27 @@ namespace App\Livewire;
 
 use App\Rules\ValidSubdomain;
 use App\Services\TenantRegistrationService;
+use App\Support\Tenancy\TenantUrlGenerator;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
-use Livewire\Component;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Component;
 
 #[Layout('platform.layout')]
 class TenantSignupForm extends Component
 {
     public string $business_name = '';
+
     public string $subdomain = '';
+
     public string $owner_name = '';
+
     public string $owner_email = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
 
     public function updatedBusinessName(): void
@@ -38,14 +46,18 @@ class TenantSignupForm extends Component
     {
         return [
             'business_name' => ['required', 'string', 'max:255'],
-            'subdomain' => ['required', 'string', new ValidSubdomain()],
+            'subdomain' => ['required', 'string', new ValidSubdomain],
             'owner_name' => ['required', 'string', 'max:255'],
-            'owner_email' => ['required', 'email', 'unique:users,email'],
+            'owner_email' => [
+                'required',
+                'email',
+                Rule::unique('users')->where(fn (Builder $query) => $query->whereNull('tenant_id')),
+            ],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
 
-    public function register(TenantRegistrationService $registration)
+    public function register(TenantRegistrationService $registration, TenantUrlGenerator $urls)
     {
         $this->validate();
 
@@ -64,7 +76,7 @@ class TenantSignupForm extends Component
             absolute: false,
         );
 
-        return redirect()->away('http://'.$tenant->subdomain.'.'.config('tenancy.central_domain').$signedPath);
+        return redirect()->away($urls->canonicalPath($tenant, $signedPath));
     }
 
     public function render()

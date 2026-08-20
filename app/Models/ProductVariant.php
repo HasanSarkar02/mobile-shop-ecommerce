@@ -56,6 +56,7 @@ class ProductVariant extends Model implements HasMedia
         ];
     }
 
+    /** @return BelongsTo<Product, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
@@ -66,6 +67,9 @@ class ProductVariant extends Model implements HasMedia
         return $this->hasMany(ProductAttributeValue::class);
     }
 
+    /**
+     * @return HasMany<SerialNumber, $this>
+     */
     public function serialNumbers(): HasMany
     {
         return $this->hasMany(SerialNumber::class);

@@ -15,11 +15,15 @@ class SubscriptionEvent extends Model
 
     public const UPDATED_AT = null;
 
-    protected $fillable = ['tenant_id', 'type', 'from_plan_id', 'to_plan_id', 'note'];
+    protected $fillable = ['tenant_id', 'type', 'from_plan_id', 'to_plan_id', 'note', 'actor_user_id', 'effective_at', 'metadata'];
 
     protected function casts(): array
     {
-        return ['type' => SubscriptionEventType::class];
+        return [
+            'type' => SubscriptionEventType::class,
+            'effective_at' => 'datetime',
+            'metadata' => 'array',
+        ];
     }
 
     public function fromPlan(): BelongsTo
@@ -30,6 +34,11 @@ class SubscriptionEvent extends Model
     public function toPlan(): BelongsTo
     {
         return $this->belongsTo(Plan::class, 'to_plan_id');
+    }
+
+    public function actor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'actor_user_id');
     }
 
     public function update(array $attributes = [], array $options = []): bool

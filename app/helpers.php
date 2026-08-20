@@ -13,6 +13,30 @@ if (! function_exists('tenant')) {
     }
 }
 
+if (! function_exists('currency_symbol')) {
+    /**
+     * Small presentation mapping from the tenant's currency code to its
+     * symbol. No rates, no formatting engine — just the glyph used by the
+     * storefront price components. Unknown codes fall back to the code plus a
+     * space so a value is always rendered.
+     */
+    function currency_symbol(?string $currency = null): string
+    {
+        $symbols = [
+            'BDT' => '৳',
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'INR' => '₹',
+            'PKR' => '₨',
+        ];
+
+        $currency ??= tenant()?->currency ?? 'BDT';
+
+        return $symbols[$currency] ?? $currency.' ';
+    }
+}
+
 if (! function_exists('media_alt')) {
     /**
      * Resolves an image's alt text from its media custom_properties, falling

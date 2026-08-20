@@ -6,6 +6,7 @@ namespace App\Enums;
 
 enum SubscriptionEventType: string
 {
+    case Subscribed = 'subscribed';
     case TrialStarted = 'trial_started';
     case Upgraded = 'upgraded';
     case Downgraded = 'downgraded';
@@ -17,6 +18,7 @@ enum SubscriptionEventType: string
     public function label(): string
     {
         return match ($this) {
+            self::Subscribed => 'Subscribed',
             self::TrialStarted => 'Trial Started',
             self::Upgraded => 'Upgraded',
             self::Downgraded => 'Downgraded',

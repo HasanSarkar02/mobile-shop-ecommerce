@@ -13,15 +13,23 @@ class PlanChangeRequest extends Model
 {
     use BelongsToTenant;
 
-    protected $fillable = ['requested_plan_id', 'status', 'note'];
+    protected $fillable = ['requested_plan_id', 'status', 'note', 'rejection_reason', 'reviewed_by_user_id', 'reviewed_at'];
 
     protected function casts(): array
     {
-        return ['status' => PlanChangeRequestStatus::class];
+        return [
+            'status' => PlanChangeRequestStatus::class,
+            'reviewed_at' => 'datetime',
+        ];
     }
 
     public function requestedPlan(): BelongsTo
     {
         return $this->belongsTo(Plan::class, 'requested_plan_id');
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by_user_id');
     }
 }

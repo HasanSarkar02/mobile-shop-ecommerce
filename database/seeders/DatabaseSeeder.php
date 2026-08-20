@@ -4,8 +4,18 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Customer;
+use App\Models\PaymentMethod;
+use App\Models\Plan;
+use App\Models\Product;
+use App\Models\SerialNumber;
+use App\Models\ShippingMethod;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\InventoryService;
+use App\Services\SubscriptionService;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Database\Seeder;
 
@@ -13,15 +23,15 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $trialPlan = \App\Models\Plan::query()->create([
+        $trialPlan = Plan::query()->create([
             'name' => 'Free Trial', 'slug' => 'trial', 'price' => 0, 'billing_period' => 'monthly',
             'max_products' => 50, 'max_staff' => 2, 'custom_domain_allowed' => false, 'is_active' => true, 'sort_order' => 1,
         ]);
-        \App\Models\Plan::query()->create([
+        Plan::query()->create([
             'name' => 'Starter', 'slug' => 'starter', 'price' => 99000, 'billing_period' => 'monthly',
             'max_products' => 500, 'max_staff' => 5, 'custom_domain_allowed' => true, 'is_active' => true, 'sort_order' => 2,
         ]);
-        \App\Models\Plan::query()->create([
+        Plan::query()->create([
             'name' => 'Growth', 'slug' => 'growth', 'price' => 249000, 'billing_period' => 'monthly',
             'max_products' => null, 'max_staff' => null, 'custom_domain_allowed' => true, 'is_active' => true, 'sort_order' => 3,
         ]);
@@ -37,27 +47,32 @@ class DatabaseSeeder extends Seeder
         // non-HTTP context (console command, job).
         app(Tenancy::class)->set($tenant);
 
-        app(\App\Services\SubscriptionService::class)->startTrial($tenant, $trialPlan, 14);
+        app(SubscriptionService::class)->startTrial($tenant, $trialPlan, 14);
 
-        User::query()->create([
+        $adminPassword = bin2hex(random_bytes(16));
+        $admin = User::query()->create([
             'name' => 'Platform Admin',
             'email' => 'admin@hasanmobileshop.com',
-            'password' => bcrypt('password'),
-            'is_platform_admin' => true,
+            'password' => bcrypt($adminPassword),
         ]);
+        $admin->forceFill(['is_platform_admin' => true, 'is_active' => true])->save();
 
-        User::query()->create([
+        if ($this->command) {
+            $this->command->info('Platform Admin credentials: admin@hasanmobileshop.com / '.$adminPassword);
+        }
+
+        $owner = User::query()->create([
             'name' => 'Demo Owner',
             'email' => 'owner@demo.test',
             'password' => bcrypt('password'),
-            'tenant_id' => $tenant->id,
-            'role' => 'owner',
         ]);
+        $owner->forceFill(['tenant_id' => $tenant->id, 'role' => 'owner', 'is_active' => true])->save();
+        $tenant->forceFill(['primary_owner_id' => $owner->id])->save();
 
-        $brand = \App\Models\Brand::query()->create(['name' => 'Samsung', 'tenant_id' => $tenant->id]);
-        $category = \App\Models\Category::query()->create(['name' => 'Smartphones', 'tenant_id' => $tenant->id]);
+        $brand = Brand::query()->create(['name' => 'Samsung', 'tenant_id' => $tenant->id]);
+        $category = Category::query()->create(['name' => 'Smartphones', 'tenant_id' => $tenant->id]);
 
-        $product = \App\Models\Product::query()->create([
+        $product = Product::query()->create([
             'tenant_id' => $tenant->id,
             'brand_id' => $brand->id,
             'category_id' => $category->id,
@@ -73,7 +88,7 @@ class DatabaseSeeder extends Seeder
             'slug' => 'galaxy-demo-phone',
         ]);
 
-        \App\Models\Customer::query()->create([
+        Customer::query()->create([
             'tenant_id' => $tenant->id,
             'name' => 'Demo Customer',
             'email' => 'customer@demo.test',
@@ -100,23 +115,23 @@ class DatabaseSeeder extends Seeder
             'expected_available_at' => now()->addDays(21),
         ]);
 
-        app(\App\Services\InventoryService::class)->restock($variant1, 25, null, 'Initial demo stock');
+        app(InventoryService::class)->restock($variant1, 25, null, 'Initial demo stock');
 
-        \App\Models\SerialNumber::query()->create([
+        SerialNumber::query()->create([
             'tenant_id' => $tenant->id,
             'product_variant_id' => $variant1->id,
             'imei_or_serial' => '359123456789012',
             'status' => 'available',
         ]);
 
-        \App\Models\PaymentMethod::query()->create([
+        PaymentMethod::query()->create([
             'tenant_id' => $tenant->id,
             'name' => 'Cash on Delivery',
             'type' => 'cod',
             'is_active' => true,
         ]);
 
-        \App\Models\PaymentMethod::query()->create([
+        PaymentMethod::query()->create([
             'tenant_id' => $tenant->id,
             'name' => 'Online Payment (bKash/Nagad/Card)',
             'type' => 'aggregator',
@@ -124,7 +139,7 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        \App\Models\ShippingMethod::query()->create([
+        ShippingMethod::query()->create([
             'tenant_id' => $tenant->id,
             'name' => 'Standard Delivery',
             'type' => 'flat_rate',

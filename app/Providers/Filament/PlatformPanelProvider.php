@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers\Filament;
 
+use App\Filament\Platform\Pages\PlatformDashboard;
+use App\Http\Middleware\BlockPlatformDuringSupport;
 use App\Http\Middleware\EnsureCentralDomain;
-use App\Http\Middleware\IdentifyTenant;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -18,8 +20,6 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Filament\Pages\Dashboard;
-use Filament\Auth\MultiFactor\App\AppAuthentication;
 
 class PlatformPanelProvider extends PanelProvider
 {
@@ -29,34 +29,33 @@ class PlatformPanelProvider extends PanelProvider
             ->id('platform')
             ->path('platform')
             ->domain(config('tenancy.central_domain'))
+            ->sidebarCollapsibleOnDesktop()
             ->login()
             ->authGuard('platform')
+            ->profile()
             ->colors(['primary' => '#4f46e5'])
             ->pages([
-                Dashboard::class, 
+                PlatformDashboard::class,
             ])
-            ->widgets([
-                        \App\Filament\Platform\Widgets\PlatformStatsOverview::class,
-                    ])
             ->discoverResources(in: app_path('Filament/Platform/Resources'), for: 'App\\Filament\\Platform\\Resources')
             ->discoverPages(in: app_path('Filament/Platform/Pages'), for: 'App\\Filament\\Platform\\Pages')
             ->discoverWidgets(in: app_path('Filament/Platform/Widgets'), for: 'App\\Filament\\Platform\\Widgets')
             ->middleware([
-            IdentifyTenant::class,
-            EnsureCentralDomain::class,
-            EncryptCookies::class,
-            AddQueuedCookiesToResponse::class,
-            StartSession::class,
-            AuthenticateSession::class,
-            ShareErrorsFromSession::class,
-            VerifyCsrfToken::class,
-            SubstituteBindings::class,
-            DisableBladeIconComponents::class,
-            DispatchServingFilamentEvent::class,
-        ])
+                EncryptCookies::class,
+                AddQueuedCookiesToResponse::class,
+                StartSession::class,
+                BlockPlatformDuringSupport::class,
+                EnsureCentralDomain::class,
+                AuthenticateSession::class,
+                ShareErrorsFromSession::class,
+                VerifyCsrfToken::class,
+                SubstituteBindings::class,
+                DisableBladeIconComponents::class,
+                DispatchServingFilamentEvent::class,
+            ])
             ->authMiddleware([Authenticate::class])
             ->multiFactorAuthentication([
                 AppAuthentication::make()->recoverable(),
-            ]);
+            ], isRequired: true);
     }
 }

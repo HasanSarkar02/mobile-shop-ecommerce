@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OrderReceiptController;
 use App\Http\Controllers\Storefront\Account\AccountAddressController;
 use App\Http\Controllers\Storefront\Account\AccountOrderController;
 use App\Http\Controllers\Storefront\Account\AccountProfileController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Storefront\FaqController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\NewsletterController;
 use App\Http\Controllers\Storefront\OrderTrackingController;
+use App\Http\Controllers\Storefront\OwnerInvitationController;
 use App\Http\Controllers\Storefront\PaymentController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\ProductReviewController;
@@ -24,6 +26,8 @@ use App\Http\Controllers\Storefront\SearchSuggestController;
 use App\Http\Controllers\Storefront\SitemapController;
 use App\Http\Controllers\Storefront\StaticPageController;
 use App\Http\Controllers\Storefront\WishlistController;
+use App\Http\Middleware\EnsureTenant;
+use App\Http\Middleware\ResolveSupportSession;
 use App\Livewire\CheckoutPage;
 use App\Models\Order;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +67,10 @@ Route::get('/checkout/confirmation/{orderNumber}', function (string $orderNumber
     return view('storefront.checkout.confirmation', compact('orderNumber', 'order'));
 })->name('storefront.checkout.confirmation');
 
+Route::get('/admin/orders/{order}/receipt', OrderReceiptController::class)
+    ->middleware([ResolveSupportSession::class, EnsureTenant::class])
+    ->name('store.orders.receipt');
+
 Route::get('/track-order', [OrderTrackingController::class, 'form'])->name('storefront.track-order.form');
 Route::post('/track-order', [OrderTrackingController::class, 'show'])->name('storefront.track-order.show');
 
@@ -71,6 +79,10 @@ Route::post('/login', [CustomerAuthController::class, 'login'])->middleware('thr
 Route::get('/register', [CustomerAuthController::class, 'showRegister'])->name('storefront.register');
 Route::post('/register', [CustomerAuthController::class, 'register'])->name('storefront.register.submit');
 Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('storefront.logout');
+Route::get('/owner-invitation/{token}', [OwnerInvitationController::class, 'show'])->name('storefront.owner-invitation.show');
+Route::post('/owner-invitation/{token}', [OwnerInvitationController::class, 'accept'])
+    ->middleware('throttle:5,1')
+    ->name('storefront.owner-invitation.accept');
 Route::get('/auto-login/{user}', AutoLoginController::class)->name('storefront.auto-login');
 
 Route::get('/faq', [FaqController::class, 'index'])->name('storefront.faq');

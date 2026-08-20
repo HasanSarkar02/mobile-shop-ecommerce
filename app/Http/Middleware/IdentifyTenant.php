@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Models\Domain;
-use App\Models\Tenant;
 use App\Support\Tenancy\Tenancy;
+use App\Support\Tenancy\TenantContextResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -14,31 +13,56 @@ use Symfony\Component\HttpFoundation\Response;
 
 class IdentifyTenant
 {
+    public function __construct(private readonly TenantContextResolver $resolver) {}
+
     public function handle(Request $request, Closure $next): Response
     {
-        $host = strtolower(trim($request->getHost()));
-        $central = strtolower(trim(config('tenancy.central_domain')));
+        app(Tenancy::class)->set(null);
 
-        // Always generate URLs from the requesting host, never config('app.url').
-        // Without this, post-login redirects (route()) resolve to the central
-        // domain, where there is no tenant context and any Customer query throws.
-        URL::forceRootUrl($request->getSchemeAndHttpHost());
+        $host = $this->resolver->normalizeHost($request->getHost());
 
-        if ($host === $central || $host === "www.{$central}") {
-            // Reset tenant for central domain
-            app(Tenancy::class)->set(null);
-            return $next($request);
-        }
+        abort_unless($this->resolver->isAllowedHost($host), 404);
 
-        // Tenant subdomain / custom domain logic
-        $tenant = str_ends_with($host, ".{$central}")
-            ? Tenant::query()->where('subdomain', substr($host, 0, -strlen(".{$central}")))->first()
-            : Domain::query()->where('domain', $host)->first()?->tenant;
+        $tenant = $this->resolver->resolve($host);
 
-        abort_unless($tenant?->isActive(), 404);
+        abort_unless($tenant !== null || $this->resolver->isCentralHost($host), 404);
+
+        $scheme = $this->effectiveScheme($request);
+
+        URL::forceRootUrl($scheme.'://'.$request->getHttpHost());
+
+        URL::forceScheme($scheme);
 
         app(Tenancy::class)->set($tenant);
 
         return $next($request);
+    }
+
+    /**
+     * Scheme used for generated URLs. FORCE_HTTPS wins outright, then the
+     * request's own secure status, then the X-Forwarded-Proto header when a
+     * trusted proxy is configured. Laravel's TrustProxies middleware runs
+     * after this middleware, so forwarded headers are not yet applied to the
+     * request and must be inspected manually.
+     */
+    private function effectiveScheme(Request $request): string
+    {
+        if (config('deployment.force_https')) {
+            return 'https';
+        }
+
+        if ($request->secure()) {
+            return 'https';
+        }
+
+        if (config('deployment.trusted_proxies') !== []) {
+            $forwarded = $request->header('X-Forwarded-Proto');
+
+            if (is_string($forwarded) && strtolower(trim(explode(',', $forwarded)[0])) === 'https') {
+                return 'https';
+            }
+        }
+
+        return 'http';
     }
 }

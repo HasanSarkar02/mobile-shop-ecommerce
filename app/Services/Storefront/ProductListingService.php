@@ -23,6 +23,10 @@ class ProductListingService
     {
         $query = $query->clone();
 
+        // Eager-load everything a product card renders (name/slug, image,
+        // cheapest variant, EMI) so the grid never triggers per-card queries.
+        $query->with(['translations', 'variants', 'media', 'emiPlans']);
+
         $this->applyStaticFilters($query, $filters);
         $this->applyAttributeFilters($query, $filters);
 

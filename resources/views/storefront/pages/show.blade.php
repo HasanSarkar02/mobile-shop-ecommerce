@@ -5,7 +5,7 @@
 @section('content')
     @include('storefront.partials.seo-meta', [
         'description' => $page->meta_description,
-        'canonical' => route('storefront.page', $page->slug),
+        'canonical' => app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.page', [$page->slug]),
     ])
 
     <div class="max-w-3xl mx-auto px-4 py-12 prose dark:prose-invert">

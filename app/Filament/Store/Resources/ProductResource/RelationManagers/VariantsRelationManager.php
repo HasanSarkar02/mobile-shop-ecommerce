@@ -29,7 +29,7 @@ class VariantsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('sku')->required()->unique(ignoreRecord: true),
+            TextInput::make('sku')->required()->scopedUnique(ignoreRecord: true),
             TextInput::make('barcode'),
             TextInput::make('color'),
             TextInput::make('storage_gb')->numeric()->suffix('GB'),

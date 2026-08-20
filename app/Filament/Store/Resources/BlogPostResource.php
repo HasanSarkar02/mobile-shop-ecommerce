@@ -34,7 +34,7 @@ class BlogPostResource extends Resource
     {
         return $schema->components([
             TextInput::make('title')->required(),
-            TextInput::make('slug')->required()->unique(ignoreRecord: true),
+            TextInput::make('slug')->required()->scopedUnique(ignoreRecord: true),
             Textarea::make('excerpt')->rows(2),
             RichEditor::make('content')->required(),
             SpatieMediaLibraryFileUpload::make('cover')->collection('cover')->image(),

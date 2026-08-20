@@ -115,10 +115,9 @@
                     class="relative p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                     aria-label="Wishlist">
                     <x-ui.icon name="heart" class="w-[22px] h-[22px]" />
-                    @if ($wishlistCount > 0)
-                        <span
-                            class="absolute -top-0.5 -right-0.5 bg-[var(--brand)] text-white text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{{ $wishlistCount }}</span>
-                    @endif
+                    <span x-data x-init="$store.wishlist.seedCount({{ $wishlistCount }})"
+                        x-show="$store.wishlist.count > 0" x-cloak x-text="$store.wishlist.count"
+                        class="absolute -top-0.5 -right-0.5 bg-[var(--brand)] text-white text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{{ $wishlistCount }}</span>
                 </a>
 
                 <a href="{{ auth('customer')->check() ? route('storefront.account.dashboard') : route('storefront.login') }}"

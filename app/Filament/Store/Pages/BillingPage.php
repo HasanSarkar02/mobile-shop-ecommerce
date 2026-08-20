@@ -7,9 +7,12 @@ namespace App\Filament\Store\Pages;
 use App\Enums\PlanChangeRequestStatus;
 use App\Models\Plan;
 use App\Models\PlanChangeRequest;
+use App\Models\Product;
 use App\Models\User;
 use App\Notifications\PlanChangeRequestedNotification;
+use App\Services\SubscriptionService;
 use BackedEnum;
+use DomainException;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use UnitEnum;
@@ -34,6 +37,14 @@ class BillingPage extends Page
         return tenant()->subscription;
     }
 
+    public function getLatestPlanChangeRequest()
+    {
+        return PlanChangeRequest::query()
+            ->whereIn('status', [PlanChangeRequestStatus::Pending, PlanChangeRequestStatus::Rejected])
+            ->latest()
+            ->first();
+    }
+
     public function getPlans()
     {
         return Plan::query()->where('is_active', true)->orderBy('sort_order')->get();
@@ -41,7 +52,7 @@ class BillingPage extends Page
 
     public function getProductUsage(): int
     {
-        return \App\Models\Product::query()->count();
+        return Product::query()->count();
     }
 
     public function getStaffUsage(): int
@@ -51,7 +62,21 @@ class BillingPage extends Page
 
     public function requestPlan(int $planId): void
     {
-        $plan = Plan::query()->findOrFail($planId);
+        $plan = Plan::query()->whereKey($planId)->where('is_active', true)->first();
+
+        if ($plan === null) {
+            Notification::make()->title('This plan is no longer available.')->danger()->send();
+
+            return;
+        }
+
+        try {
+            app(SubscriptionService::class)->assertCanRequestPlanChange(tenant(), $plan);
+        } catch (DomainException $exception) {
+            Notification::make()->title($exception->getMessage())->danger()->send();
+
+            return;
+        }
 
         $request = PlanChangeRequest::query()->create([
             'tenant_id' => tenant()->id,

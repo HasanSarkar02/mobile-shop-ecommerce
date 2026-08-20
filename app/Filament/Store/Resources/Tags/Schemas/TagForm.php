@@ -12,7 +12,7 @@ class TagForm
         return $schema
             ->components([
                 TextInput::make('name')->required(),
-                TextInput::make('slug')->required()->unique(ignoreRecord: true),
+                TextInput::make('slug')->required()->scopedUnique(ignoreRecord: true),
             ]);
     }
 }

@@ -6,10 +6,12 @@ namespace App\Services;
 
 use App\Models\Tenant;
 use App\Models\User;
-use App\Notifications\WelcomeTenantOwnerNotification;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
+/**
+ * Public signup facade. Provisioning itself is delegated to the single
+ * authoritative TenantBootstrapService so both the public signup and the
+ * Platform Admin "Create Tenant" flow share identical core logic.
+ */
 class TenantRegistrationService
 {
     /**
@@ -17,29 +19,15 @@ class TenantRegistrationService
      */
     public function register(string $businessName, string $subdomain, string $ownerName, string $ownerEmail, string $password): array
     {
-        return DB::transaction(function () use ($businessName, $subdomain, $ownerName, $ownerEmail, $password): array {
-            $tenant = Tenant::query()->create([
-                'name' => $businessName,
-                'subdomain' => strtolower($subdomain),
-                'status' => 'trial',
-                'plan' => 'trial',
-                'currency' => 'BDT',
-            ]);
-
-            $trialPlan = \App\Models\Plan::query()->where('slug', 'trial')->firstOrFail();
-            app(\App\Services\SubscriptionService::class)->startTrial($tenant, $trialPlan, (int) config('tenancy.trial_days'));
-
-            $owner = User::query()->create([
-                'tenant_id' => $tenant->id,
-                'role' => 'owner',
+        return app(TenantBootstrapService::class)->bootstrap([
+            'name' => $businessName,
+            'subdomain' => $subdomain,
+            'plan' => 'trial',
+            'owner' => [
                 'name' => $ownerName,
                 'email' => $ownerEmail,
-                'password' => Hash::make($password),
-            ]);
-
-            $owner->notify(new WelcomeTenantOwnerNotification($tenant));
-
-            return [$tenant, $owner];
-        });
+                'password' => $password,
+            ],
+        ], ownerMode: TenantBootstrapService::OWNER_MODE_EXPLICIT);
     }
 }

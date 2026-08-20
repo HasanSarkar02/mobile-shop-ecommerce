@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Wishlist;
+use App\Models\WishlistItem;
+use Illuminate\Support\Collection;
 
 class WishlistService
 {
@@ -44,6 +46,59 @@ class WishlistService
         ]);
 
         return true;
+    }
+
+    /**
+     * Resolve which of the given product ids are already in the visitor's
+     * default wishlist. Deliberately queries an EXISTING wishlist and never
+     * creates one just to answer a membership check, so listing pages have no
+     * side effects. Returns an empty collection for anonymous visitors who
+     * have never touched the wishlist feature.
+     *
+     * @param  Collection<int, int>  $productIds
+     * @return Collection<int, int>
+     */
+    public function wishlistedProductIds(Collection $productIds): Collection
+    {
+        if ($productIds->isEmpty()) {
+            return collect();
+        }
+
+        $customer = auth('customer')->user();
+        $guestToken = request()->cookie('wishlist_token');
+
+        if (! $customer && ! $guestToken) {
+            return collect();
+        }
+
+        return WishlistItem::query()
+            ->whereIn('product_id', $productIds)
+            ->whereHas('wishlist', function ($query) use ($customer, $guestToken): void {
+                $query->where('is_default', true);
+                $customer ? $query->where('customer_id', $customer->id) : $query->where('guest_token', $guestToken);
+            })
+            ->pluck('product_id');
+    }
+
+    /**
+     * Count of items in the visitor's default wishlist, without ever creating
+     * a wishlist as a side effect. Used for the header/mobile count badge.
+     */
+    public function wishlistCount(): int
+    {
+        if ($customer = auth('customer')->user()) {
+            return WishlistItem::query()
+                ->whereHas('wishlist', fn ($query) => $query->where('customer_id', $customer->id)->where('is_default', true))
+                ->count();
+        }
+
+        if ($token = request()->cookie('wishlist_token')) {
+            return WishlistItem::query()
+                ->whereHas('wishlist', fn ($query) => $query->where('guest_token', $token)->where('is_default', true))
+                ->count();
+        }
+
+        return 0;
     }
 
     public function mergeGuestIntoCustomer(string $guestToken, Customer $customer): void

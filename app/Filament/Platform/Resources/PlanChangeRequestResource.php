@@ -7,12 +7,14 @@ namespace App\Filament\Platform\Resources;
 use App\Enums\PlanChangeRequestStatus;
 use App\Filament\Platform\Resources\PlanChangeRequestResource\Pages;
 use App\Models\PlanChangeRequest;
+use App\Models\User;
 use App\Services\SubscriptionService;
-use App\Support\Tenancy\Tenancy;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -28,26 +30,59 @@ class PlanChangeRequestResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('created_at')->dateTime(),
-                TextColumn::make('tenant.name')->label('Tenant'),
                 TextColumn::make('requestedPlan.name')->label('Requested Plan'),
-                TextColumn::make('note')->limit(30)->placeholder('—'),
+                TextColumn::make('tenant.subscription.plan.name')
+                    ->label('Current Plan')
+                    ->placeholder('—'),
                 TextColumn::make('status')->badge(),
+                TextColumn::make('created_at')
+                    ->label('Requested At')
+                    ->dateTime(),
+                TextColumn::make('reviewed_at')->dateTime()->placeholder('—'),
+                TextColumn::make('reviewer.name')
+                    ->label('Reviewed By')
+                    ->placeholder('—'),
+                TextColumn::make('rejection_reason')->limit(40)->placeholder('—'),
+                TextColumn::make('note')->limit(30)->placeholder('—'),
             ])
             ->defaultSort('created_at', 'desc')
+            ->filters([
+                SelectFilter::make('status')
+                    ->options(fn (): array => collect(PlanChangeRequestStatus::cases())
+                        ->mapWithKeys(fn ($status): array => [$status->value => $status->label()])
+                        ->all()),
+            ])
             ->recordActions([
                 Action::make('approve')
                     ->icon('heroicon-o-check')
-                    ->visible(fn (PlanChangeRequest $record): bool => $record->status === PlanChangeRequestStatus::Pending)
+                    ->visible(fn (PlanChangeRequest $record): bool => self::isPending($record))
                     ->requiresConfirmation()
                     ->action(function (PlanChangeRequest $record): void {
-                        app(SubscriptionService::class)->changePlan($record->tenant, $record->requestedPlan);
-                        static::updateAsTenant($record, PlanChangeRequestStatus::Approved);
+                        $actor = auth('platform')->user();
+
+                        app(SubscriptionService::class)->approvePlanChange(
+                            $record,
+                            $actor instanceof User ? $actor : null,
+                        );
                     }),
                 Action::make('reject')
                     ->icon('heroicon-o-x-mark')
-                    ->visible(fn (PlanChangeRequest $record): bool => $record->status === PlanChangeRequestStatus::Pending)
-                    ->action(fn (PlanChangeRequest $record) => static::updateAsTenant($record, PlanChangeRequestStatus::Rejected)),
+                    ->visible(fn (PlanChangeRequest $record): bool => self::isPending($record))
+                    ->form([
+                        TextInput::make('reason')
+                            ->label('Rejection reason')
+                            ->required()
+                            ->maxLength(255),
+                    ])
+                    ->action(function (array $data, PlanChangeRequest $record): void {
+                        $actor = auth('platform')->user();
+
+                        app(SubscriptionService::class)->rejectPlanChange(
+                            $record,
+                            $actor instanceof User ? $actor : null,
+                            reason: (string) ($data['reason'] ?? ''),
+                        );
+                    }),
             ]);
     }
 
@@ -61,7 +96,9 @@ class PlanChangeRequestResource extends Resource
      */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->withoutGlobalScope('tenant');
+        return parent::getEloquentQuery()
+            ->withoutGlobalScope('tenant')
+            ->with(['requestedPlan', 'tenant.subscription.plan', 'reviewer']);
     }
 
     public static function getPages(): array
@@ -69,22 +106,11 @@ class PlanChangeRequestResource extends Resource
         return ['index' => Pages\ListPlanChangeRequests::route('/')];
     }
 
-    /**
-     * Mutating this record requires the tenant scope (PlanChangeRequest is
-     * tenant-scoped), but this action runs on the central domain with no
-     * resolved tenant. The record itself names exactly one tenant, so we act
-     * as that tenant for the duration of the write, then clear it — the same
-     * pattern used by console commands that iterate tenants one at a time.
-     */
-    private static function updateAsTenant(PlanChangeRequest $record, PlanChangeRequestStatus $status): void
+    private static function isPending(PlanChangeRequest $record): bool
     {
-        $tenancy = app(Tenancy::class);
-        $tenancy->set($record->tenant);
+        $status = $record->getAttribute('status');
 
-        try {
-            $record->update(['status' => $status]);
-        } finally {
-            $tenancy->set(null);
-        }
+        return $status instanceof PlanChangeRequestStatus
+            && $status === PlanChangeRequestStatus::Pending;
     }
 }

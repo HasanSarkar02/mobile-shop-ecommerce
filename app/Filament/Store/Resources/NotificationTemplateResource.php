@@ -18,6 +18,8 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class NotificationTemplateResource extends Resource
@@ -33,7 +35,8 @@ class NotificationTemplateResource extends Resource
         return $schema->components([
             TextInput::make('event_key')
                 ->required()
-                ->helperText('e.g. order.placed, order.status_changed, order.cancelled, payment.recorded'),
+                ->helperText('e.g. order.placed, order.status_changed, order.cancelled, payment.recorded')
+                ->rule('not_regex:/^subscription\\.charge\\.reminder\\./'),
             Select::make('channel')
                 ->options(array_combine(array_keys(config('notification_channels.drivers')), array_keys(config('notification_channels.drivers'))))
                 ->required(),
@@ -44,6 +47,11 @@ class NotificationTemplateResource extends Resource
                 ->helperText('Placeholders: {{ order.number }} {{ order.total }} {{ order.status }} {{ customer.name }} {{ customer.email }} {{ store.name }} {{ tracking.url }}'),
             Toggle::make('is_active')->default(true),
         ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('is_platform_managed', false);
     }
 
     public static function table(Table $table): Table
@@ -65,5 +73,15 @@ class NotificationTemplateResource extends Resource
             'create' => Pages\CreateNotificationTemplate::route('/create'),
             'edit' => Pages\EditNotificationTemplate::route('/{record}/edit'),
         ];
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return ! $record->getAttribute('is_platform_managed');
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return ! $record->getAttribute('is_platform_managed');
     }
 }

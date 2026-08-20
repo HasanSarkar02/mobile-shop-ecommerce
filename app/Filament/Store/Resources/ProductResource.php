@@ -10,10 +10,12 @@ use App\Filament\Store\Resources\ProductResource\RelationManagers\AttributeValue
 use App\Filament\Store\Resources\ProductResource\RelationManagers\ProductRelationsRelationManager;
 use App\Filament\Store\Resources\ProductResource\RelationManagers\VariantsRelationManager;
 use App\Models\Product;
+use App\Models\ProductTranslation;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
@@ -43,7 +45,24 @@ class ProductResource extends Resource
                     Select::make('locale')->options(['en' => 'English', 'bn' => 'Bangla'])->required(),
                     TextInput::make('name')->required(),
                     TextInput::make('slug')->required(),
-                    Textarea::make('description')->rows(4),
+                    RichEditor::make('description')
+                        ->toolbarButtons([
+                            ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+                            ['bold', 'italic', 'underline'],
+                            ['link'],
+                            ['bulletList', 'orderedList', 'blockquote'],
+                            ['alignStart', 'alignCenter', 'alignEnd'],
+                            ['table', 'attachFiles'],
+                            ['horizontalRule', 'undo', 'redo', 'clearFormatting'],
+                        ])
+                        ->preventFileAttachmentPathTampering(
+                            allowFilePathUsing: function (string $file, ?ProductTranslation $record): bool {
+                                return $record?->media()
+                                    ->where('collection_name', 'description_images')
+                                    ->where('uuid', $file)
+                                    ->exists() ?? false;
+                            },
+                        ),
                     Textarea::make('warranty_info')->rows(3)->helperText('Warranty terms shown in the Warranty tab.'),
                     TextInput::make('meta_title'),
                     Textarea::make('meta_description')->rows(2),

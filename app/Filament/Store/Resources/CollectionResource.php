@@ -34,7 +34,7 @@ class CollectionResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')->required(),
-            TextInput::make('slug')->required()->unique(ignoreRecord: true),
+            TextInput::make('slug')->required()->scopedUnique(ignoreRecord: true),
             Textarea::make('description')->rows(3),
             SpatieMediaLibraryFileUpload::make('hero')->collection('hero')->image(),
             Select::make('products')

@@ -33,7 +33,7 @@ class StaticPageResource extends Resource
     {
         return $schema->components([
             TextInput::make('title')->required(),
-            TextInput::make('slug')->required()->unique(ignoreRecord: true),
+            TextInput::make('slug')->required()->scopedUnique(ignoreRecord: true),
             RichEditor::make('content'),
             Select::make('status')
                 ->options(collect(StaticPageStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))

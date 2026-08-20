@@ -59,7 +59,7 @@ npm install
 # 2. Environment
 cp .env.example .env
 php artisan key:generate
-# edit .env (DB_*, APP_URL=http://mobile-shop-ecommerce.test)
+# edit .env (DB_*, APP_URL, APP_DOMAIN, DEPLOYMENT_MODE, and proxy/HTTPS settings)
 
 # 3. Database
 php artisan migrate
@@ -76,11 +76,55 @@ The seeder creates a **Demo Store** on subdomain `demo` with sample data:
 
 | Role              | Email                 | Password  |
 | ----------------- | --------------------- | --------- |
-| Platform admin    | `admin@hasanmobileshop.com` | `password` |
+| Platform admin    | `admin@hasanmobileshop.com` | random — generated and printed to the console during `db:seed` |
 | Store owner       | `owner@demo.test`     | `password` |
 | Store customer    | `customer@demo.test`  | `password` |
 
 Add `demo.mobile-shop-ecommerce.test` (and your `APP_URL` host) to your hosts file / local resolver, then open the storefront.
+
+### Platform Admin management
+
+Platform Admins are managed from the **Platform panel → Platform Admins** resource (SaaS mode only). The first Platform Admin is seeded with a randomly generated password. Additional admins are invited by an active Platform Admin:
+
+1. An invitation link is emailed to the new admin (the token is stored as a SHA-256 digest only).
+2. The invited admin sets their own password through the secure setup page.
+3. Multi-factor authentication (authenticator app) is **mandatory** — the Platform panel redirects an admin without MFA to MFA setup and denies panel access until it is enrolled.
+4. An active Platform Admin can activate/deactivate, revoke access, reset a password, or reset MFA for another admin. The last active Platform Admin cannot be deactivated or revoked.
+
+Authoritative fields such as `tenant_id`, `role`, `is_platform_admin`, `is_active`, and `app_authentication_secret` are excluded from mass assignment and are only written through internal services.
+
+### Deployment mode
+
+The application defaults to SaaS mode:
+
+```dotenv
+DEPLOYMENT_MODE=saas
+APP_DOMAIN=mobile-shop-ecommerce.test
+```
+
+SaaS mode resolves the central host, tenant subdomains, and registered custom domains. Custom-domain access also requires an active tenant subscription whose plan allows custom domains.
+
+Dedicated mode uses the same tenant context and tenant-scoped models, but resolves exactly one configured tenant from one configured host:
+
+```dotenv
+DEPLOYMENT_MODE=dedicated
+DEDICATED_TENANT_ID=1
+DEDICATED_CANONICAL_HOST=store.example.com
+APP_URL=https://store.example.com
+APP_SCHEME=https
+FORCE_HTTPS=true
+```
+
+`DEDICATED_TENANT_ID` must reference an already bootstrapped active tenant. The dedicated installer is not included yet. The Platform panel remains unavailable in dedicated mode.
+
+When running behind a reverse proxy, configure only the proxy addresses or CIDRs that are allowed to provide forwarded host/scheme headers:
+
+```dotenv
+TRUSTED_PROXIES=10.0.0.10,10.0.0.0/24
+TRUSTED_PROXY_HEADERS=all
+```
+
+Do not use a blanket trusted-proxy or allowed-host wildcard in production. Production deployments should use HTTPS URLs and set `FORCE_HTTPS=true` after proxy configuration has been verified.
 
 > The seeder also wires a live-like `/auto-login/{user}` route for quick storefront testing.
 

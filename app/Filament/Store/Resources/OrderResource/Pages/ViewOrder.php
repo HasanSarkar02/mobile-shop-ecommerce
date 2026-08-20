@@ -21,6 +21,13 @@ class ViewOrder extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('printReceipt')
+                ->label('Print Receipt')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->url(fn (): string => route('store.orders.receipt', ['order' => $this->record]))
+                ->openUrlInNewTab(),
+
             Action::make('updateStatus')
                 ->label('Update Status')
                 ->schema([
@@ -72,11 +79,13 @@ class ViewOrder extends ViewRecord
                 ->label('Cancel Order')
                 ->color('danger')
                 ->icon('heroicon-o-x-circle')
-                ->requiresConfirmation()
-                ->modalDescription('This will cancel the order, release any reserved stock, and mark it as cancelled. This action cannot be undone.')
+                ->schema([
+                    Textarea::make('reason')->label('Reason for cancellation')->required()->rows(2),
+                ])
+                ->modalDescription('This will cancel the order, release or restock any reserved/committed inventory, and flag any refund that becomes due. This action cannot be undone.')
                 ->visible(fn (): bool => in_array(OrderStatus::Cancelled, $this->record->status->allowedNextStatuses(), true))
-                ->action(function (): void {
-                    app(OrderService::class)->updateStatus($this->record, OrderStatus::Cancelled, 'Order cancelled by staff.');
+                ->action(function (array $data): void {
+                    app(OrderService::class)->cancelOrder($this->record, $data['reason']);
                 }),
         ];
     }

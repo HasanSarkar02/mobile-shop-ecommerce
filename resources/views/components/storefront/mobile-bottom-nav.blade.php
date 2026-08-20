@@ -21,10 +21,9 @@
             class="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 text-[11px] font-medium {{ request()->routeIs('storefront.wishlist') ? 'text-[var(--brand)]' : 'text-gray-500 dark:text-gray-400' }}">
             <span class="relative">
                 <x-ui.icon name="heart" class="w-6 h-6" />
-                @if ($wishlistCount > 0)
-                    <span
-                        class="absolute -top-1 -right-1.5 bg-[var(--brand)] text-white text-[9px] font-semibold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5">{{ $wishlistCount }}</span>
-                @endif
+                <span x-data x-init="$store.wishlist.seedCount({{ $wishlistCount }})"
+                    x-show="$store.wishlist.count > 0" x-cloak x-text="$store.wishlist.count"
+                    class="absolute -top-1 -right-1.5 bg-[var(--brand)] text-white text-[9px] font-semibold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5">{{ $wishlistCount }}</span>
             </span>
             Wishlist
         </a>

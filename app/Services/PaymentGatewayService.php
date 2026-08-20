@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
+use App\Exceptions\InvalidOrderStateException;
 use App\Models\Order;
 use App\Models\OrderPayment;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -13,9 +14,7 @@ use Illuminate\Support\Str;
 
 class PaymentGatewayService
 {
-    public function __construct(private readonly OrderService $orders)
-    {
-    }
+    public function __construct(private readonly OrderService $orders) {}
 
     public function initiatePayment(Order $order): string
     {
@@ -38,7 +37,7 @@ class PaymentGatewayService
         );
     }
 
-    public function handleCallback(string $valId, string $tranId): void
+    private function resolveOrderForTransaction(string $tranId): ?Order
     {
         $tenantId = tenant()?->id;
 
@@ -51,7 +50,14 @@ class PaymentGatewayService
                 ->first(fn (Order $o) => "{$o->tenant_id}-{$o->order_number}" === $tranId);
         }
 
-        if (! $order || ! $order->paymentMethod?->gateway_driver) {
+        return $order?->paymentMethod?->gateway_driver ? $order : null;
+    }
+
+    public function handleCallback(string $valId, string $tranId): void
+    {
+        $order = $this->resolveOrderForTransaction($tranId);
+
+        if (! $order) {
             return;
         }
 
@@ -76,10 +82,48 @@ class PaymentGatewayService
             $this->orders->recordPayment($order, $order->paymentMethod, $amountProp ?? $order->grand_total, $status, $tranId);
         } catch (UniqueConstraintViolationException) {
             return;
+        } catch (InvalidOrderStateException) {
+            // The order is already fully paid / overpaid relative to its due
+            // amount, so the callback is satisfied — ignore instead of failing
+            // the webhook with a 500.
+            return;
         }
 
         if ($status === OrderPaymentStatus::Paid && $order->status === OrderStatus::Pending) {
             $this->orders->updateStatus($order, OrderStatus::Confirmed, 'Payment confirmed via gateway.');
         }
+
+        if ($status === OrderPaymentStatus::Failed) {
+            $this->orders->cancelPendingOrderReservation($order, 'Order cancelled — payment failed.');
+        }
+    }
+
+    /**
+     * Records a failed payment for a transaction and atomically releases the
+     * Pending order's reservation. Idempotent: repeated fail/cancel callbacks
+     * are harmless, and non-Pending orders are never touched.
+     */
+    public function markFailed(string $tranId, string $note): void
+    {
+        $order = $this->resolveOrderForTransaction($tranId);
+
+        if (! $order) {
+            return;
+        }
+
+        if (OrderPayment::query()->where('tenant_id', $order->tenant_id)->where('transaction_reference', $tranId)->exists()) {
+            return;
+        }
+
+        try {
+            $this->orders->recordPayment($order, $order->paymentMethod, (int) $order->grand_total, OrderPaymentStatus::Failed, $tranId);
+        } catch (UniqueConstraintViolationException) {
+            return;
+        } catch (InvalidOrderStateException) {
+            // The order is already cancelled — nothing further to release.
+            return;
+        }
+
+        $this->orders->cancelPendingOrderReservation($order, $note);
     }
 }

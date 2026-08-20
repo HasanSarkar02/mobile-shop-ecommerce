@@ -3,6 +3,9 @@
 @section('title', 'Frequently Asked Questions - ' . tenant()->name)
 
 @section('content')
+    @include('storefront.partials.seo-meta', [
+        'canonical' => app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalPath(tenant(), '/faq'),
+    ])
     <div class="max-w-3xl mx-auto px-4 py-8">
         <h1 class="text-2xl font-bold mb-6">Frequently Asked Questions</h1>
         @foreach ($faqs as $faq)
@@ -18,6 +21,7 @@
 {!! json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'FAQPage',
+    'url' => app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalPath(tenant(), '/faq'),
     'mainEntity' => $faqs->map(fn ($f) => ['@type' => 'Question', 'name' => $f->question, 'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags($f->answer)]])->all(),
 ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
 </script>

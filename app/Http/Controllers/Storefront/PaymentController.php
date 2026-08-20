@@ -26,13 +26,25 @@ class PaymentController extends Controller
         return redirect()->route('storefront.checkout.confirmation', $orderNumber);
     }
 
-    public function fail()
+    public function fail(Request $request, PaymentGatewayService $gateway)
     {
+        $tranId = (string) $request->input('tran_id');
+
+        if ($tranId !== '') {
+            $gateway->markFailed($tranId, 'Order cancelled — payment failed.');
+        }
+
         return redirect()->route('storefront.checkout')->with('error', 'Payment failed. Please try again or choose Cash on Delivery.');
     }
 
-    public function cancel()
+    public function cancel(Request $request, PaymentGatewayService $gateway)
     {
+        $tranId = (string) $request->input('tran_id');
+
+        if ($tranId !== '') {
+            $gateway->markFailed($tranId, 'Order cancelled — payment was cancelled.');
+        }
+
         return redirect()->route('storefront.checkout')->with('error', 'Payment was cancelled.');
     }
 

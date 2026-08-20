@@ -10,7 +10,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TenantSubscription extends Model
 {
-    protected $fillable = ['tenant_id', 'plan_id', 'status', 'current_period_starts_at', 'current_period_ends_at', 'cancelled_at'];
+    protected $fillable = [
+        'tenant_id',
+        'plan_id',
+        'status',
+        'current_period_starts_at',
+        'current_period_ends_at',
+        'cancelled_at',
+        'plan_name',
+        'billing_period',
+        'price',
+        'max_products',
+        'max_staff',
+        'custom_domain_allowed',
+    ];
 
     protected function casts(): array
     {
@@ -19,6 +32,10 @@ class TenantSubscription extends Model
             'current_period_starts_at' => 'datetime',
             'current_period_ends_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'price' => 'integer',
+            'max_products' => 'integer',
+            'max_staff' => 'integer',
+            'custom_domain_allowed' => 'boolean',
         ];
     }
 
@@ -34,11 +51,32 @@ class TenantSubscription extends Model
 
     public function isTrialing(): bool
     {
-        return $this->status === SubscriptionStatus::Trialing;
+        $status = $this->getAttribute('status');
+
+        return $status instanceof SubscriptionStatus
+            && $status === SubscriptionStatus::Trialing;
     }
 
     public function daysRemaining(): int
     {
         return max(0, (int) now()->diffInDays($this->current_period_ends_at, false));
+    }
+
+    /**
+     * Snapshot entitlement value for a plan attribute. The snapshot written at
+     * subscription time is authoritative; when a legacy row has no snapshot, the
+     * current catalog plan is used as a fallback.
+     */
+    public function entitlement(string $attribute): mixed
+    {
+        $value = $this->getAttribute($attribute);
+
+        if ($value !== null) {
+            return $value;
+        }
+
+        $planAttribute = $attribute === 'plan_name' ? 'name' : $attribute;
+
+        return $this->plan?->getAttribute($planAttribute);
     }
 }

@@ -1,5 +1,11 @@
 <?php
 
+use App\Http\Middleware\AssignStorefrontTokens;
+use App\Http\Middleware\EnsureCentralDomain;
+use App\Http\Middleware\EnsureTenant;
+use App\Http\Middleware\IdentifyTenant;
+use App\Http\Middleware\ResolveSupportSession;
+use App\Support\Tenancy\TenantContextResolver;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,15 +18,41 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->prepend(\App\Http\Middleware\IdentifyTenant::class);
+        $trustedProxies = array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('TRUSTED_PROXIES', '')),
+        )));
+        $trustedProxyHeaders = match (strtolower((string) env('TRUSTED_PROXY_HEADERS', 'all'))) {
+            'host' => Request::HEADER_X_FORWARDED_HOST,
+            'proto' => Request::HEADER_X_FORWARDED_PROTO,
+            'port' => Request::HEADER_X_FORWARDED_PORT,
+            'for' => Request::HEADER_X_FORWARDED_FOR,
+            default => Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+                | Request::HEADER_X_FORWARDED_PREFIX
+                | Request::HEADER_X_FORWARDED_AWS_ELB,
+        };
+
+        $middleware->trustHosts(
+            at: fn (): array => app(TenantContextResolver::class)->trustedHostPatterns(),
+            subdomains: false,
+        );
+        $middleware->trustProxies(
+            at: $trustedProxies,
+            headers: $trustedProxyHeaders,
+        );
+        $middleware->prepend(IdentifyTenant::class);
 
         $middleware->web(append: [
-            \App\Http\Middleware\AssignStorefrontTokens::class,
+            AssignStorefrontTokens::class,
+            ResolveSupportSession::class,
         ]);
 
         $middleware->alias([
-            'tenant' => \App\Http\Middleware\EnsureTenant::class,
-            'central' => \App\Http\Middleware\EnsureCentralDomain::class,
+            'tenant' => EnsureTenant::class,
+            'central' => EnsureCentralDomain::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

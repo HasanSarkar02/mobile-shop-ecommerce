@@ -4,7 +4,7 @@
     @endpush
 @endif
 @push('meta')
-    <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
+    <link rel="canonical" href="{{ $canonical ?? app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalPath(tenant(), request()->getPathInfo()) }}">
 @endpush
 @if ($robots ?? null)
     @push('meta')

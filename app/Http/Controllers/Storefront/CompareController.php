@@ -9,6 +9,7 @@ use App\Enums\VariantAvailability;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\CompareService;
+use App\Support\Tenancy\TenantUrlGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ use Illuminate\Support\Collection;
 
 class CompareController extends Controller
 {
-    public function show(CompareService $compare)
+    public function show(CompareService $compare, TenantUrlGenerator $urls)
     {
         $ids = $compare->ids();
 
@@ -44,7 +45,7 @@ class CompareController extends Controller
             : $products;
 
         return view('storefront.compare.show', [
-            'productsJson' => $ordered->map(fn (Product $product) => $this->toJson($product))->values(),
+            'productsJson' => $ordered->map(fn (Product $product) => $this->toJson($product, $urls))->values(),
             'rowsJson' => $this->buildSpecRows($ordered),
             'compareCount' => count($ids),
             'compareLimit' => $compare->limit(),
@@ -99,7 +100,7 @@ class CompareController extends Controller
      * Build the compact view-model each product needs for its comparison
      * column, derived from its active variants (never hard-coded specs).
      */
-    private function toJson(Product $product): array
+    private function toJson(Product $product, TenantUrlGenerator $urls): array
     {
         $activeVariants = $product->variants->where('is_active', true)->values();
         $cheapest = $activeVariants->sortBy('price')->first();
@@ -126,7 +127,7 @@ class CompareController extends Controller
         return [
             'id' => $product->id,
             'name' => $product->name,
-            'url' => route('storefront.product', $product->translation('en')?->slug ?? $product->id),
+            'url' => $urls->canonicalRoute(tenant(), 'storefront.product', [$product->translation('en')?->slug ?? $product->id]),
             'image' => $product->getFirstMediaUrl('images', 'thumb') ?: null,
             'brand' => $product->brand?->name,
             'price' => $price !== null ? '৳'.number_format($price / 100) : null,

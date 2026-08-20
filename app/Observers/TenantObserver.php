@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Observers;
 
 use App\Models\Location;
+use App\Models\NotificationTemplate;
 use App\Models\StoreSetting;
 use App\Models\StoreThemeSetting;
 use App\Models\Tenant;
+use App\Support\ReminderTemplateDefaults;
 
 class TenantObserver
 {
@@ -37,10 +39,11 @@ class TenantObserver
             ['event_key' => 'order.status_changed', 'channel' => 'email', 'subject' => 'Order {{ order.number }} Update', 'body' => 'Hi {{ customer.name }}, your order {{ order.number }} is now {{ order.to_status }}.'],
             ['event_key' => 'order.cancelled', 'channel' => 'email', 'subject' => 'Order {{ order.number }} Cancelled', 'body' => 'Hi {{ customer.name }}, your order {{ order.number }} has been cancelled.'],
             ['event_key' => 'payment.recorded', 'channel' => 'email', 'subject' => 'Payment Received - {{ order.number }}', 'body' => "We've received your payment of {{ order.payment_amount }} for order {{ order.number }}. Thank you!"],
+            ...ReminderTemplateDefaults::definitions(),
         ];
 
         foreach ($defaults as $default) {
-            \App\Models\NotificationTemplate::query()->create([...$default, 'tenant_id' => $tenant->id, 'is_active' => true]);
+            NotificationTemplate::query()->create([...$default, 'tenant_id' => $tenant->id, 'is_active' => true]);
         }
     }
 }

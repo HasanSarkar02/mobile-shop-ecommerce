@@ -3,9 +3,13 @@
 @section('title', ($post->meta_title ?: $post->title) . ' - ' . tenant()->name)
 
 @section('content')
+    @php
+        $canonicalBlogUrl = app(\App\Support\Tenancy\TenantUrlGenerator::class)
+            ->canonicalRoute(tenant(), 'storefront.blog.show', [$post->slug]);
+    @endphp
     @include('storefront.partials.seo-meta', [
         'description' => $post->meta_description ?: $post->excerpt,
-        'canonical' => route('storefront.blog.show', $post->slug),
+        'canonical' => $canonicalBlogUrl,
     ])
 
     <div class="max-w-3xl mx-auto px-4 py-8 prose dark:prose-invert">
@@ -21,6 +25,8 @@
 {!! json_encode([
     '@context' => 'https://schema.org',
     '@type' => 'BlogPosting',
+    'url' => $canonicalBlogUrl,
+    'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $canonicalBlogUrl],
     'headline' => $post->title,
     'datePublished' => $post->published_at?->toIso8601String(),
     'author' => ['@type' => 'Organization', 'name' => tenant()->name],

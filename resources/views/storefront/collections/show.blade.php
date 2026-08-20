@@ -6,7 +6,7 @@
     @include('storefront.partials.seo-meta', [
         'description' => $collection->meta_description,
         'robots' => $isFiltered ? 'noindex,follow' : null,
-        'canonical' => route('storefront.collection', $collection->slug),
+        'canonical' => app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.collection', [$collection->slug]),
     ])
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

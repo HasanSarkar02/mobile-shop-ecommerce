@@ -16,7 +16,10 @@
             'warranty' => $showWarranty,
             'reviews' => $showReviews,
             'faq' => $showFaqs,
-        ])->filter()->keys()->values();
+        ])
+            ->filter()
+            ->keys()
+            ->values();
         $navLabels = [
             'specifications' => 'Specifications',
             'description' => 'Description',
@@ -25,21 +28,29 @@
             'faq' => 'FAQ',
         ];
         $policyLinks = collect($policyLinks ?? []);
-        $warrantyPolicyLink = $policyLinks->first(fn ($link) => $link['label'] === 'Warranty');
+        $warrantyPolicyLink = $policyLinks->first(fn($link) => $link['label'] === 'Warranty');
+        $canonicalProductUrl = app(\App\Support\Tenancy\TenantUrlGenerator::class)
+            ->canonicalRoute(tenant(), 'storefront.product', [$product->translation('en')?->slug]);
 
         // Server-rendered EMI figures (progressive enhancement baseline). Uses
         // the first variant's price — the same variant Alpine starts on — and
         // mirrors the client formula exactly: round(price * (1 + rate/100) / tenure).
         $emiBasePrice = $product->variants->first()?->price ?? 0;
         $emiFromMonthly = $product->emiPlans->isNotEmpty()
-            ? $product->emiPlans->map(fn ($plan) => round($emiBasePrice * (1 + (float) $plan->interest_rate / 100) / $plan->tenure_months))->min()
+            ? $product->emiPlans
+                ->map(
+                    fn($plan) => round(
+                        ($emiBasePrice * (1 + (float) $plan->interest_rate / 100)) / $plan->tenure_months,
+                    ),
+                )
+                ->min()
             : null;
-        $emiHasZero = $product->emiPlans->contains(fn ($plan) => (float) $plan->interest_rate === 0.0);
+        $emiHasZero = $product->emiPlans->contains(fn($plan) => (float) $plan->interest_rate === 0.0);
     @endphp
 
     @include('storefront.partials.seo-meta', [
         'description' => $product->translation('en')?->meta_description,
-        'canonical' => route('storefront.product', $product->translation('en')?->slug),
+        'canonical' => $canonicalProductUrl,
     ])
 
     @push('meta')
@@ -51,13 +62,16 @@
             html {
                 scroll-behavior: smooth;
             }
+
             .pdp-sticky-cta {
                 transition: transform .25s ease, opacity .25s ease;
             }
+
             @media (prefers-reduced-motion: reduce) {
                 html {
                     scroll-behavior: auto;
                 }
+
                 .pdp-sticky-cta {
                     transition: none;
                 }
@@ -65,14 +79,12 @@
         </style>
     @endpush
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8"
-        x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), {{ $product->variants->first()?->id ?? 'null' }}, @js($isWishlisted), @js($isComparing), @js($emiData))"
-        x-init="init()">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8" x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), @js($initialVariantId), @js($isWishlisted), @js($isComparing), @js($emiData), @js($requiresSelection))" x-init="init()">
         <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
-            <a href="{{ route('storefront.home') }}" class="hover:text-[var(--brand)]">Home</a>
+            <a href="{{ app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.home') }}" class="hover:text-[var(--brand)]">Home</a>
             @if ($product->category)
                 <span class="mx-1">/</span>
-                <a href="{{ route('storefront.category', $product->category->slug) }}"
+                <a href="{{ app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.category', [$product->category->slug]) }}"
                     class="hover:text-[var(--brand)]">{{ $product->category->name }}</a>
             @endif
             <span class="mx-1">/</span>
@@ -82,24 +94,49 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
             {{-- Gallery --}}
             <div>
-                <button type="button" @click="lightboxOpen = true"
-                    class="block w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-900 relative group cursor-zoom-in"
+                <button type="button" @click="lightboxOpen = true" :disabled="!hasUsableImage()"
+                    class="block w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-900 relative group cursor-zoom-in disabled:cursor-default"
                     aria-label="Open full-size image">
-                    <template x-for="image in currentImages()" :key="image">
-                        <img x-show="image === activeImage" :src="image" width="600" height="600"
+                    {{-- Driven purely by currentImages().length, never by activeImage — so this
+                         can never go blank even if activeImage momentarily desyncs. --}}
+                    <div x-show="currentImages().length === 0" x-cloak
+                        class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-300 dark:text-gray-600">
+                        <x-ui.icon name="image" class="w-16 h-16" />
+                        <span class="text-sm font-medium text-gray-400 dark:text-gray-500">No image available</span>
+                    </div>
+
+                    <template x-for="image in currentImages()" :key="image.src">
+                        <img x-show="image.src === resolvedActiveImage() && !erroredImages[image.src]"
+                            x-transition:enter="transition-opacity duration-200 ease-out"
+                            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" :src="image.src"
+                            :alt="image.alt" width="600" height="600" loading="eager" x-init="$el.complete && $el.naturalWidth > 0 && markLoaded(image.src)"
+                            x-on:load="markLoaded(image.src)" x-on:error="markErrored(image.src)"
                             class="w-full h-full object-cover">
                     </template>
-                    <span
+
+                    <div x-show="currentImages().length > 0 && !isLoaded(resolvedActiveImage()) && !erroredImages[resolvedActiveImage()]"
+                        x-cloak class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+                        <div class="h-9 w-9 rounded-full border-2 border-gray-300 dark:border-gray-700 border-t-[var(--brand)] animate-spin"
+                            aria-hidden="true"></div>
+                    </div>
+
+                    <div x-show="currentImages().length > 0 && erroredImages[resolvedActiveImage()]" x-cloak
+                        class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-300 dark:text-gray-600">
+                        <x-ui.icon name="image" class="w-16 h-16" />
+                        <span class="text-sm font-medium text-gray-400 dark:text-gray-500">Image unavailable</span>
+                    </div>
+
+                    <span x-show="hasUsableImage()"
                         class="absolute bottom-3 right-3 p-2 rounded-full bg-white/90 dark:bg-gray-900/90 shadow-soft opacity-0 group-hover:opacity-100 transition">
                         <x-ui.icon name="search" class="w-4 h-4" />
                     </span>
                 </button>
                 <div class="flex gap-2 mt-4 overflow-x-auto pb-1">
-                    <template x-for="image in currentImages()" :key="'thumb-' + image">
-                        <button @click="activeImage = image"
+                    <template x-for="image in currentImages()" :key="'thumb-' + image.src">
+                        <button @click="activeImage = image.src"
                             class="w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition"
-                            :class="activeImage === image ? 'border-[var(--brand)]' : 'border-transparent'">
-                            <img :src="image" width="64" height="64" loading="lazy"
+                            :class="resolvedActiveImage() === image.src ? 'border-[var(--brand)]' : 'border-transparent'">
+                            <img :src="image.src" :alt="image.alt" width="64" height="64" loading="lazy"
                                 class="w-full h-full object-cover">
                         </button>
                     </template>
@@ -108,23 +145,24 @@
 
             {{-- Lightbox --}}
             <template x-teleport="body">
-                <div x-show="lightboxOpen" x-cloak class="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4 sm:p-10"
-                    role="dialog" aria-modal="true" aria-label="Product image" @keydown.escape.window="lightboxOpen = false"
+                <div x-show="lightboxOpen" x-cloak
+                    class="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4 sm:p-10" role="dialog"
+                    aria-modal="true" aria-label="Product image" @keydown.escape.window="lightboxOpen = false"
                     @click="lightboxOpen = false">
                     <button type="button" @click.stop="lightboxOpen = false"
                         class="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
                         aria-label="Close">
                         <x-ui.icon name="close" class="w-6 h-6" />
                     </button>
-                    <template x-for="image in currentImages()" :key="'lightbox-' + image">
-                        <img x-show="image === activeImage" :src="image" @click.stop
-                            class="max-w-full max-h-full object-contain rounded-lg">
+                    <template x-for="image in currentImages()" :key="'lightbox-' + image.src">
+                        <img x-show="image.src === resolvedActiveImage()" :src="image.src" :alt="image.alt"
+                            @click.stop class="max-w-full max-h-full object-contain rounded-lg">
                     </template>
                     <template x-if="currentImages().length > 1">
                         <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2" @click.stop>
-                            <template x-for="image in currentImages()" :key="'lightbox-dot-' + image">
-                                <button @click="activeImage = image" class="w-2 h-2 rounded-full transition"
-                                    :class="activeImage === image ? 'bg-white' : 'bg-white/40'"
+                            <template x-for="image in currentImages()" :key="'lightbox-dot-' + image.src">
+                                <button @click="activeImage = image.src" class="w-2 h-2 rounded-full transition"
+                                    :class="resolvedActiveImage() === image.src ? 'bg-white' : 'bg-white/40'"
                                     aria-label="Show image"></button>
                             </template>
                         </div>
@@ -152,12 +190,21 @@
                         @endif
                     </div>
                     <div class="flex gap-2 flex-shrink-0">
-                        <button @click="toggleWishlist()" :disabled="wishlistLoading"
-                            class="p-2.5 rounded-xl border transition"
-                            :class="wishlisted ? 'border-red-300 bg-red-50 dark:bg-red-950 text-red-600' :
+                        <button @click="$store.wishlist.toggle({{ $product->id }})"
+                            :disabled="$store.wishlist.pending[{{ $product->id }}]"
+                            :aria-busy="$store.wishlist.pending[{{ $product->id }}]"
+                            class="p-2.5 rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                            :class="$store.wishlist.isWishlisted({{ $product->id }}) ?
+                                'border-red-300 bg-red-50 dark:bg-red-950 text-red-600' :
                                 'border-gray-300 dark:border-gray-700'"
-                            aria-label="Toggle wishlist" :aria-pressed="wishlisted">
-                            <x-ui.icon name="heart" :solid="true" class="w-5 h-5" x-bind:class="wishlisted ? '' : 'opacity-40'" />
+                            :aria-pressed="$store.wishlist.isWishlisted({{ $product->id }})"
+                            :aria-label="$store.wishlist.isWishlisted({{ $product->id }}) ?
+                                'Remove {{ $product->translation('en')?->name }} from wishlist' :
+                                'Add {{ $product->translation('en')?->name }} to wishlist'">
+                            <span x-show="!$store.wishlist.isWishlisted({{ $product->id }})"><x-ui.icon name="heart"
+                                    class="w-5 h-5" /></span>
+                            <span x-show="$store.wishlist.isWishlisted({{ $product->id }})" x-cloak><x-ui.icon
+                                    name="heart" :solid="true" class="w-5 h-5 text-red-600" /></span>
                         </button>
                         <button @click="toggleCompare()" :disabled="compareLoading"
                             class="p-2.5 rounded-xl border transition text-sm"
@@ -166,13 +213,29 @@
                             aria-label="Toggle compare" :aria-pressed="comparing">
                             <x-ui.icon name="grid" class="w-5 h-5" />
                         </button>
+                        <button @click="share()" :disabled="shareLoading"
+                            class="p-2.5 rounded-xl border transition text-sm border-gray-300 dark:border-gray-700"
+                            aria-label="Share product">
+                            <x-ui.icon name="share" class="w-5 h-5" x-show="!shareLoading" />
+                            <svg x-show="shareLoading" class="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
-                <div x-show="!current()" x-cloak
-                    class="mt-4 rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950 p-3 text-sm text-amber-700 dark:text-amber-300">
-                    This combination of options is not available.
-                </div>
+                <template x-if="selectionIssueType()">
+                    <div class="mt-4 rounded-xl border p-3 text-sm"
+                        :class="selectionIssueType() === 'invalid' ?
+                            'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300' :
+                            'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300'">
+                        <span x-text="selectionMessage()"></span>
+                    </div>
+                </template>
 
                 <template x-if="current()">
                     <div>
@@ -183,7 +246,8 @@
                                     x-text="formatPrice(current().compare_at_price)"></span>
                             </template>
                             <template x-if="discountPercent()">
-                                <x-ui.badge variant="danger"><span x-text="discountPercent() + '% OFF'"></span></x-ui.badge>
+                                <x-ui.badge variant="danger"><span
+                                        x-text="discountPercent() + '% OFF'"></span></x-ui.badge>
                             </template>
                         </div>
 
@@ -202,11 +266,13 @@
                     <div class="mt-4">
                         <p class="text-sm font-medium mb-2" x-text="dimension.label"></p>
                         <div class="flex flex-wrap gap-2">
-                            <template x-for="option in dimensionOptions(dimension.code)" :key="dimension.code + '-' + option">
+                            <template x-for="option in dimensionOptions(dimension.code)"
+                                :key="dimension.code + '-' + option">
                                 <button @click="selected[dimension.code] = option; updateVariant()"
+                                    :aria-pressed="selected[dimension.code] === option"
                                     class="px-3 py-1.5 rounded-full border text-sm transition"
                                     :class="selected[dimension.code] === option ?
-                                        'border-[var(--brand)] text-[var(--brand)] bg-[var(--brand)]/10' :
+                                        'border-[var(--brand)] text-[var(--brand)] bg-[var(--brand)]/10 font-semibold' :
                                         'border-gray-300 dark:border-gray-700 hover:border-gray-400'"
                                     x-text="option + (dimension.suffix || '')"></button>
                             </template>
@@ -215,7 +281,8 @@
                 </template>
 
                 @if ($product->emiPlans->isNotEmpty())
-                    <div class="mt-6 flex items-center justify-between gap-4 rounded-xl border border-gray-200 dark:border-gray-800 p-3">
+                    <div
+                        class="mt-6 flex items-center justify-between gap-4 rounded-xl border border-gray-200 dark:border-gray-800 p-3">
                         <div class="min-w-0">
                             <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
                                 <span class="text-gray-900 dark:text-gray-100">EMI from</span>
@@ -240,11 +307,14 @@
                             @keydown.escape.window="closeEmi()" @click="closeEmi()">
                             <div class="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden"
                                 x-ref="emiPanel" @click.stop>
-                                <header class="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-gray-800 p-5">
+                                <header
+                                    class="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-gray-800 p-5">
                                     <div>
-                                        <h2 id="emi-modal-title" class="text-lg font-bold text-gray-900 dark:text-gray-100">EMI Plans</h2>
+                                        <h2 id="emi-modal-title"
+                                            class="text-lg font-bold text-gray-900 dark:text-gray-100">EMI Plans</h2>
                                         <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-                                            <span x-text="emiHeadline()">৳{{ number_format(($emiFromMonthly ?? 0) / 100) }}/month</span>
+                                            <span
+                                                x-text="emiHeadline()">৳{{ number_format(($emiFromMonthly ?? 0) / 100) }}/month</span>
                                         </p>
                                     </div>
                                     <button type="button" x-ref="emiClose" @click="closeEmi()"
@@ -257,9 +327,11 @@
                                 <div class="overflow-y-auto p-5 space-y-3">
                                     @foreach ($product->emiPlans as $plan)
                                         @php $planRate = (float) $plan->interest_rate; @endphp
-                                        <div class="flex items-center justify-between gap-4 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+                                        <div
+                                            class="flex items-center justify-between gap-4 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
                                             <div class="min-w-0">
-                                                <p class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-gray-900 dark:text-gray-100">
+                                                <p
+                                                    class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-gray-900 dark:text-gray-100">
                                                     {{ $plan->bank_name }}
                                                     @if ($planRate === 0.0)
                                                         <x-ui.badge variant="success">0% EMI</x-ui.badge>
@@ -267,15 +339,17 @@
                                                 </p>
                                                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                                                     <span class="tabular-nums"
-                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}))">৳{{ number_format(round($emiBasePrice * (1 + $planRate / 100) / $plan->tenure_months) / 100) }}</span>/month
+                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}))">৳{{ number_format(round(($emiBasePrice * (1 + $planRate / 100)) / $plan->tenure_months) / 100) }}</span>/month
                                                     for {{ $plan->tenure_months }} months
                                                 </p>
                                             </div>
                                             <div class="text-right flex-shrink-0">
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $planRate }}% interest</p>
-                                                <p class="text-sm font-medium text-gray-900 dark:text-gray-100 tabular-nums">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $planRate }}%
+                                                    interest</p>
+                                                <p
+                                                    class="text-sm font-medium text-gray-900 dark:text-gray-100 tabular-nums">
                                                     <span
-                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}) * {{ $plan->tenure_months }})">৳{{ number_format(round($emiBasePrice * (1 + $planRate / 100) / $plan->tenure_months) * $plan->tenure_months / 100) }}</span>
+                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}) * {{ $plan->tenure_months }})">৳{{ number_format((round(($emiBasePrice * (1 + $planRate / 100)) / $plan->tenure_months) * $plan->tenure_months) / 100) }}</span>
                                                     total
                                                 </p>
                                             </div>
@@ -324,16 +398,22 @@
              see setupStickyCta in productDetail) and retracts near the end of the
              page so it never covers the footer. Motion respects reduced-motion via
              the .pdp-sticky-cta transition rule. --}}
-        <template x-if="current()">
+        <template x-if="showSticky()">
             <div class="pdp-sticky-cta lg:hidden fixed bottom-16 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 px-4 py-3"
-                :class="stickyCtaVisible ? 'translate-y-0 opacity-100 shadow-soft' : 'translate-y-full opacity-0 pointer-events-none'"
+                :class="stickyCtaVisible ? 'translate-y-0 opacity-100 shadow-soft' :
+                    'translate-y-full opacity-0 pointer-events-none'"
                 :aria-hidden="stickyCtaVisible ? 'false' : 'true'">
                 <div class="flex items-center gap-3">
                     <div class="min-w-0 flex-shrink-0">
-                        <p class="font-bold text-lg leading-none" x-text="formatPrice(current().price)"></p>
-                        <template x-if="current().compare_at_price && current().compare_at_price > current().price">
-                            <p class="text-xs text-gray-400 line-through leading-none mt-1"
-                                x-text="formatPrice(current().compare_at_price)"></p>
+                        <template x-if="current()">
+                            <div>
+                                <p class="font-bold text-lg leading-none" x-text="formatPrice(current().price)"></p>
+                                <template
+                                    x-if="current().compare_at_price && current().compare_at_price > current().price">
+                                    <p class="text-xs text-gray-400 line-through leading-none mt-1"
+                                        x-text="formatPrice(current().compare_at_price)"></p>
+                                </template>
+                            </div>
                         </template>
                     </div>
                     <form method="POST" action="{{ route('storefront.buy-now') }}" class="flex-1"
@@ -343,17 +423,21 @@
                         <input type="hidden" name="product_variant_id" :value="currentVariantId || ''">
                         <input type="hidden" name="quantity" :value="quantity">
                         <x-ui.button variant="primary" size="lg" class="w-full" type="submit"
-                            x-bind:disabled="pending || cartLoading || !current().purchasable">
+                            x-bind:disabled="pending || cartLoading || !current() || !current().purchasable">
                             Buy Now
                         </x-ui.button>
                     </form>
                 </div>
                 <div class="mt-2">
                     <x-ui.button variant="secondary" size="lg" class="w-full" @click="addToCart()"
-                        x-bind:disabled="cartLoading || !current().purchasable">
+                        x-bind:disabled="cartLoading || !current() || !current().purchasable">
                         <span x-text="ctaLabel()"></span>
                     </x-ui.button>
                 </div>
+                <template x-if="!current()">
+                    <p class="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium" x-text="selectionMessage()">
+                    </p>
+                </template>
             </div>
         </template>
 
@@ -370,6 +454,52 @@
             </div>
         @endif
 
+        @if ($shippingMethods->isNotEmpty() || $paymentMethods->isNotEmpty())
+            <div class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800"
+                aria-label="Delivery and payment information">
+                <ul class="space-y-2.5">
+                    @if ($shippingMethods->isNotEmpty())
+                        <li class="flex items-start gap-3">
+                            <span class="mt-0.5 flex-shrink-0 text-gray-400">
+                                <x-ui.icon name="truck" class="w-5 h-5" />
+                            </span>
+                            <div class="min-w-0 text-sm">
+                                <p class="font-medium">Delivery</p>
+                                <ul class="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 dark:text-gray-400">
+                                    @foreach ($shippingMethods as $method)
+                                        <li class="flex items-center gap-1.5">
+                                            {{ $method->name }}
+                                            @if ($method->type === \App\Enums\ShippingMethodType::Free || $method->cost === 0)
+                                                <span class="text-green-600 dark:text-green-400 font-medium">Free</span>
+                                            @else
+                                                <span
+                                                    class="tabular-nums">৳{{ number_format($method->cost / 100) }}</span>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+                    @if ($paymentMethods->isNotEmpty())
+                        <li class="flex items-start gap-3">
+                            <span class="mt-0.5 flex-shrink-0 text-gray-400">
+                                <x-ui.icon name="card" class="w-5 h-5" />
+                            </span>
+                            <div class="min-w-0 text-sm">
+                                <p class="font-medium">Payment</p>
+                                <ul class="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 dark:text-gray-400">
+                                    @foreach ($paymentMethods as $method)
+                                        <li class="flex items-center gap-1.5">{{ $method->name }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </li>
+                    @endif
+                </ul>
+            </div>
+        @endif
+
         @if ($navSections->isNotEmpty())
             <nav x-data="productSections(@js($navSections))" x-init="init()" aria-label="Product sections"
                 class="sticky top-16 lg:top-28 z-30 -mx-4 sm:mx-0 mt-8 lg:mt-12 border-y border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur">
@@ -377,7 +507,8 @@
                     @foreach ($navSections as $sectionId)
                         <a href="#{{ $sectionId }}"
                             class="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition text-gray-600 dark:text-gray-300 hover:text-[var(--brand)] hover:bg-[var(--brand)]/10"
-                            :class="isActive('{{ $sectionId }}') ? 'text-[var(--brand)] bg-[var(--brand)]/10 font-semibold' : ''"
+                            :class="isActive('{{ $sectionId }}') ?
+                                'text-[var(--brand)] bg-[var(--brand)]/10 font-semibold' : ''"
                             :aria-current="isActive('{{ $sectionId }}') ? 'location' : null">
                             {{ $navLabels[$sectionId] ?? ucfirst($sectionId) }}
                         </a>
@@ -387,7 +518,8 @@
         @endif
 
         {{-- Specifications --}}
-        <section id="specifications" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="specifications-heading">
+        <section id="specifications" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+            aria-labelledby="specifications-heading">
             <h2 id="specifications-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Specifications</h2>
             <div class="mt-5">
                 @forelse($specificationGroups as $group)
@@ -395,10 +527,12 @@
                         <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
                             {{ $group['group'] }}
                         </h3>
-                        <dl class="divide-y divide-gray-100 dark:divide-gray-800 rounded-xl border border-gray-100 dark:border-gray-800">
+                        <dl
+                            class="divide-y divide-gray-100 dark:divide-gray-800 rounded-xl border border-gray-100 dark:border-gray-800">
                             @foreach ($group['items'] as $value)
                                 <div class="flex py-2.5 text-sm gap-4 px-4">
-                                    <dt class="w-1/3 flex-shrink-0 text-gray-500">{{ $value->attributeDefinition->label }}</dt>
+                                    <dt class="w-1/3 flex-shrink-0 text-gray-500">{{ $value->attributeDefinition->label }}
+                                    </dt>
                                     <dd class="text-gray-800 dark:text-gray-200">{{ $value->displayValue() }}
                                         @if ($value->attributeDefinition->unit)
                                             <span class="text-gray-500">{{ $value->attributeDefinition->unit }}</span>
@@ -416,7 +550,8 @@
 
         {{-- Description --}}
         @if ($showDescription)
-            <section id="description" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="description-heading">
+            <section id="description" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+                aria-labelledby="description-heading">
                 <h2 id="description-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Description</h2>
                 <div class="prose dark:prose-invert max-w-none mt-5">
                     {!! $productDescription !!}
@@ -426,7 +561,8 @@
 
         {{-- Warranty --}}
         @if ($showWarranty)
-            <section id="warranty" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="warranty-heading">
+            <section id="warranty" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+                aria-labelledby="warranty-heading">
                 <h2 id="warranty-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Warranty</h2>
                 <div class="prose dark:prose-invert max-w-none mt-5">
                     {!! nl2br(e($product->translation('en')->warranty_info)) !!}
@@ -443,8 +579,10 @@
         @endif
 
         {{-- Reviews --}}
-        <section id="reviews" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="reviews-heading">
-            <h2 id="reviews-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Reviews ({{ $product->reviews_count }})</h2>
+        <section id="reviews" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+            aria-labelledby="reviews-heading">
+            <h2 id="reviews-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Reviews
+                ({{ $product->reviews_count }})</h2>
 
             @if ($product->reviews_count > 0)
                 <div class="mb-6 mt-5"><x-ui.rating-stars :rating="$product->average_rating" :count="$product->reviews_count" /></div>
@@ -492,7 +630,8 @@
 
         {{-- FAQ --}}
         @if ($showFaqs)
-            <section id="faq" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="faq-heading">
+            <section id="faq" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+                aria-labelledby="faq-heading">
                 <h2 id="faq-heading" class="text-xl lg:text-2xl font-bold tracking-tight">FAQ</h2>
                 <div class="mt-5 space-y-3">
                     @foreach ($product->faqs as $faq)
@@ -511,13 +650,84 @@
         @endif
 
         {{-- Related --}}
-        @if ($relatedProducts->isNotEmpty())
-            <section id="related" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="related-heading">
+        @if ($relatedCards->isNotEmpty())
+            <section id="related" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+                aria-labelledby="related-heading">
                 <h2 id="related-heading" class="text-xl lg:text-2xl font-bold tracking-tight">You May Also Like</h2>
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
-                    @foreach ($relatedProducts as $related)
-                        @include('storefront.partials.product-card', ['product' => $related])
+                    @foreach ($relatedCards as $card)
+                        @include('storefront.partials.product-card', ['card' => $card])
                     @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- Merchandising rails: cross-sell, upsell, frequently-bought and
+             compatible-accessory relations, each only when populated. --}}
+        @if ($crossSellCards->isNotEmpty())
+            <section id="cross-sells" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+                aria-labelledby="cross-sells-heading">
+                <h2 id="cross-sells-heading" class="text-xl lg:text-2xl font-bold tracking-tight">You May Also Like</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
+                    @foreach ($crossSellCards as $card)
+                        @include('storefront.partials.product-card', ['card' => $card])
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        @if ($upsellCards->isNotEmpty())
+            <section id="upsells" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+                aria-labelledby="upsells-heading">
+                <h2 id="upsells-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Upgrade Your Choice</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
+                    @foreach ($upsellCards as $card)
+                        @include('storefront.partials.product-card', ['card' => $card])
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        @if ($frequentlyBoughtCards->isNotEmpty())
+            <section id="frequently-bought-together" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+                aria-labelledby="frequently-bought-heading">
+                <h2 id="frequently-bought-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Frequently Bought
+                    Together</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
+                    @foreach ($frequentlyBoughtCards as $card)
+                        @include('storefront.partials.product-card', ['card' => $card])
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        @if ($compatibleAccessoryCards->isNotEmpty())
+            <section id="compatible-accessories" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+                aria-labelledby="compatible-accessories-heading">
+                <h2 id="compatible-accessories-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Compatible
+                    Accessories</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
+                    @foreach ($compatibleAccessoryCards as $card)
+                        @include('storefront.partials.product-card', ['card' => $card])
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- Recently viewed (reuses the existing RecentlyViewedService pipeline;
+             ordering is the service's most-recent-first, preserved after fetch). --}}
+        @if ($recentlyViewedCards->isNotEmpty())
+            <section id="recently-viewed" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
+                aria-labelledby="recently-viewed-heading">
+                <h2 id="recently-viewed-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Recently Viewed</h2>
+                <div class="mt-5 -mx-4 sm:mx-0">
+                    <div class="flex gap-4 overflow-x-auto px-4 sm:px-0 pb-2 snap-x">
+                        @foreach ($recentlyViewedCards as $card)
+                            <div class="w-44 flex-shrink-0 snap-start">
+                                @include('storefront.partials.product-card', ['card' => $card])
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </section>
         @endif
@@ -550,7 +760,9 @@
                                 this.activeId = entry.target.id;
                             }
                         });
-                    }, { rootMargin: '-45% 0px -50% 0px' });
+                    }, {
+                        rootMargin: '-45% 0px -50% 0px'
+                    });
 
                     this.ids.forEach((id) => {
                         const el = document.getElementById(id);
@@ -563,22 +775,25 @@
             };
         }
 
-        function productDetail(variants, productImages, dimensions, initialId, initialWishlisted, initialComparing, emiPlans) {
+        function productDetail(variants, productImages, dimensions, initialId, initialWishlisted, initialComparing,
+            emiPlans, requiresSelection) {
             return {
                 variants,
                 productImages,
                 dimensions,
+                requiresSelection,
                 selected: {},
                 activeImage: null,
+                loadedImages: {},
+                erroredImages: {},
                 lightboxOpen: false,
                 currentVariantId: initialId,
                 unavailable: false,
                 quantity: 1,
-                wishlisted: initialWishlisted,
                 comparing: initialComparing,
                 cartLoading: false,
-                wishlistLoading: false,
                 compareLoading: false,
+                shareLoading: false,
                 stickyCtaVisible: false,
                 buyBoxObserver: null,
                 endObserver: null,
@@ -587,30 +802,33 @@
                 emiTrigger: null,
 
                 init() {
-                    const first = this.current();
+                    this.$store.wishlist.seed({{ $product->id }}, initialWishlisted);
 
-                    if (! first) {
-                        this.unavailable = true;
+                    if (this.requiresSelection) {
+                        // Multi-option product: never auto-select a variant. The
+                        // shopper must explicitly pick every dimension before any
+                        // purchase action resolves.
                         this.currentVariantId = null;
-                        this.activeImage = this.productImages[0] ?? null;
+                    } else {
+                        const first = this.current();
 
-                        return;
+                        if (first) {
+                            dimensions.forEach(d => {
+                                if (first.dims[d.code] !== undefined && first.dims[d.code] !== null) {
+                                    this.selected[d.code] = first.dims[d.code];
+                                }
+                            });
+                        }
                     }
 
-                    dimensions.forEach(d => {
-                        if (first.dims[d.code] !== undefined && first.dims[d.code] !== null) {
-                            this.selected[d.code] = first.dims[d.code];
-                        }
-                    });
-
-                    this.activeImage = this.currentImages()[0] ?? null;
+                    this.activeImage = this.currentImages()[0]?.src ?? null;
                     this.setupStickyCta();
                 },
                 setupStickyCta() {
                     if (!('IntersectionObserver' in window)) return;
 
                     const buyBox = this.$refs.buyBox;
-                    if (! buyBox) return;
+                    if (!buyBox) return;
 
                     // Show the sticky bar once the main purchase area has left
                     // the viewport (a little past the bottom so it does not
@@ -619,7 +837,9 @@
                         entries.forEach((entry) => {
                             this.stickyCtaVisible = !entry.isIntersecting;
                         });
-                    }, { rootMargin: '0px 0px -15% 0px' });
+                    }, {
+                        rootMargin: '0px 0px -15% 0px'
+                    });
                     this.buyBoxObserver.observe(buyBox);
 
                     // Retract near the end of the product content so the bar
@@ -632,7 +852,9 @@
                                     this.stickyCtaVisible = false;
                                 }
                             });
-                        }, { rootMargin: '0px 0px -15% 0px' });
+                        }, {
+                            rootMargin: '0px 0px -15% 0px'
+                        });
                         this.endObserver.observe(end);
                     }
                 },
@@ -640,46 +862,147 @@
                     this.buyBoxObserver?.disconnect();
                     this.endObserver?.disconnect();
                 },
+                activeVariants() {
+                    return this.variants.filter(v => v.is_active);
+                },
+                missingDimensions() {
+                    if (!this.requiresSelection) return [];
+                    return this.dimensions.filter(d => this.selected[d.code] === undefined || this.selected[d.code] ===
+                        null);
+                },
+                selectionComplete() {
+                    return this.missingDimensions().length === 0;
+                },
+                // 'incomplete': shopper hasn't finished picking every dimension yet — a
+                //   normal, expected mid-flow state (neutral tone).
+                // 'invalid': every dimension is picked but no active variant matches
+                //   that exact combination — a real dead end (warning tone).
+                // null: either a concrete variant resolved, or this product doesn't
+                //   require selection at all.
+                selectionIssueType() {
+                    if (!this.requiresSelection) return null;
+                    if (!this.selectionComplete()) return 'incomplete';
+                    if (!this.current()) return 'invalid';
+                    return null;
+                },
+                selectionMessage() {
+                    if (this.requiresSelection && !this.selectionComplete()) {
+                        const missing = this.missingDimensions().map(d => d.label);
+                        if (missing.length === 0) return 'Please select all product options';
+                        return 'Please select ' + missing.join(' and ');
+                    }
+                    return 'This combination of options is not available.';
+                },
+                showSticky() {
+                    return this.current() !== null || (this.requiresSelection && !this.selectionComplete());
+                },
                 current() {
                     if (this.unavailable) {
                         return null;
                     }
 
-                    return this.variants.find(v => v.id === this.currentVariantId) ?? this.variants[0] ?? null;
+                    if (this.requiresSelection) {
+                        if (!this.selectionComplete()) return null;
+
+                        const matches = this.activeVariants().filter(v =>
+                            this.dimensions.every(d => v.dims[d.code] === this.selected[d.code])
+                        );
+
+                        return matches.length === 1 ? matches[0] : null;
+                    }
+
+                    return this.activeVariants().find(v => v.id === this.currentVariantId) ?? null;
                 },
                 updateVariant() {
-                    const match = this.variants.find(v =>
-                        this.dimensions.every(d => !this.selected[d.code] || v.dims[d.code] === this.selected[d.code])
-                    );
+                    const match = this.current();
 
                     if (match) {
                         this.unavailable = false;
                         this.currentVariantId = match.id;
-                        this.activeImage = this.currentImages()[0] ?? null;
+                    } else if (this.requiresSelection && !this.selectionComplete()) {
+                        // Still picking options — currentImages() falls back to
+                        // the product/preview gallery until a concrete variant
+                        // resolves (see currentImages()).
+                        this.unavailable = false;
+                        this.currentVariantId = null;
                     } else {
                         this.unavailable = true;
                         this.currentVariantId = null;
-                        this.activeImage = this.productImages[0] ?? null;
                     }
+
+                    // Single source of truth for the fallback chain lives in
+                    // currentImages(); just point activeImage at its first
+                    // result here rather than duplicating the fallback logic.
+                    this.activeImage = this.currentImages()[0]?.src ?? null;
                 },
                 dimensionOptions(code) {
-                    return [...new Set(this.variants.map(v => v.dims[code]).filter(v => v !== undefined && v !== null))];
+                    return [...new Set(this.activeVariants().map(v => v.dims[code]).filter(v => v !== undefined && v !==
+                        null))];
                 },
                 currentImages() {
                     const variant = this.current();
-                    if (! variant) return this.productImages;
-                    const variantImages = variant.images && variant.images.length ? variant.images : [];
-                    return [...new Set([...variantImages, ...this.productImages])];
+
+                    if (variant) {
+                        const variantImages = variant.images && variant.images.length ? variant.images : [];
+                        return this.dedupeImages([...variantImages, ...this.productImages]);
+                    }
+
+                    // No concrete variant resolved yet (nothing picked, still
+                    // incomplete, or an invalid combination). Show product
+                    // images if there are any; if the product itself has no
+                    // photos, fall back to the first active variant that does
+                    // have photos so the shopper sees a real preview instead
+                    // of an empty gallery before they've finished choosing.
+                    if (this.productImages.length > 0) {
+                        return this.productImages;
+                    }
+
+                    const preview = this.activeVariants().find(v => v.images && v.images.length);
+
+                    return preview ? this.dedupeImages(preview.images) : [];
+                },
+                dedupeImages(images) {
+                    const seen = new Set();
+                    return images.filter(img => {
+                        if (seen.has(img.src)) return false;
+                        seen.add(img.src);
+                        return true;
+                    });
+                },
+                hasUsableImage() {
+                    return this.currentImages().length > 0;
+                },
+                // Self-healing: always returns a src that's actually in the current
+                // image set. If activeImage is null, stale, or points at an image
+                // that's no longer in currentImages() (e.g. right after switching
+                // selections), this falls back to the first available image instead
+                // of leaving every x-show comparison false and the gallery blank.
+                resolvedActiveImage() {
+                    const images = this.currentImages();
+                    if (images.length === 0) return null;
+                    if (images.some(img => img.src === this.activeImage)) return this.activeImage;
+                    return images[0].src;
+                },
+                markLoaded(src) {
+                    if (src) this.loadedImages[src] = true;
+                },
+                markErrored(src) {
+                    if (!src) return;
+                    this.erroredImages[src] = true;
+                    this.loadedImages[src] = true;
+                },
+                isLoaded(src) {
+                    return !!this.loadedImages[src];
                 },
                 discountPercent() {
                     const v = this.current();
-                    if (! v) return null;
+                    if (!v) return null;
                     if (!v.compare_at_price || v.compare_at_price <= v.price) return null;
                     return Math.round(((v.compare_at_price - v.price) / v.compare_at_price) * 100);
                 },
                 availabilityLabel() {
                     const v = this.current();
-                    if (! v) return '';
+                    if (!v) return '';
                     if (v.purchase_state === 'preorder') return 'Pre-Order';
                     if (v.purchase_state === 'dropship') return 'Available';
                     if (v.purchase_state === 'discontinued') return 'Discontinued';
@@ -688,7 +1011,7 @@
                 },
                 availabilityTone() {
                     const v = this.current();
-                    if (! v) return 'text-gray-500';
+                    if (!v) return 'text-gray-500';
                     const state = v.purchase_state;
                     if (state === 'discontinued' || state === 'out_of_stock') return 'text-red-500';
                     if (state === 'preorder' || state === 'low_stock') return 'text-amber-600';
@@ -696,16 +1019,17 @@
                 },
                 restockMessage() {
                     const v = this.current();
-                    if (! v || ! v.expected_available_at) return '';
+                    if (!v || !v.expected_available_at) return '';
                     if (v.purchase_state === 'preorder') return 'Expected availability ' + v.expected_available_at;
-                    if (v.purchase_state === 'out_of_stock' && !v.backorder_policy) return 'Back in stock ' + v.expected_available_at;
+                    if (v.purchase_state === 'out_of_stock' && !v.backorder_policy) return 'Back in stock ' + v
+                        .expected_available_at;
                     return '';
                 },
                 ctaLabel() {
                     const v = this.current();
                     if (this.cartLoading) return 'Adding…';
-                    if (! v) return 'Unavailable';
-                    if (! v.purchasable) {
+                    if (!v) return 'Unavailable';
+                    if (!v.purchasable) {
                         return v.purchase_state === 'discontinued' ? 'Discontinued' : 'Out of Stock';
                     }
                     if (v.purchase_state === 'preorder') return 'Pre-Order Now';
@@ -724,7 +1048,7 @@
                 },
                 emiFrom() {
                     const v = this.current();
-                    if (! v || ! this.emiPlans.length) return null;
+                    if (!v || !this.emiPlans.length) return null;
                     return Math.min(...this.emiPlans.map(p => this.emiMonthly(v.price, p.rate, p.tenure)));
                 },
                 emiHeadline() {
@@ -758,7 +1082,7 @@
                 },
                 addToCart() {
                     const v = this.current();
-                    if (! v || ! v.purchasable) return;
+                    if (!v || !v.purchasable) return;
                     this.cartLoading = true;
                     fetch('{{ route('storefront.cart.store') }}', {
                             method: 'POST',
@@ -783,27 +1107,6 @@
                         .catch(() => this.toast('Could not add to cart — please try again', 'error'))
                         .finally(() => this.cartLoading = false);
                 },
-                toggleWishlist() {
-                    this.wishlistLoading = true;
-                    fetch('{{ route('storefront.wishlist.toggle') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': this.csrfToken(),
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                product_id: {{ $product->id }}
-                            }),
-                        })
-                        .then(r => {
-                            if (!r.ok) throw new Error();
-                            this.wishlisted = !this.wishlisted;
-                            this.toast(this.wishlisted ? 'Added to wishlist' : 'Removed from wishlist');
-                        })
-                        .catch(() => this.toast('Something went wrong', 'error'))
-                        .finally(() => this.wishlistLoading = false);
-                },
                 toggleCompare() {
                     this.compareLoading = true;
                     fetch('{{ route('storefront.compare.toggle') }}', {
@@ -819,7 +1122,9 @@
                         })
                         .then(r => {
                             if (!r.ok) {
-                                return r.json().then(d => { throw new Error(d.message || 'Something went wrong'); });
+                                return r.json().then(d => {
+                                    throw new Error(d.message || 'Something went wrong');
+                                });
                             }
                             return r.json();
                         })
@@ -830,6 +1135,56 @@
                         })
                         .catch(err => this.toast(err.message || 'Something went wrong', 'error'))
                         .finally(() => this.compareLoading = false);
+                },
+                share() {
+                    const url = document.querySelector('link[rel="canonical"]')?.href ?? window.location.href;
+                    const data = {
+                        title: document.title,
+                        text: 'Check out this product',
+                        url,
+                    };
+
+                    this.shareLoading = true;
+
+                    const copyLink = async () => {
+                        try {
+                            await navigator.clipboard.writeText(url);
+                            this.toast('Link copied to clipboard');
+                        } catch {
+                            // Legacy fallback when the Clipboard API is unavailable.
+                            const textarea = document.createElement('textarea');
+                            textarea.value = url;
+                            textarea.style.position = 'fixed';
+                            textarea.style.opacity = '0';
+                            document.body.appendChild(textarea);
+                            textarea.select();
+                            try {
+                                document.execCommand('copy');
+                                this.toast('Link copied to clipboard');
+                            } catch {
+                                this.toast('Could not copy the link', 'error');
+                            } finally {
+                                document.body.removeChild(textarea);
+                            }
+                        }
+                    };
+
+                    const finish = () => this.shareLoading = false;
+
+                    if (navigator.share) {
+                        navigator.share(data).then(finish).catch((err) => {
+                            if (err && err.name === 'AbortError') {
+                                finish();
+
+                                return;
+                            }
+                            copyLink().then(finish);
+                        });
+
+                        return;
+                    }
+
+                    copyLink().then(finish);
                 },
             }
         }

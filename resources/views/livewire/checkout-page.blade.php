@@ -151,7 +151,8 @@
                     </div>
                     @if ($discount > 0)
                         <div class="flex justify-between text-green-600">
-                            <span>Discount</span><span>-৳{{ number_format($discount / 100) }}</span></div>
+                            <span>Discount</span><span>-৳{{ number_format($discount / 100) }}</span>
+                        </div>
                     @endif
                     <div class="flex justify-between"><span
                             class="text-gray-500">Shipping</span><span>৳{{ number_format($shippingCost / 100) }}</span>

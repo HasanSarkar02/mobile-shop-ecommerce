@@ -16,6 +16,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class CustomerResource extends Resource
@@ -30,7 +31,7 @@ class CustomerResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')->required(),
-            TextInput::make('email')->email()->required()->unique(ignoreRecord: true),
+            TextInput::make('email')->email()->required()->scopedUnique(ignoreRecord: true),
             TextInput::make('phone'),
             Toggle::make('marketing_opt_in')->label('Subscribed to marketing'),
         ]);
@@ -61,7 +62,7 @@ class CustomerResource extends Resource
     // Staff can view and edit customer records as part of normal customer
     // service (addresses, notes, etc.); deleting a customer record is a more
     // significant, less-reversible action reserved for owners.
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return auth()->user()?->isOwner() ?? false;
     }

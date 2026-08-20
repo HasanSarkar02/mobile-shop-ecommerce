@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Product;
+use App\Models\ProductTranslation;
 use App\Models\ProductVariant;
 use App\Services\InventoryService;
 
@@ -15,7 +16,7 @@ function stickyCtaProduct(): array
 {
     $tenant = actingAsTenant(['status' => 'active']);
     $product = Product::factory()->create(['status' => 'published']);
-    \App\Models\ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
+    ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
     $variant = ProductVariant::factory()->for($product)->create();
     app(InventoryService::class)->restock($variant, 10);
 
@@ -71,8 +72,10 @@ it('gates the sticky CTAs on the same purchasable state as the buy box', functio
 
     // Sticky Buy Now + sticky Add to Cart both gate on !current().purchasable.
     expect(substr_count($html, '!current().purchasable'))->toBeGreaterThanOrEqual(4);
-    // The sticky Add to Cart keeps the exact shared disabled binding.
-    expect($html)->toContain('x-bind:disabled="cartLoading || !current().purchasable"');
+    // The sticky Add to Cart keeps the exact shared disabled binding, now also
+    // gated on a resolved variant (a multi-option product disables it until a
+    // concrete active variant is selected).
+    expect($html)->toContain('x-bind:disabled="cartLoading || !current() || !current().purchasable"');
 });
 
 it('retracts when the end of the product content is reached', function (): void {
