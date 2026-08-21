@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Http;
 class SslcommerzDriver implements PaymentGatewayDriver
 {
     private string $sessionUrl;
+
     private string $validatorUrl;
 
     public function __construct()

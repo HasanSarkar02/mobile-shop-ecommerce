@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Store\Resources;
 
+use App\Enums\BannerPlacement;
 use App\Enums\HomepageSectionType;
 use App\Enums\LinkType;
 use App\Enums\ProductGridDataSource;
@@ -51,7 +52,7 @@ class HomepageSectionResource extends Resource
 
             Select::make('config_placement')
                 ->label('Which banner placement to show')
-                ->options(collect(\App\Enums\BannerPlacement::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
+                ->options(collect(BannerPlacement::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                 ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::BannerCarousel->value),
             Select::make('config_layout')
                 ->label('Layout')

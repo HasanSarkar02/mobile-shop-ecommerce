@@ -136,6 +136,8 @@
                         wire:model.live.blur="owner_name" :error="$errors->first('owner_name')" />
                     <x-ui.input name="owner_email" type="email" label="Email" placeholder="you@example.com"
                         wire:model.live.blur="owner_email" :error="$errors->first('owner_email')" />
+                    <x-ui.input name="owner_phone" type="tel" label="Mobile number" placeholder="e.g. 01712345678"
+                        wire:model.live.blur="owner_phone" :error="$errors->first('owner_phone')" />
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <x-ui.input name="password" type="password" label="Password" placeholder="Min 8 characters"

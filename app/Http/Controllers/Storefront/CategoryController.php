@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Services\Storefront\FilterQueryParser;
-use App\Services\Storefront\ProductListingService;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -23,16 +22,14 @@ class CategoryController extends Controller
         return view('storefront.categories.index', compact('categories'));
     }
 
-        public function show(Request $request, string $slug, FilterQueryParser $parser)
-
+    public function show(Request $request, string $slug, FilterQueryParser $parser)
     {
 
         $category = Category::query()->where('slug', $slug)->firstOrFail();
 
         $isFiltered = $parser->fromRequest($request)->isFiltered();
+
         return view('storefront.categories.show', compact('category', 'isFiltered'));
 
     }
-
-
 }

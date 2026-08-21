@@ -4,6 +4,4 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
-class InsufficientStockException extends \RuntimeException
-{
-}
+class InsufficientStockException extends \RuntimeException {}

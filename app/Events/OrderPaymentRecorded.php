@@ -11,7 +11,5 @@ class OrderPaymentRecorded
 {
     use Dispatchable;
 
-    public function __construct(public readonly OrderPayment $payment)
-    {
-    }
+    public function __construct(public readonly OrderPayment $payment) {}
 }

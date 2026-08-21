@@ -33,8 +33,7 @@ class SendNotificationJob implements ShouldQueue
     public function __construct(
         private readonly int $notificationLogId,
         private readonly int $tenantId,
-    ) {
-    }
+    ) {}
 
     /** @return list<int> seconds before each retry: 30s, 2min, 5min */
     public function backoff(): array

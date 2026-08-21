@@ -9,9 +9,7 @@ use App\Services\RedirectService;
 
 class StaticPageObserver
 {
-    public function __construct(private readonly RedirectService $redirects)
-    {
-    }
+    public function __construct(private readonly RedirectService $redirects) {}
 
     public function updated(StaticPage $page): void
     {

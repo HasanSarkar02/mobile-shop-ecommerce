@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Filament\Store\Resources\ProductResource\Pages;
 
 use App\Filament\Store\Resources\ProductResource;
-use Filament\Resources\Pages\CreateRecord;
 use App\Services\SubscriptionService;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\CreateRecord;
 
 class CreateProduct extends CreateRecord
 {

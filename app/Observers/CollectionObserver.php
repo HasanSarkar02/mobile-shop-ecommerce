@@ -9,9 +9,7 @@ use App\Services\RedirectService;
 
 class CollectionObserver
 {
-    public function __construct(private readonly RedirectService $redirects)
-    {
-    }
+    public function __construct(private readonly RedirectService $redirects) {}
 
     public function updated(Collection $collection): void
     {

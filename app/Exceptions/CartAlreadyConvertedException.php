@@ -9,6 +9,4 @@ namespace App\Exceptions;
  * converted into an order (converted_at is set). Guards against a double
  * checkout submission producing two orders from the same cart.
  */
-class CartAlreadyConvertedException extends \RuntimeException
-{
-}
+class CartAlreadyConvertedException extends \RuntimeException {}

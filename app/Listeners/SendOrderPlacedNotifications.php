@@ -14,9 +14,7 @@ class SendOrderPlacedNotifications
 {
     use BuildsOrderNotificationContext;
 
-    public function __construct(private readonly NotificationService $notifications)
-    {
-    }
+    public function __construct(private readonly NotificationService $notifications) {}
 
     public function handle(OrderPlaced $event): void
     {

@@ -16,6 +16,4 @@ namespace App\Exceptions;
  * `Model::query()->withoutGlobalScope('tenant')` rather than relying on this
  * exception being suppressed.
  */
-class TenantContextRequiredException extends \RuntimeException
-{
-}
+class TenantContextRequiredException extends \RuntimeException {}

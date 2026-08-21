@@ -25,7 +25,7 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     use InteractsWithAppAuthenticationRecovery;
     use Notifiable;
 
-    protected $fillable = ['name', 'email', 'password'];
+    protected $fillable = ['name', 'email', 'phone', 'password'];
 
     protected $hidden = ['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'];
 

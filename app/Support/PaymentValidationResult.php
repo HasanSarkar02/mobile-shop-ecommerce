@@ -11,6 +11,5 @@ final class PaymentValidationResult
         public readonly string $tranId,
         public readonly int $amount, // integer minor units
         public readonly ?string $cardType = null,
-    ) {
-    }
+    ) {}
 }

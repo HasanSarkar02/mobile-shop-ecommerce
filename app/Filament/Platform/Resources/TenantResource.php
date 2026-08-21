@@ -17,6 +17,7 @@ use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Models\User;
+use App\Rules\BangladeshiPhone;
 use App\Rules\ValidSubdomain;
 use BackedEnum;
 use Carbon\CarbonInterface;
@@ -31,6 +32,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -73,11 +75,20 @@ class TenantResource extends Resource
                 ->required()
                 ->unique(table: 'users', column: 'email', modifyRuleUsing: fn (Unique $rule) => $rule->whereNull('tenant_id'))
                 ->hiddenOn('edit'),
+            TextInput::make('owner_phone')
+                ->label('Owner phone')
+                ->tel()
+                ->maxLength(20)
+                ->rules([new BangladeshiPhone])
+                ->helperText('Optional — so the platform can reach the owner.')
+                ->hiddenOn('edit'),
             Select::make('status')
                 ->options([
+                    'pending' => 'Pending',
                     'trial' => 'Trial',
                     'active' => 'Active',
                     'suspended' => 'Suspended',
+                    'rejected' => 'Rejected',
                 ])
                 ->disabled()
                 ->dehydrated(false)
@@ -97,7 +108,16 @@ class TenantResource extends Resource
                 TextColumn::make('plan'),
                 TextColumn::make('created_at')->date(),
             ])
-            ->filters([])
+            ->filters([
+                SelectFilter::make('status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'trial' => 'Trial',
+                        'active' => 'Active',
+                        'suspended' => 'Suspended',
+                        'rejected' => 'Rejected',
+                    ]),
+            ])
             ->recordActions([ViewAction::make(), EditAction::make()])
             ->toolbarActions([]);
     }
@@ -255,10 +275,11 @@ class TenantResource extends Resource
         }
 
         return $owners->map(fn (User $owner): string => sprintf(
-            '%s <%s> — role: %s — email: %s',
+            '%s <%s> — role: %s — phone: %s — email: %s',
             $owner->name,
             $owner->email,
             $owner->id === $primaryOwnerId ? 'primary owner' : 'additional owner',
+            $owner->phone ?: '—',
             self::emailVerification($owner),
         ))->prepend($owners->count().' owner(s)')->implode("\n");
     }
@@ -311,7 +332,9 @@ class TenantResource extends Resource
 
     private static function subscription(Tenant $tenant): ?TenantSubscription
     {
-        $subscription = $tenant->getRelation('subscription');
+        $subscription = $tenant->relationLoaded('subscription')
+            ? $tenant->getRelation('subscription')
+            : $tenant->subscription;
 
         return $subscription instanceof TenantSubscription ? $subscription : null;
     }
@@ -342,7 +365,9 @@ class TenantResource extends Resource
     /** @return list<Domain> */
     private static function domains(Tenant $tenant): array
     {
-        $relation = $tenant->getRelation('domains');
+        $relation = $tenant->relationLoaded('domains')
+            ? $tenant->getRelation('domains')
+            : $tenant->domains;
 
         if (! $relation instanceof Collection) {
             return [];
@@ -361,7 +386,9 @@ class TenantResource extends Resource
 
     private static function primaryDomain(Tenant $tenant): string
     {
-        $domain = $tenant->getRelation('primaryDomain');
+        $domain = $tenant->relationLoaded('primaryDomain')
+            ? $tenant->getRelation('primaryDomain')
+            : $tenant->primaryDomain;
 
         return $domain instanceof Domain ? (string) $domain->getAttribute('domain') : 'Tenant subdomain fallback';
     }

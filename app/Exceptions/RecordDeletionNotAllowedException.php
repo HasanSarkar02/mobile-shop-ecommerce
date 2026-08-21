@@ -16,6 +16,4 @@ namespace App\Exceptions;
  * which bypasses Eloquent model events entirely and is unaffected by this
  * guard.
  */
-class RecordDeletionNotAllowedException extends \RuntimeException
-{
-}
+class RecordDeletionNotAllowedException extends \RuntimeException {}

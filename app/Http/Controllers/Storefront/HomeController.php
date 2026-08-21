@@ -10,12 +10,11 @@ use App\Models\HomepageSection;
 class HomeController extends Controller
 {
     public function __invoke()
-{
-    $sections = HomepageSection::query()
-        ->currentlyActive()
-        ->get();
+    {
+        $sections = HomepageSection::query()
+            ->currentlyActive()
+            ->get();
 
-
-    return view('storefront.home', compact('sections'));
-}
+        return view('storefront.home', compact('sections'));
+    }
 }

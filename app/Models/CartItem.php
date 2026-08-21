@@ -12,7 +12,7 @@ class CartItem extends Model
 {
     use BelongsToTenant;
 
-    protected $fillable = ['tenant_id','cart_id', 'product_variant_id', 'quantity', 'unit_price'];
+    protected $fillable = ['tenant_id', 'cart_id', 'product_variant_id', 'quantity', 'unit_price'];
 
     protected function casts(): array
     {

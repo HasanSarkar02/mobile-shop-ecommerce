@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Models\Tenant;
 use App\Services\OrderService;
+use App\Support\Tenancy\Tenancy;
 use Illuminate\Console\Command;
 
 class ReleaseExpiredReservations extends Command
@@ -19,7 +20,7 @@ class ReleaseExpiredReservations extends Command
         $total = 0;
 
         Tenant::query()->where('status', 'active')->each(function (Tenant $tenant) use ($orders, &$total): void {
-            app(\App\Support\Tenancy\Tenancy::class)->set($tenant);
+            app(Tenancy::class)->set($tenant);
             $total += $orders->releaseExpiredReservations();
         });
 

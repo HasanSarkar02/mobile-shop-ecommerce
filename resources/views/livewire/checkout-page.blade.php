@@ -95,19 +95,78 @@
                 </div>
                 <div class="space-y-2">
                     @foreach ($paymentMethods as $method)
+                        @php
+                            $isManualMfs = $method->type === \App\Enums\PaymentMethodType::ManualMfs;
+                            $isBank = $method->type === \App\Enums\PaymentMethodType::BankTransfer;
+                            $isCod = $method->type === \App\Enums\PaymentMethodType::Cod;
+                            $isManual = $isManualMfs || $isBank;
+                        @endphp
                         <label @class([
-                            'flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition',
+                            'flex flex-col gap-2 p-3 rounded-xl border cursor-pointer transition',
                             'border-[var(--brand)] bg-[var(--brand)]/5' =>
                                 $paymentMethodId === $method->id,
                             'border-gray-200 dark:border-gray-800' => $paymentMethodId !== $method->id,
                         ])>
-                            <input type="radio" wire:model.live="paymentMethodId" value="{{ $method->id }}"
-                                class="text-[var(--brand)] focus:ring-[var(--brand)]">
-                            <span class="text-sm font-medium">{{ $method->name }}</span>
+                            <span class="flex items-center gap-3">
+                                <input type="radio" wire:model.live="paymentMethodId" value="{{ $method->id }}"
+                                    class="text-[var(--brand)] focus:ring-[var(--brand)]">
+                                <span class="text-sm font-medium">{{ $method->displayName() }}</span>
+                                @if ($isCod)
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">COD</span>
+                                @elseif($isManual)
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Manual verification</span>
+                                @endif
+                            </span>
+                            @if ($paymentMethodId === $method->id)
+                                @if ($isManual)
+                                    <div class="ml-7 mt-1 rounded-lg bg-gray-50 dark:bg-gray-900 p-3 text-sm space-y-1">
+                                        @if ($method->account_number)
+                                            <p><span class="text-gray-500">Account:</span> <span class="font-mono font-medium">{{ $method->account_number }}</span> @if ($method->account_name) — {{ $method->account_name }} @endif</p>
+                                        @endif
+                                        @if ($isBank && $method->bank_name)
+                                            <p><span class="text-gray-500">Bank:</span> {{ $method->bank_name }} @if ($method->branch_name) ({{ $method->branch_name }}) @endif</p>
+                                        @endif
+                                        @if ($method->instructions)
+                                            <p class="text-gray-600 dark:text-gray-300 whitespace-pre-line">{{ $method->instructions }}</p>
+                                        @endif
+                                        <p class="text-xs text-amber-700 dark:text-amber-300">After paying, submit your Transaction ID on the order confirmation page for verification.</p>
+                                    </div>
+                                @elseif($isCod)
+                                    @if ($method->instructions)
+                                        <p class="ml-7 text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line">{{ $method->instructions }}</p>
+                                    @else
+                                        <p class="ml-7 text-sm text-gray-500">Pay with cash when your order is delivered.</p>
+                                    @endif
+                                @endif
+                            @endif
                         </label>
                     @endforeach
+                    @if ($paymentMethods->isEmpty())
+                        <p class="text-sm text-gray-500">No payment methods are currently enabled for this store.</p>
+                    @endif
                 </div>
             </div>
+
+            @if ($hasPreorder ?? false)
+                <div class="rounded-2xl border border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/40 p-4">
+                    <h3 class="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-purple-500"></span> Pre-order in your cart
+                    </h3>
+                    @if ($preorderEta)
+                        <p class="mt-1 text-sm text-purple-700 dark:text-purple-300">Earliest expected availability: <strong>{{ $preorderEta->format('M j, Y') }}</strong> — estimate, subject to change.</p>
+                    @endif
+                    @if ($isMixed ?? false)
+                        <p class="mt-1 text-sm text-purple-700 dark:text-purple-300">In-stock items will ship now. Pre-order items will ship separately around their ETA.</p>
+                    @else
+                        <p class="mt-1 text-sm text-purple-700 dark:text-purple-300">This order contains pre-order items that will ship around the ETA.</p>
+                    @endif
+                    <label class="mt-3 flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" wire:model.live="preorder_ack" class="mt-1 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                        <span class="text-sm text-purple-900 dark:text-purple-100">I understand that pre-order items are paid now and ship around the estimated availability date.</span>
+                    </label>
+                    @error('preorder_ack') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+            @endif
 
             <div class="rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
                 <label for="customerNote" class="font-semibold text-sm block mb-2">Order Note (optional)</label>
@@ -126,8 +185,14 @@
         <div class="w-full lg:w-80 flex-shrink-0 lg:sticky lg:top-24">
             <div class="rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
                 <h2 class="font-semibold mb-4">Order Summary</h2>
+                @if ($isMixed ?? false)
+                    <div class="mb-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 p-2 text-xs text-purple-700 dark:text-purple-300">
+                        Stock ships now · Pre-order ships around ETA
+                    </div>
+                @endif
                 <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
                     @foreach ($cartItems as $item)
+                        @php $isPre = $item->variant?->fulfillment_strategy?->value === 'preorder'; @endphp
                         <div class="flex items-center gap-3">
                             <div
                                 class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 flex-shrink-0 relative">
@@ -137,9 +202,16 @@
                                 @endif
                                 <span
                                     class="absolute -top-1.5 -right-1.5 bg-gray-700 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">{{ $item->quantity }}</span>
+                                @if ($isPre)
+                                    <span class="absolute bottom-0 left-0 right-0 bg-purple-600 text-white text-[9px] font-bold text-center leading-3">PRE-ORDER</span>
+                                @endif
                             </div>
-                            <p class="text-sm flex-1 min-w-0 truncate">
-                                {{ $item->variant->product->name ?? $item->variant->sku }}</p>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm truncate">{{ $item->variant->product->name ?? $item->variant->sku }}</p>
+                                @if ($isPre && $item->variant?->expected_available_at)
+                                    <p class="text-xs text-purple-600 dark:text-purple-400">ETA {{ $item->variant->expected_available_at->format('M j, Y') }}</p>
+                                @endif
+                            </div>
                             <p class="text-sm font-medium flex-shrink-0">৳{{ number_format($item->lineTotal() / 100) }}
                             </p>
                         </div>

@@ -80,9 +80,17 @@
                                     </span>
                                 @endif
                                 <div class="min-w-0">
-                                    <p class="break-words font-medium text-gray-900 dark:text-white">{{ $item->product_name_snapshot }}</p>
+                                    <p class="break-words font-medium text-gray-900 dark:text-white">
+                                        {{ $item->product_name_snapshot }}
+                                        @if (($item->fulfillment_strategy ?? null) === 'preorder')
+                                            <span class="ml-1 inline-flex px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-xs">PRE-ORDER</span>
+                                        @endif
+                                    </p>
                                     @if ($item->variant_sku_snapshot)
                                         <p class="mt-0.5 break-words text-xs text-gray-500 dark:text-gray-400">SKU: {{ $item->variant_sku_snapshot }}</p>
+                                    @endif
+                                    @if (($item->fulfillment_strategy ?? null) === 'preorder' && $item->expected_available_at)
+                                        <p class="mt-0.5 text-xs text-purple-600 dark:text-purple-400">Expected {{ $item->expected_available_at->format('M j, Y') }}</p>
                                     @endif
                                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 sm:hidden">
                                         {{ $item->quantity }} × ৳{{ number_format($item->unit_price / 100, 2) }}

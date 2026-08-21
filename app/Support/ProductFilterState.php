@@ -23,8 +23,7 @@ final class ProductFilterState
         public readonly int $page = 1,
         public readonly int $perPage = 24,
         public readonly ?string $searchTerm = null,
-    ) {
-    }
+    ) {}
 
     public function isFiltered(): bool
     {

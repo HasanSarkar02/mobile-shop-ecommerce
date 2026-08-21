@@ -19,9 +19,16 @@
                             @endif
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="font-medium truncate">{{ $item->variant->product->name ?? $item->variant->sku }}
+                            <p class="font-medium truncate">
+                                {{ $item->variant->product->name ?? $item->variant->sku }}
+                                @if ($item->variant?->fulfillment_strategy?->value === 'preorder')
+                                    <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">PRE-ORDER</span>
+                                @endif
                             </p>
                             <p class="text-sm text-gray-500">{{ $item->variant->sku }}</p>
+                            @if ($item->variant?->fulfillment_strategy?->value === 'preorder' && $item->variant?->expected_available_at)
+                                <p class="text-xs text-purple-600 dark:text-purple-400">Expected {{ $item->variant->expected_available_at->format('M j, Y') }}</p>
+                            @endif
                             <button wire:click="removeItem({{ $item->id }})" wire:loading.attr="disabled"
                                 wire:target="removeItem({{ $item->id }})"
                                 class="text-xs text-red-500 hover:underline mt-1">Remove</button>

@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Notifications\ShopNeedsApprovalNotification;
 
 /**
  * Public signup facade. Provisioning itself is delegated to the single
@@ -17,9 +18,9 @@ class TenantRegistrationService
     /**
      * @return array{0: Tenant, 1: User}
      */
-    public function register(string $businessName, string $subdomain, string $ownerName, string $ownerEmail, string $password): array
+    public function register(string $businessName, string $subdomain, string $ownerName, string $ownerEmail, string $password, string $ownerPhone = ''): array
     {
-        return app(TenantBootstrapService::class)->bootstrap([
+        [$tenant, $owner] = app(TenantBootstrapService::class)->bootstrap([
             'name' => $businessName,
             'subdomain' => $subdomain,
             'plan' => 'trial',
@@ -27,7 +28,15 @@ class TenantRegistrationService
                 'name' => $ownerName,
                 'email' => $ownerEmail,
                 'password' => $password,
+                'phone' => $ownerPhone === '' ? null : $ownerPhone,
             ],
-        ], ownerMode: TenantBootstrapService::OWNER_MODE_EXPLICIT);
+        ], ownerMode: TenantBootstrapService::OWNER_MODE_EXPLICIT, initialStatus: 'pending');
+
+        User::query()
+            ->where('is_platform_admin', true)
+            ->get()
+            ->each(fn (User $admin) => $admin->notify(new ShopNeedsApprovalNotification($tenant)));
+
+        return [$tenant, $owner];
     }
 }

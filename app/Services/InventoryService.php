@@ -29,7 +29,22 @@ class InventoryService
 {
     public function defaultLocation(): Location
     {
-        return Location::query()->where('is_default', true)->firstOrFail();
+        $location = Location::query()->where('is_default', true)->first();
+
+        if ($location) {
+            return $location;
+        }
+
+        $tenantId = tenant()?->id;
+
+        if (! $tenantId) {
+            throw new \RuntimeException('No default location found and no tenant context available.');
+        }
+
+        return Location::query()->firstOrCreate(
+            ['tenant_id' => $tenantId, 'is_default' => true],
+            ['name' => 'Main Store', 'type' => 'store', 'is_default' => true, 'is_active' => true],
+        );
     }
 
     private function stockItemFor(ProductVariant $variant, ?Location $location = null): StockItem

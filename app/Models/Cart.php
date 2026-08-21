@@ -14,13 +14,13 @@ class Cart extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-    'tenant_id',
-    'customer_id',
-    'session_token',
-    'currency_code',
-    'converted_at',
-    'coupon_id',
-];
+        'tenant_id',
+        'customer_id',
+        'session_token',
+        'currency_code',
+        'converted_at',
+        'coupon_id',
+    ];
 
     protected function casts(): array
     {
@@ -41,6 +41,7 @@ class Cart extends Model
     {
         return $this->converted_at !== null;
     }
+
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);

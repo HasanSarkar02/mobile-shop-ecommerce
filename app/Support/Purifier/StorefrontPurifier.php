@@ -24,10 +24,8 @@ use Mews\Purifier\Facades\Purifier;
  */
 class StorefrontPurifier
 {
-/**
-     * @param  string|null  $html
+    /**
      * @param  string  $profile  Purifier profile name, defaults to 'storefront'.
-     * @return string
      */
     public static function clean(?string $html, string $profile = 'storefront'): string
     {
@@ -36,7 +34,7 @@ class StorefrontPurifier
         }
 
         return (string) Purifier::clean($html, $profile, function ($config) {
-            \App\Support\Purifier\StorefrontPurifier::configure($config);
+            StorefrontPurifier::configure($config);
         });
     }
 
@@ -47,7 +45,7 @@ class StorefrontPurifier
      * Purifier instance, so the class is referenced by its fully qualified
      * name.
      *
-     * @param \HTMLPurifier_Config $config
+     * @param  \HTMLPurifier_Config  $config
      */
     public static function configure($config): void
     {
@@ -67,7 +65,7 @@ class StorefrontPurifier
      * written to the definition cache). The one benign warning it emits for
      * the missing CSS.DefinitionID lookup is suppressed.
      *
-     * @param \HTMLPurifier_Config $config
+     * @param  \HTMLPurifier_Config  $config
      * @return \HTMLPurifier_CSSDefinition|null
      */
     private static function getRawCssDefinition($config)
@@ -108,15 +106,15 @@ class StorefrontPurifier
             'visible', 'hidden', 'scroll', 'auto', 'clip', 'inherit', 'initial', 'unset',
         ]);
 
-        $css->info['opacity'] = new HTMLPurifier_AttrDef_CSS_AlphaValue();
+        $css->info['opacity'] = new HTMLPurifier_AttrDef_CSS_AlphaValue;
 
         $css->info['position'] = $enum([
             'static', 'relative', 'absolute', 'fixed', 'sticky', 'inherit', 'initial', 'unset',
         ]);
 
         $inset = new HTMLPurifier_AttrDef_CSS_Composite([
-            new HTMLPurifier_AttrDef_CSS_Length(),
-            new HTMLPurifier_AttrDef_CSS_Percentage(),
+            new HTMLPurifier_AttrDef_CSS_Length,
+            new HTMLPurifier_AttrDef_CSS_Percentage,
             new HTMLPurifier_AttrDef_Enum(['auto']),
         ]);
 
@@ -126,7 +124,7 @@ class StorefrontPurifier
         $css->info['left'] = $inset;
 
         $css->info['z-index'] = new HTMLPurifier_AttrDef_CSS_Composite([
-            new HTMLPurifier_AttrDef_Integer(),
+            new HTMLPurifier_AttrDef_Integer,
             new HTMLPurifier_AttrDef_Enum(['auto']),
         ]);
 
@@ -145,8 +143,8 @@ class StorefrontPurifier
         $css->info['flex-grow'] = $css->info['flex-shrink'] = new HTMLPurifier_AttrDef_CSS_Number(true);
 
         $css->info['flex-basis'] = new HTMLPurifier_AttrDef_CSS_Composite([
-            new HTMLPurifier_AttrDef_CSS_Length(),
-            new HTMLPurifier_AttrDef_CSS_Percentage(),
+            new HTMLPurifier_AttrDef_CSS_Length,
+            new HTMLPurifier_AttrDef_CSS_Percentage,
             new HTMLPurifier_AttrDef_Enum(['auto', 'content']),
         ]);
 
@@ -160,13 +158,13 @@ class StorefrontPurifier
 
         $flexPart = new HTMLPurifier_AttrDef_CSS_Composite([
             new HTMLPurifier_AttrDef_CSS_Number(true),
-            new HTMLPurifier_AttrDef_CSS_Length(),
-            new HTMLPurifier_AttrDef_CSS_Percentage(),
+            new HTMLPurifier_AttrDef_CSS_Length,
+            new HTMLPurifier_AttrDef_CSS_Percentage,
             new HTMLPurifier_AttrDef_Enum(['auto', 'content', 'none', 'inherit', 'initial', 'unset']),
         ]);
 
         $css->info['flex'] = new HTMLPurifier_AttrDef_CSS_Multiple($flexPart, 3);
-        $css->info['flex-flow'] = new SafeCssValue();
+        $css->info['flex-flow'] = new SafeCssValue;
 
         $css->info['justify-content'] = $enum([
             'flex-start', 'flex-end', 'center', 'space-between', 'space-around',
@@ -188,8 +186,8 @@ class StorefrontPurifier
         ]);
 
         $gap = new HTMLPurifier_AttrDef_CSS_Composite([
-            new HTMLPurifier_AttrDef_CSS_Length(),
-            new HTMLPurifier_AttrDef_CSS_Percentage(),
+            new HTMLPurifier_AttrDef_CSS_Length,
+            new HTMLPurifier_AttrDef_CSS_Percentage,
             new HTMLPurifier_AttrDef_Enum(['normal']),
         ]);
 
@@ -197,25 +195,25 @@ class StorefrontPurifier
         $css->info['row-gap'] =
         $css->info['column-gap'] = $gap;
 
-        $css->info['grid'] = new SafeCssValue();
-        $css->info['grid-template'] = new SafeCssValue();
-        $css->info['grid-template-columns'] = new SafeCssValue();
-        $css->info['grid-template-rows'] = new SafeCssValue();
-        $css->info['grid-template-areas'] = new SafeCssValue();
-        $css->info['grid-auto-columns'] = new SafeCssValue();
-        $css->info['grid-auto-rows'] = new SafeCssValue();
-        $css->info['grid-auto-flow'] = new SafeCssValue();
-        $css->info['grid-column'] = new SafeCssValue();
-        $css->info['grid-column-start'] = new SafeCssValue();
-        $css->info['grid-column-end'] = new SafeCssValue();
-        $css->info['grid-row'] = new SafeCssValue();
-        $css->info['grid-row-start'] = new SafeCssValue();
-        $css->info['grid-row-end'] = new SafeCssValue();
-        $css->info['grid-area'] = new SafeCssValue();
+        $css->info['grid'] = new SafeCssValue;
+        $css->info['grid-template'] = new SafeCssValue;
+        $css->info['grid-template-columns'] = new SafeCssValue;
+        $css->info['grid-template-rows'] = new SafeCssValue;
+        $css->info['grid-template-areas'] = new SafeCssValue;
+        $css->info['grid-auto-columns'] = new SafeCssValue;
+        $css->info['grid-auto-rows'] = new SafeCssValue;
+        $css->info['grid-auto-flow'] = new SafeCssValue;
+        $css->info['grid-column'] = new SafeCssValue;
+        $css->info['grid-column-start'] = new SafeCssValue;
+        $css->info['grid-column-end'] = new SafeCssValue;
+        $css->info['grid-row'] = new SafeCssValue;
+        $css->info['grid-row-start'] = new SafeCssValue;
+        $css->info['grid-row-end'] = new SafeCssValue;
+        $css->info['grid-area'] = new SafeCssValue;
 
         $css->info['box-sizing'] = $enum(['content-box', 'border-box']);
-        $css->info['box-shadow'] = new SafeCssValue();
-        $css->info['text-shadow'] = new SafeCssValue();
+        $css->info['box-shadow'] = new SafeCssValue;
+        $css->info['text-shadow'] = new SafeCssValue;
 
         $css->info['object-fit'] = $enum([
             'fill', 'contain', 'cover', 'none', 'scale-down', 'inherit', 'initial', 'unset',
@@ -223,25 +221,25 @@ class StorefrontPurifier
 
         $css->info['object-position'] = new HTMLPurifier_AttrDef_CSS_Multiple(
             new HTMLPurifier_AttrDef_CSS_Composite([
-                new HTMLPurifier_AttrDef_CSS_Length(),
-                new HTMLPurifier_AttrDef_CSS_Percentage(),
+                new HTMLPurifier_AttrDef_CSS_Length,
+                new HTMLPurifier_AttrDef_CSS_Percentage,
                 new HTMLPurifier_AttrDef_Enum(['center', 'top', 'bottom', 'left', 'right']),
             ]),
             2
         );
 
-        $css->info['transform'] = new SafeCssValue();
+        $css->info['transform'] = new SafeCssValue;
 
         $css->info['transform-origin'] = new HTMLPurifier_AttrDef_CSS_Multiple(
             new HTMLPurifier_AttrDef_CSS_Composite([
-                new HTMLPurifier_AttrDef_CSS_Length(),
-                new HTMLPurifier_AttrDef_CSS_Percentage(),
+                new HTMLPurifier_AttrDef_CSS_Length,
+                new HTMLPurifier_AttrDef_CSS_Percentage,
                 new HTMLPurifier_AttrDef_Enum(['center', 'top', 'bottom', 'left', 'right']),
             ]),
             3
         );
 
-        $css->info['transition'] = new SafeCssValue();
+        $css->info['transition'] = new SafeCssValue;
 
         $css->info['word-break'] = $enum([
             'normal', 'break-all', 'keep-all', 'break-word', 'inherit', 'initial', 'unset',

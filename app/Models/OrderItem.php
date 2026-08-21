@@ -14,8 +14,9 @@ class OrderItem extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'order_id', 'product_variant_id', 'product_name_snapshot', 'variant_sku_snapshot',
-        'unit_price', 'quantity', 'line_total',
+        'tenant_id',
+        'order_id', 'order_fulfillment_id', 'product_variant_id', 'product_name_snapshot', 'variant_sku_snapshot',
+        'unit_price', 'quantity', 'line_total', 'fulfillment_strategy', 'expected_available_at',
     ];
 
     protected function casts(): array
@@ -24,7 +25,13 @@ class OrderItem extends Model
             'unit_price' => 'integer',
             'quantity' => 'integer',
             'line_total' => 'integer',
+            'expected_available_at' => 'datetime',
         ];
+    }
+
+    public function fulfillment(): BelongsTo
+    {
+        return $this->belongsTo(OrderFulfillment::class, 'order_fulfillment_id');
     }
 
     public function order(): BelongsTo

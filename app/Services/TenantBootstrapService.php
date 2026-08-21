@@ -8,6 +8,7 @@ use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\TenantInvitation;
 use App\Models\User;
+use App\Notifications\ShopPendingApprovalNotification;
 use App\Notifications\TenantOwnerInvitationNotification;
 use App\Notifications\WelcomeTenantOwnerNotification;
 use Carbon\CarbonInterface;
@@ -41,32 +42,39 @@ final class TenantBootstrapService
      *     currency?: string,
      *     contact_email?: string|null,
      *     contact_phone?: string|null,
-     *     owner: array{name: string, email: string, password?: string|null},
+     *     owner: array{name: string, email: string, password?: string|null, phone?: string|null},
      * }  $data
+     * @param  string|null  $initialStatus  Optional tenant status override. When
+     *                                      'pending' the tenant is created without a
+     *                                      subscription and the owner is told their
+     *                                      shop is under review (public signup approval
+     *                                      gate). Null keeps the plan-derived default.
      * @return array{0: Tenant, 1: User}
      */
-    public function bootstrap(array $data, string $ownerMode = self::OWNER_MODE_EXPLICIT, ?User $invitedBy = null): array
+    public function bootstrap(array $data, string $ownerMode = self::OWNER_MODE_EXPLICIT, ?User $invitedBy = null, ?string $initialStatus = null): array
     {
-        return DB::transaction(function () use ($data, $ownerMode, $invitedBy): array {
+        return DB::transaction(function () use ($data, $ownerMode, $invitedBy, $initialStatus): array {
             $plan = $this->resolveActivePlan($data['plan']);
             $isTrial = $plan->slug === 'trial';
 
             $tenant = Tenant::query()->create([
                 'name' => $data['name'],
                 'subdomain' => strtolower($data['subdomain']),
-                'status' => $isTrial ? 'trial' : 'active',
+                'status' => $initialStatus ?? ($isTrial ? 'trial' : 'active'),
                 'plan' => $plan->slug,
                 'currency' => $data['currency'] ?? 'BDT',
                 'contact_email' => $data['contact_email'] ?? null,
                 'contact_phone' => $data['contact_phone'] ?? null,
             ]);
 
-            $this->createSubscription($tenant, $plan, $isTrial);
+            if ($initialStatus !== 'pending') {
+                $this->createSubscription($tenant, $plan, $isTrial);
+            }
 
             $owner = $this->createOwner($tenant, $data['owner'], $ownerMode);
             $tenant->forceFill(['primary_owner_id' => $owner->id])->save();
 
-            $this->notifyOwner($tenant, $owner, $ownerMode, $invitedBy);
+            $this->notifyOwner($tenant, $owner, $ownerMode, $invitedBy, $initialStatus);
 
             return [$tenant, $owner];
         });
@@ -97,7 +105,7 @@ final class TenantBootstrapService
     }
 
     /**
-     * @param  array{name: string, email: string, password?: string|null}  $ownerData
+     * @param  array{name: string, email: string, password?: string|null, phone?: string|null}  $ownerData
      */
     private function createOwner(Tenant $tenant, array $ownerData, string $ownerMode): User
     {
@@ -124,6 +132,7 @@ final class TenantBootstrapService
             'tenant_id' => $tenant->id,
             'name' => $name,
             'email' => $email,
+            'phone' => $ownerData['phone'] ?? null,
             'password' => Hash::make($password),
         ]);
         $owner->forceFill(['tenant_id' => $tenant->id, 'role' => 'owner', 'is_active' => true])->save();
@@ -131,8 +140,14 @@ final class TenantBootstrapService
         return $owner;
     }
 
-    private function notifyOwner(Tenant $tenant, User $owner, string $ownerMode, ?User $invitedBy): void
+    private function notifyOwner(Tenant $tenant, User $owner, string $ownerMode, ?User $invitedBy, ?string $initialStatus): void
     {
+        if ($initialStatus === 'pending') {
+            $owner->notify(new ShopPendingApprovalNotification($tenant));
+
+            return;
+        }
+
         if ($ownerMode === self::OWNER_MODE_INVITATION) {
             $issued = $this->invitations->issue(
                 $tenant,

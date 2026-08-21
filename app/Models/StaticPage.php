@@ -8,6 +8,7 @@ use App\Enums\StaticPageStatus;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Mews\Purifier\Facades\Purifier;
 
 class StaticPage extends Model
 {
@@ -32,6 +33,6 @@ class StaticPage extends Model
 
     public function sanitizedContent(): ?string
     {
-        return $this->content ? \Mews\Purifier\Facades\Purifier::clean($this->content) : null;
+        return $this->content ? Purifier::clean($this->content) : null;
     }
 }

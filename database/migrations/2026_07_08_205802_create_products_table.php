@@ -30,7 +30,7 @@ return new class extends Migration
             $table->index(['tenant_id', 'status']);
             $table->index(['tenant_id', 'brand_id']);
             $table->index(['tenant_id', 'category_id']);
-            $table->index(['tenant_id', 'is_featured'],'ptf_idx');
+            $table->index(['tenant_id', 'is_featured'], 'ptf_idx');
         });
     }
 

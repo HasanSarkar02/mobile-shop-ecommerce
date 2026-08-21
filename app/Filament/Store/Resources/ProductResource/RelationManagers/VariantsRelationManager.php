@@ -79,7 +79,14 @@ class VariantsRelationManager extends RelationManager
                 ->required(),
             DateTimePicker::make('expected_available_at')
                 ->label('Expected availability date')
-                ->visible(fn (Get $get): bool => $get('fulfillment_strategy') === FulfillmentStrategy::Preorder->value),
+                ->helperText('Required for pre-orders. Shown to shoppers as “Expected availability M j, Y — estimate, subject to change”.')
+                ->visible(fn (Get $get): bool => $get('fulfillment_strategy') === FulfillmentStrategy::Preorder->value)
+                ->required(fn (Get $get): bool => $get('fulfillment_strategy') === FulfillmentStrategy::Preorder->value)
+                ->after('now')
+                ->validationMessages([
+                    'required' => 'ETA is required for pre-orders.',
+                    'after' => 'ETA must be in the future.',
+                ]),
             SpatieMediaLibraryFileUpload::make('images')
                 ->collection('images')
                 ->image()

@@ -11,8 +11,7 @@ final class CouponValidationResult
         public readonly int $discountAmount = 0,
         public readonly bool $freeShipping = false,
         public readonly ?string $message = null,
-    ) {
-    }
+    ) {}
 
     public static function valid(int $discountAmount, bool $freeShipping = false): self
     {

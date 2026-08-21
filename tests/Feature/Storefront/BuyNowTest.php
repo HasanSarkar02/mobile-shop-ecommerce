@@ -5,9 +5,9 @@ declare(strict_types=1);
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductTranslation;
 use App\Models\ProductVariant;
 use App\Services\InventoryService;
-use Illuminate\Support\Str;
 
 function buyNowBaseUrl(object $tenant): string
 {
@@ -19,7 +19,7 @@ function buyNowProduct(array $variantOverrides = []): array
     $tenant = actingAsTenant(['status' => 'active']);
 
     $product = Product::factory()->create(['status' => 'published']);
-    \App\Models\ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
+    ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
     $variant = ProductVariant::factory()->for($product)->create($variantOverrides);
 
     return [$slug = $product->translation('en')->slug, $variant, $tenant, buyNowBaseUrl($tenant)];

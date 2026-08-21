@@ -23,8 +23,8 @@ return new class extends Migration
             $table->boolean('value_boolean')->nullable();
             $table->timestamps();
 
-            $table->index(['attribute_definition_id', 'value_string'],'pav_idx');
-            $table->index(['attribute_definition_id', 'value_decimal'],'pav_idx_decimal');
+            $table->index(['attribute_definition_id', 'value_string'], 'pav_idx');
+            $table->index(['attribute_definition_id', 'value_decimal'], 'pav_idx_decimal');
             $table->index('product_id');
             $table->index('product_variant_id');
         });

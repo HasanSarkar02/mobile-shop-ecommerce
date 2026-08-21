@@ -16,6 +16,5 @@ class OrderStatusChanged
         public readonly Order $order,
         public readonly OrderStatus $from,
         public readonly OrderStatus $to,
-    ) {
-    }
+    ) {}
 }

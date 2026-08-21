@@ -14,9 +14,7 @@ class SubscriptionExpiredNotification extends Notification implements ShouldQueu
 {
     use Queueable;
 
-    public function __construct(private readonly Tenant $tenant)
-    {
-    }
+    public function __construct(private readonly Tenant $tenant) {}
 
     public function via($notifiable): array
     {

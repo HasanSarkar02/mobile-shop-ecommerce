@@ -18,7 +18,7 @@ class OrderEvent extends Model
 
     public const UPDATED_AT = null;
 
-    protected $fillable = ['order_id', 'type', 'from_status', 'to_status', 'description', 'metadata', 'created_by'];
+    protected $fillable = ['tenant_id', 'order_id', 'type', 'from_status', 'to_status', 'description', 'metadata', 'created_by'];
 
     protected function casts(): array
     {

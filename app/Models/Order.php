@@ -30,12 +30,13 @@ class Order extends Model
     use PreventsDeletion;
 
     protected $fillable = [
+        'tenant_id',
         'order_number', 'invoice_number', 'customer_id', 'guest_name', 'guest_email', 'guest_phone',
         'status', 'order_source', 'sales_channel', 'payment_method_id', 'shipping_method_id',
         'currency_code', 'currency_rate', 'subtotal', 'shipping_cost', 'discount_total', 'tax_total', 'grand_total',
         'shipping_address_id', 'shipping_address_snapshot', 'billing_address_id', 'billing_address_snapshot',
         'customer_note', 'internal_note', 'placed_at', 'reservation_expires_at',
-        'active_reservation_key',
+        'active_reservation_key', 'preorder_ack_at',
     ];
 
     protected function casts(): array
@@ -53,6 +54,7 @@ class Order extends Model
             'billing_address_snapshot' => 'array',
             'placed_at' => 'datetime',
             'reservation_expires_at' => 'datetime',
+            'preorder_ack_at' => 'datetime',
         ];
     }
 

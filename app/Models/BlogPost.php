@@ -9,6 +9,7 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
+use Mews\Purifier\Facades\Purifier;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -43,7 +44,7 @@ class BlogPost extends Model implements HasMedia
 
     public function sanitizedContent(): string
     {
-        return \Mews\Purifier\Facades\Purifier::clean($this->content);
+        return Purifier::clean($this->content);
     }
 
     public function registerMediaCollections(): void

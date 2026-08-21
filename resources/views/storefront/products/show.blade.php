@@ -378,7 +378,7 @@
                         <input type="hidden" name="quantity" :value="quantity">
                         <x-ui.button variant="primary" size="lg" class="w-full" type="submit"
                             x-bind:disabled="pending || cartLoading || !current() || !current().purchasable">
-                            Buy Now
+                            <span x-text="current() && current().purchase_state === 'preorder' ? 'Pre-Order Now' : 'Buy Now'"></span>
                         </x-ui.button>
                     </form>
                 </div>
@@ -424,7 +424,7 @@
                         <input type="hidden" name="quantity" :value="quantity">
                         <x-ui.button variant="primary" size="lg" class="w-full" type="submit"
                             x-bind:disabled="pending || cartLoading || !current() || !current().purchasable">
-                            Buy Now
+                            <span x-text="current() && current().purchase_state === 'preorder' ? 'Pre-Order Now' : 'Buy Now'"></span>
                         </x-ui.button>
                     </form>
                 </div>
@@ -1014,7 +1014,8 @@
                     if (!v) return 'text-gray-500';
                     const state = v.purchase_state;
                     if (state === 'discontinued' || state === 'out_of_stock') return 'text-red-500';
-                    if (state === 'preorder' || state === 'low_stock') return 'text-amber-600';
+                    if (state === 'preorder') return 'text-purple-600';
+                    if (state === 'low_stock') return 'text-amber-600';
                     return 'text-green-600';
                 },
                 restockMessage() {

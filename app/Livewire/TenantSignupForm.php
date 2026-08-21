@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Rules\BangladeshiPhone;
 use App\Rules\ValidSubdomain;
 use App\Services\TenantRegistrationService;
 use App\Support\Tenancy\TenantUrlGenerator;
@@ -24,6 +25,8 @@ class TenantSignupForm extends Component
     public string $owner_name = '';
 
     public string $owner_email = '';
+
+    public string $owner_phone = '';
 
     public string $password = '';
 
@@ -51,8 +54,9 @@ class TenantSignupForm extends Component
             'owner_email' => [
                 'required',
                 'email',
-                Rule::unique('users')->where(fn (Builder $query) => $query->whereNull('tenant_id')),
+                Rule::unique('users', 'email')->where(fn (Builder $query) => $query->whereNull('tenant_id')),
             ],
+            'owner_phone' => ['required', 'string', new BangladeshiPhone],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
@@ -67,7 +71,12 @@ class TenantSignupForm extends Component
             $this->owner_name,
             $this->owner_email,
             $this->password,
+            $this->owner_phone,
         );
+
+        if ($tenant->getAttribute('status') === 'pending') {
+            return redirect()->route('platform.signup.pending');
+        }
 
         $signedPath = URL::temporarySignedRoute(
             'storefront.auto-login',

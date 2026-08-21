@@ -10,10 +10,10 @@ use App\Enums\CouponScopeMode;
 use App\Enums\CouponType;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasSchedule;
+use App\Models\CouponCustomerEligibility as CouponCustomerEligibilityModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\CouponCustomerEligibility as CouponCustomerEligibilityModel;
 
 class Coupon extends Model
 {
@@ -55,6 +55,7 @@ class Coupon extends Model
     {
         return $this->hasMany(CouponCustomerEligibilityModel::class);
     }
+
     public function scopes(): HasMany
     {
         return $this->hasMany(CouponScope::class);

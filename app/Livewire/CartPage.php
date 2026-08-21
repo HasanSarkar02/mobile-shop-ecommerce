@@ -6,10 +6,10 @@ namespace App\Livewire;
 
 use App\Models\CartItem;
 use App\Services\CartService;
+use App\Services\CouponService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use App\Services\CouponService;
 
 #[Layout('storefront.layout')]
 class CartPage extends Component
@@ -39,6 +39,7 @@ class CartPage extends Component
     }
 
     public string $couponCode = '';
+
     public ?string $couponError = null;
 
     public function applyCoupon(CartService $carts, CouponService $coupons): void

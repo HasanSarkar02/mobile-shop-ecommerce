@@ -9,9 +9,7 @@ use App\Services\RedirectService;
 
 class CategoryObserver
 {
-    public function __construct(private readonly RedirectService $redirects)
-    {
-    }
+    public function __construct(private readonly RedirectService $redirects) {}
 
     public function updated(Category $category): void
     {

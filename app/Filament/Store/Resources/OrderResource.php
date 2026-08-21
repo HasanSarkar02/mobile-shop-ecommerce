@@ -4,16 +4,22 @@ declare(strict_types=1);
 
 namespace App\Filament\Store\Resources;
 
+use App\Enums\OrderEventType;
+use App\Enums\OrderFulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Filament\Store\Resources\OrderResource\Pages;
+use App\Models\CourierConnection;
+use App\Models\CourierProvider;
 use App\Models\Order;
+use App\Models\OrderPayment;
 use App\Models\PaymentMethod;
 use App\Models\ProductVariant;
 use App\Models\ShippingMethod;
 use App\Services\OrderService;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -21,6 +27,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Group;
@@ -29,6 +36,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
@@ -52,7 +60,32 @@ class OrderResource extends Resource
                 TextColumn::make('placed_at')->dateTime(),
             ])
             ->defaultSort('placed_at', 'desc')
-            ->recordActions([ViewAction::make()]);
+            ->recordActions([ViewAction::make()])
+            ->bulkActions([
+                BulkAction::make('bulkSendToCourier')
+                    ->label('Send to Courier (bulk)')
+                    ->icon('heroicon-o-truck')
+                    ->schema([
+                        Select::make('courier_connection_id')
+                            ->label('Courier')
+                            ->options(fn (): array => CourierConnection::query()->where('is_active', true)->with('provider')->get()->mapWithKeys(fn ($c) => [$c->id => ($c->provider?->displayName() ?? 'Courier').' — '.($c->sandbox ? 'Sandbox' : 'Live')])->all())
+                            ->required(),
+                    ])
+                    ->action(function (EloquentCollection $records, array $data): void {
+                        $connection = CourierConnection::query()->whereKey($data['courier_connection_id'])->firstOrFail();
+                        $provider = $connection->provider()->first() ?? CourierProvider::query()->findOrFail($connection->courier_provider_id);
+                        $baseUrl = $provider->effectiveBaseUrl((bool) $connection->sandbox) ?: $connection->effectiveBaseUrl();
+                        $driverClass = $provider->driver_class ?? config('couriers.drivers.'.$provider->code);
+                        $driver = app($driverClass);
+
+                        $orders = $records->load('fulfillments');
+                        $result = $driver->createBulk($orders->all(), $connection->credentials ?? [], $baseUrl);
+
+                        foreach ($result->items as $item) {
+                            Notification::make()->title('Bulk result: '.($item['invoice'] ?? '').' — '.$item['status'])->send();
+                        }
+                    }),
+            ]);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -206,6 +239,8 @@ class OrderResource extends Resource
                             ->description(fn (Order $record): string => self::paymentSummary($record))
                             ->headerActions([
                                 self::recordPaymentAction(),
+                                self::verifyManualPaymentAction(),
+                                self::rejectManualPaymentAction(),
                             ])
                             ->schema([
                                 RepeatableEntry::make('payments')
@@ -233,38 +268,29 @@ class OrderResource extends Resource
                         Section::make('Fulfillment')
                             ->icon('heroicon-o-truck')
                             ->hidden(fn (Order $record): bool => $record->fulfillments()->count() === 0)
-                            ->columns(['sm' => 2, 'xl' => 3])
                             ->schema([
-                                TextEntry::make('shipping_method')
-                                    ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->shippingMethod?->name)
-                                    ->label('Shipping Method'),
-                                TextEntry::make('fulfillment_status')
-                                    ->state(fn (Order $record): ?string => self::fulfillmentStatusFor($record))
-                                    ->badge()
-                                    ->color(fn (string $state): string => self::fulfillmentStatusColor($state))
-                                    ->label('Status'),
-                                TextEntry::make('fulfillment_location')
-                                    ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->location?->name)
-                                    ->label('Location')
-                                    ->placeholder('—'),
-                                TextEntry::make('fulfillment_courier_name')
-                                    ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->courier_name)
-                                    ->label('Courier')
-                                    ->placeholder('—'),
-                                TextEntry::make('fulfillment_tracking_number')
-                                    ->state(fn (Order $record): ?string => $record->fulfillments()->latest()->first()?->tracking_number)
-                                    ->label('Tracking Number')
-                                    ->placeholder('—'),
-                                TextEntry::make('fulfillment_shipped_at')
-                                    ->state(fn (Order $record) => $record->fulfillments()->latest()->first()?->shipped_at)
-                                    ->dateTime()
-                                    ->placeholder('—')
-                                    ->label('Shipped At'),
-                                TextEntry::make('fulfillment_delivered_at')
-                                    ->state(fn (Order $record) => $record->fulfillments()->latest()->first()?->delivered_at)
-                                    ->dateTime()
-                                    ->placeholder('—')
-                                    ->label('Delivered At'),
+                                RepeatableEntry::make('fulfillments')
+                                    ->hiddenLabel()
+                                    ->schema([
+                                        Grid::make(['default' => 1, 'sm' => 2, 'xl' => 3])->schema([
+                                            TextEntry::make('fulfillment_group')
+                                                ->label('Group')
+                                                ->badge()
+                                                ->formatStateUsing(fn (?string $state): string => $state ? ucfirst($state) : 'Stock'),
+                                            TextEntry::make('status')
+                                                ->badge()
+                                                ->color(fn (OrderFulfillmentStatus $state): string => self::fulfillmentStatusColor($state->value))
+                                                ->label('Status'),
+                                            TextEntry::make('expected_available_at')
+                                                ->label('ETA')
+                                                ->dateTime('M j, Y')
+                                                ->placeholder('—'),
+                                            TextEntry::make('courier_name')->label('Courier')->placeholder('—'),
+                                            TextEntry::make('tracking_number')->label('Tracking')->placeholder('—'),
+                                            TextEntry::make('shipped_at')->dateTime()->label('Shipped At')->placeholder('—'),
+                                            TextEntry::make('delivered_at')->dateTime()->label('Delivered At')->placeholder('—'),
+                                        ]),
+                                    ]),
                             ]),
 
                         Section::make('Inventory Movements')
@@ -340,6 +366,91 @@ class OrderResource extends Resource
                     OrderPaymentStatus::from($data['status']),
                     $data['transaction_reference'] ?? null,
                 );
+            });
+    }
+
+    public static function verifyManualPaymentAction(): Action
+    {
+        return Action::make('verifyManualPayment')
+            ->label('Verify Manual Payment')
+            ->icon('heroicon-o-check-circle')
+            ->color('success')
+            ->visible(fn (Order $record): bool => $record->payments()->where('status', OrderPaymentStatus::Pending)->exists())
+            ->form([
+                Select::make('order_payment_id')
+                    ->label('Pending Payment')
+                    ->options(fn (Order $record) => $record->payments()->where('status', OrderPaymentStatus::Pending)->with('paymentMethod')->get()->mapWithKeys(fn (OrderPayment $p) => [$p->id => ($p->paymentMethod?->displayName() ?? 'Payment').' — ৳'.number_format($p->amount / 100, 2).' — '.$p->transaction_reference]))
+                    ->required(),
+            ])
+            ->action(function (Order $record, array $data): void {
+                $payment = OrderPayment::query()->whereKey($data['order_payment_id'])->where('order_id', $record->id)->firstOrFail();
+
+                if ($payment->status !== OrderPaymentStatus::Pending) {
+                    return;
+                }
+
+                // Verify that this is a manual verification flow (shop-owned, not COD).
+                $method = $payment->paymentMethod;
+                if ($method && $method->type->isCod()) {
+                    return;
+                }
+
+                $payment->forceFill([
+                    'status' => OrderPaymentStatus::Paid,
+                    'paid_at' => now(),
+                ])->save();
+
+                $record->events()->create([
+                    'tenant_id' => $record->tenant_id,
+                    'type' => OrderEventType::PaymentRecorded,
+                    'description' => 'Manual payment verified — '.$payment->transaction_reference.' marked as Paid.',
+                    'metadata' => ['order_payment_id' => $payment->id, 'transaction_reference' => $payment->transaction_reference],
+                    'created_by' => auth()->id(),
+                ]);
+
+                // Auto-confirm order if fully paid, mirroring OrderService::recordPayment behaviour.
+                $orders = app(OrderService::class);
+                $paidAlready = $orders->amountPaid($record);
+
+                if ($record->status === OrderStatus::Pending && $paidAlready >= (int) $record->grand_total) {
+                    $orders->updateStatus($record, OrderStatus::Confirmed, 'Confirmed — manual payment verified.');
+                }
+            });
+    }
+
+    public static function rejectManualPaymentAction(): Action
+    {
+        return Action::make('rejectManualPayment')
+            ->label('Reject Manual Payment')
+            ->icon('heroicon-o-x-circle')
+            ->color('danger')
+            ->visible(fn (Order $record): bool => $record->payments()->where('status', OrderPaymentStatus::Pending)->exists())
+            ->requiresConfirmation()
+            ->form([
+                Select::make('order_payment_id')
+                    ->label('Pending Payment')
+                    ->options(fn (Order $record) => $record->payments()->where('status', OrderPaymentStatus::Pending)->with('paymentMethod')->get()->mapWithKeys(fn (OrderPayment $p) => [$p->id => ($p->paymentMethod?->displayName() ?? 'Payment').' — ৳'.number_format($p->amount / 100, 2).' — '.$p->transaction_reference]))
+                    ->required(),
+                Textarea::make('reason')->label('Reason')->required(),
+            ])
+            ->action(function (Order $record, array $data): void {
+                $payment = OrderPayment::query()->whereKey($data['order_payment_id'])->where('order_id', $record->id)->firstOrFail();
+
+                if ($payment->status !== OrderPaymentStatus::Pending) {
+                    return;
+                }
+
+                $payment->forceFill([
+                    'status' => OrderPaymentStatus::Failed,
+                ])->save();
+
+                $record->events()->create([
+                    'tenant_id' => $record->tenant_id,
+                    'type' => OrderEventType::PaymentRecorded,
+                    'description' => 'Manual payment rejected — '.$payment->transaction_reference.': '.$data['reason'],
+                    'metadata' => ['order_payment_id' => $payment->id, 'reason' => $data['reason']],
+                    'created_by' => auth()->id(),
+                ]);
             });
     }
 
@@ -724,6 +835,7 @@ class OrderResource extends Resource
             OrderStatus::Confirmed, OrderStatus::Processing, OrderStatus::Shipped => 'info',
             OrderStatus::Delivered => 'success',
             OrderStatus::Cancelled => 'danger',
+            OrderStatus::Refunded => 'gray',
         };
     }
 
@@ -752,6 +864,7 @@ class OrderResource extends Resource
     {
         return [
             'index' => Pages\ListOrders::route('/'),
+            'create' => Pages\CreateOrder::route('/create'),
             'view' => Pages\ViewOrder::route('/{record}'),
         ];
     }

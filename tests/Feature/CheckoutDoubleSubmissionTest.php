@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Enums\OrderStatus;
 use App\Enums\PaymentMethodType;
 use App\Exceptions\CartAlreadyConvertedException;
 use App\Models\Cart;
@@ -14,6 +13,7 @@ use App\Models\ProductVariant;
 use App\Models\Tenant;
 use App\Services\OrderService;
 use App\Support\Tenancy\Tenancy;
+use Illuminate\Support\Facades\Event;
 
 function makeCartForCheckout(Tenant $tenant): Cart
 {
@@ -47,7 +47,7 @@ function makeCartForCheckout(Tenant $tenant): Cart
 }
 
 it('throws CartAlreadyConvertedException on a second createFromCart call for the same cart', function (): void {
-    \Illuminate\Support\Facades\Event::fake();
+    Event::fake();
     $tenant = Tenant::factory()->create();
     app(Tenancy::class)->set($tenant);
 
@@ -56,12 +56,12 @@ it('throws CartAlreadyConvertedException on a second createFromCart call for the
     $paymentMethod = PaymentMethod::query()->create([
         'tenant_id' => $tenant->id,
         'name' => 'Cash on Delivery', // Added a standard name
-        'type' => PaymentMethodType::Cod, 
+        'type' => PaymentMethodType::Cod,
         'is_active' => true,
     ]);
 
     $cart = makeCartForCheckout($tenant);
-    
+
     $orderData = [
         'guest_name' => 'Test Guest',
         'guest_email' => 'guest@example.com',
@@ -81,7 +81,7 @@ it('throws CartAlreadyConvertedException on a second createFromCart call for the
 
     // No second order was created.
     expect(Order::query()->where('tenant_id', $tenant->id)->count())->toBe(1);
-    
+
     // Safely verify the order matches the first one without triggering "id on null"
     $savedOrder = Order::query()->where('tenant_id', $tenant->id)->first();
     expect($savedOrder)->not->toBeNull();

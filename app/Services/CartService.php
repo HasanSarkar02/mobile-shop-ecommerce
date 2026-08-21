@@ -16,8 +16,7 @@ class CartService
         private readonly InventoryService $inventory,
         private readonly OrderService $orders,
         private readonly CouponService $coupons,
-    ) {
-    }
+    ) {}
 
     public function getOrCreateCart(?Customer $customer, ?string $cartToken): Cart
     {
@@ -126,7 +125,7 @@ class CartService
         foreach ($cart->items()->with('variant')->get() as $item) {
             if (! $item->variant) {
                 $item->delete();
-                $issues->push("An item in your cart is no longer available and was removed.");
+                $issues->push('An item in your cart is no longer available and was removed.');
 
                 continue;
             }

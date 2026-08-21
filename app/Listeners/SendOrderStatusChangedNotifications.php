@@ -12,9 +12,7 @@ class SendOrderStatusChangedNotifications
 {
     use BuildsOrderNotificationContext;
 
-    public function __construct(private readonly NotificationService $notifications)
-    {
-    }
+    public function __construct(private readonly NotificationService $notifications) {}
 
     public function handle(OrderStatusChanged $event): void
     {

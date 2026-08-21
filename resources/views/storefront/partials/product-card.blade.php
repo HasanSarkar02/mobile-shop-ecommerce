@@ -1,8 +1,4 @@
-{{-- resources/views/storefront/partials/product-card.blade.php --}}
-{{-- Expects a single `card` view-model array built by App\Services\Storefront\ProductCardData.
-     The card renders only presentation; all business logic (cheapest active variant,
-     discount, availability, wishlist state, CTA type) is resolved server-side before
-     this partial ever runs. Nothing here invents inventory/cart rules. --}}
+
 @php
     $variant = $card['variant'] ?? null;
     $cta = $card['cta'] ?? null;
@@ -12,11 +8,7 @@
     $reviews = $card['reviews_count'] ?? 0;
     $hasRating = $reviews > 0 && $rating !== null;
 @endphp
-{{-- Single outer relative container. One <a> spans the whole visual card
-     (image + name + rating + price) for one clean tab stop and a single
-     navigation target. Wishlist button and the CTA are separate focusable
-     controls rendered as siblings — never nested inside the <a> (a <button>
-     inside an <a> is invalid HTML and breaks click/keyboard semantics). --}}
+
 <div class="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-gray-900/5 dark:border-gray-800 dark:bg-gray-900"
     x-data="{ imgLoaded: false, imgError: false }">
 

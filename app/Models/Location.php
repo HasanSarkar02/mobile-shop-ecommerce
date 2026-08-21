@@ -14,7 +14,7 @@ class Location extends Model
     use BelongsToTenant;
     use HasFactory;
 
-    protected $fillable = ['tenant_id','name', 'type', 'is_default', 'is_active'];
+    protected $fillable = ['tenant_id', 'name', 'type', 'is_default', 'is_active'];
 
     protected function casts(): array
     {

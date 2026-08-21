@@ -7,11 +7,17 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+use App\Console\Commands\ReleaseExpiredPendingApprovals;
 use App\Console\Commands\ReleaseExpiredReservations;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command(ReleaseExpiredReservations::class)
     ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command(ReleaseExpiredPendingApprovals::class)
+    ->daily()
     ->withoutOverlapping()
     ->onOneServer();
 

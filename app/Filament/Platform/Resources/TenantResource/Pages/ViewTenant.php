@@ -12,6 +12,7 @@ use App\Models\TenantInvitation;
 use App\Models\User;
 use App\Notifications\TenantOwnerInvitationNotification;
 use App\Services\OwnerInvitationService;
+use App\Services\TenantApprovalService;
 use Carbon\CarbonInterface;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -28,6 +29,47 @@ class ViewTenant extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('approveShop')
+                ->label('Approve Shop')
+                ->icon('heroicon-o-check-badge')
+                ->color('success')
+                ->requiresConfirmation()
+                ->visible(fn (Tenant $record): bool => $record->getAttribute('status') === 'pending')
+                ->action(function (Tenant $record): void {
+                    try {
+                        $actor = auth('platform')->user();
+                        abort_unless($actor instanceof User, 403);
+                        app(TenantApprovalService::class)->approve($record, $actor);
+                        FilamentNotification::make()->success()->title('Shop approved.')->send();
+                        $this->redirect(request()->url());
+                    } catch (Throwable $exception) {
+                        FilamentNotification::make()->danger()->title('Shop could not be approved.')->body($exception->getMessage())->send();
+                    }
+                }),
+            Action::make('rejectShop')
+                ->label('Reject Shop')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->form([
+                    TextInput::make('reason')
+                        ->label('Reason')
+                        ->required()
+                        ->minLength(5)
+                        ->maxLength(500),
+                ])
+                ->visible(fn (Tenant $record): bool => $record->getAttribute('status') === 'pending')
+                ->action(function (Tenant $record, array $data): void {
+                    try {
+                        $actor = auth('platform')->user();
+                        abort_unless($actor instanceof User, 403);
+                        app(TenantApprovalService::class)->reject($record, $actor, $data['reason']);
+                        FilamentNotification::make()->success()->title('Shop rejected.')->send();
+                        $this->redirect(request()->url());
+                    } catch (Throwable $exception) {
+                        FilamentNotification::make()->danger()->title('Shop could not be rejected.')->body($exception->getMessage())->send();
+                    }
+                }),
             Action::make('resendOwnerInvitation')
                 ->label('Resend Owner Invitation')
                 ->requiresConfirmation()

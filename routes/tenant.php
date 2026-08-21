@@ -18,6 +18,7 @@ use App\Http\Controllers\Storefront\NewsletterController;
 use App\Http\Controllers\Storefront\OrderTrackingController;
 use App\Http\Controllers\Storefront\OwnerInvitationController;
 use App\Http\Controllers\Storefront\PaymentController;
+use App\Http\Controllers\Storefront\PreorderController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\ProductReviewController;
 use App\Http\Controllers\Storefront\RobotsController;
@@ -39,6 +40,7 @@ Route::get('/brand', [BrandController::class, 'index'])->name('storefront.brands
 Route::get('/brand/{slug}', [BrandController::class, 'show'])->name('storefront.brand');
 Route::get('/collection/{slug}', [CollectionController::class, 'show'])->name('storefront.collection');
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('storefront.product');
+Route::get('/pre-order', [PreorderController::class, 'index'])->name('storefront.preorders');
 Route::get('/search', [SearchController::class, 'index'])->name('storefront.search');
 Route::get('/search/suggest', SearchSuggestController::class)->name('storefront.search.suggest');
 Route::get('/page/{slug}', [StaticPageController::class, 'show'])->name('storefront.page');

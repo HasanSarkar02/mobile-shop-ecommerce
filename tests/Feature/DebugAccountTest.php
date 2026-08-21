@@ -18,15 +18,15 @@ it('debug: customer can login and reach account dashboard', function () {
 
     $base = 'http://demo.mobile-shop-ecommerce.test';
 
-    $login = $this->post($base . '/login', [
+    $login = $this->post($base.'/login', [
         'email' => 'cust@demo.test',
         'password' => 'password',
     ]);
 
-    dump('login status: ' . $login->getStatusCode());
-    dump('login exception: ' . ($login->exception ? get_class($login->exception) . ': ' . $login->exception->getMessage() : 'none'));
+    dump('login status: '.$login->getStatusCode());
+    dump('login exception: '.($login->exception ? get_class($login->exception).': '.$login->exception->getMessage() : 'none'));
 
-    $response = $this->get($base . '/account');
-    dump('account status: ' . $response->getStatusCode());
-    dump('account exception: ' . ($response->exception ? get_class($response->exception) . ': ' . $response->exception->getMessage() : 'none'));
+    $response = $this->get($base.'/account');
+    dump('account status: '.$response->getStatusCode());
+    dump('account exception: '.($response->exception ? get_class($response->exception).': '.$response->exception->getMessage() : 'none'));
 });

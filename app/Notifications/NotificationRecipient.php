@@ -17,6 +17,5 @@ final class NotificationRecipient
         public readonly ?string $modelType = null,
         public readonly ?int $modelId = null,
         public readonly array $addresses = [],
-    ) {
-    }
+    ) {}
 }

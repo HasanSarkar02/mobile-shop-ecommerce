@@ -8,6 +8,7 @@ use App\Enums\ProductRelationType;
 use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +23,6 @@ use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Illuminate\Database\Eloquent\Builder;
 
 class Product extends Model implements HasMedia
 {
@@ -35,7 +35,7 @@ class Product extends Model implements HasMedia
 
     protected $fillable = [
         'brand_id', 'category_id', 'model_number', 'type', 'base_price',
-        'status', 'is_featured', 'is_serialized', 'published_at', 'created_by', 'updated_by','is_official_import', 'max_discount_percentage', 'view_count',
+        'status', 'is_featured', 'is_serialized', 'published_at', 'created_by', 'updated_by', 'is_official_import', 'max_discount_percentage', 'view_count',
     ];
 
     protected function casts(): array
@@ -175,6 +175,7 @@ class Product extends Model implements HasMedia
     {
         return $query->where('status', ProductStatus::Published);
     }
+
     public function collections(): BelongsToMany
     {
         return $this->belongsToMany(Collection::class, 'collection_product')->withPivot('sort_order');

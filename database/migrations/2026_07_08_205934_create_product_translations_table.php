@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('meta_description')->nullable();
             $table->timestamps();
 
-            $table->unique(['tenant_id', 'locale', 'slug'],'ptt_idx');
+            $table->unique(['tenant_id', 'locale', 'slug'], 'ptt_idx');
             $table->unique(['product_id', 'locale']);
         });
     }

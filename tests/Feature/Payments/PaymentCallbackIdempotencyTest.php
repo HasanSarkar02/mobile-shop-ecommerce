@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethodType;
 use App\Models\Order;
 use App\Models\OrderPayment;
 use App\Models\PaymentMethod;
@@ -10,6 +11,7 @@ use App\Models\Tenant;
 use App\Services\PaymentGatewayService;
 use App\Support\PaymentValidationResult;
 use App\Support\Tenancy\Tenancy;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 /**
  * Stands in for SslcommerzDriver so the test never makes a real HTTP call to
@@ -19,9 +21,7 @@ use App\Support\Tenancy\Tenancy;
  */
 class FakeAlwaysValidPaymentDriver
 {
-    public function __construct(private readonly int $amount)
-    {
-    }
+    public function __construct(private readonly int $amount) {}
 
     public function validateTransaction(string $valId): PaymentValidationResult
     {
@@ -41,7 +41,7 @@ it('never creates two OrderPayment rows for two callbacks with the same transact
     $paymentMethod = PaymentMethod::query()->forceCreate([
         'tenant_id' => $tenant->id,
         'name' => 'SSLCommerz',
-        'type' => \App\Enums\PaymentMethodType::Aggregator,
+        'type' => PaymentMethodType::Aggregator,
         'gateway_driver' => 'sslcommerz',
         'is_active' => true,
     ]);
@@ -100,7 +100,7 @@ it('enforces the unique (tenant_id, transaction_reference) constraint at the dat
         'amount' => 10000,
         'status' => 'paid',
         'transaction_reference' => 'dup-ref',
-    ]))->toThrow(\Illuminate\Database\UniqueConstraintViolationException::class);
+    ]))->toThrow(UniqueConstraintViolationException::class);
 
     app(Tenancy::class)->set(null);
 });

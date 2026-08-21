@@ -147,6 +147,8 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
+        $this->call(CourierProviderSeeder::class);
+
         app(Tenancy::class)->set(null);
     }
 }

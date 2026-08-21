@@ -20,7 +20,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->unique(['tenant_id', 'event_key', 'channel'],'tevent_ch_unq');
+            $table->unique(['tenant_id', 'event_key', 'channel'], 'tevent_ch_unq');
         });
     }
 

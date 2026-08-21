@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Image\Enums\Fit;
@@ -54,6 +55,25 @@ class ProductVariant extends Model implements HasMedia
             'expected_available_at' => 'datetime',
             'is_active' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $variant): void {
+            if ($variant->fulfillment_strategy === FulfillmentStrategy::Preorder) {
+                if ($variant->expected_available_at === null) {
+                    throw ValidationException::withMessages([
+                        'expected_available_at' => 'ETA is required for pre-orders.',
+                    ]);
+                }
+
+                if ($variant->expected_available_at->isPast()) {
+                    throw ValidationException::withMessages([
+                        'expected_available_at' => 'ETA must be in the future.',
+                    ]);
+                }
+            }
+        });
     }
 
     /** @return BelongsTo<Product, $this> */

@@ -13,9 +13,7 @@ use Illuminate\Support\Collection as EloquentCollection;
 
 class HomepageSectionRenderer
 {
-    public function __construct(private readonly ProductListingService $listing)
-    {
-    }
+    public function __construct(private readonly ProductListingService $listing) {}
 
     public function resolveProducts(HomepageSection $section): EloquentCollection
     {

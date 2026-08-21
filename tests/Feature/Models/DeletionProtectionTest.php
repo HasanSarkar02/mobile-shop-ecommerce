@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use App\Exceptions\RecordDeletionNotAllowedException;
+use App\Models\Coupon;
 use App\Models\CouponRedemption;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\OrderPayment;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use App\Models\Tenant;
@@ -62,7 +64,7 @@ it('blocks deleting a StockMovement', function (): void {
     // when the Tenant is created (verified in app/Observers/TenantObserver.php).
     $location = Location::query()->where('tenant_id', $tenant->id)->firstOrFail();
 
-    $product = \App\Models\Product::factory()->create(['tenant_id' => $tenant->id]);
+    $product = Product::factory()->create(['tenant_id' => $tenant->id]);
     $variant = ProductVariant::factory()->create([
         'tenant_id' => $tenant->id,
         'product_id' => $product->id,
@@ -95,7 +97,7 @@ it('does not block deleting a CouponRedemption, since releaseForOrder() legitima
         'grand_total' => 1000,
     ]);
 
-    $coupon = \App\Models\Coupon::query()->create([
+    $coupon = Coupon::query()->create([
         'code' => 'DELOK',
         'name' => 'Deletable redemption coupon',
         'type' => 'fixed_amount',

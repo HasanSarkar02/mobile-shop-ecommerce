@@ -11,6 +11,7 @@ return [
         'help', 'blog', 'status', 'cdn', 'assets', 'static', 'docs', 'dev', 'billing', 'account', 'accounts',
     ],
     'trial_days' => env('TENANT_TRIAL_DAYS', 14),
+    'pending_approval_expiry_days' => env('PENDING_APPROVAL_EXPIRY_DAYS', 7),
     'domain_verification_ttl_hours' => env('DOMAIN_VERIFICATION_TTL_HOURS', 72),
     'domain_verification_record_prefix' => env('DOMAIN_VERIFICATION_RECORD_PREFIX', '_mobile-shop-verification'),
 ];

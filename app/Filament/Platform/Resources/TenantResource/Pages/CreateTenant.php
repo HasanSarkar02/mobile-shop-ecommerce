@@ -28,6 +28,7 @@ class CreateTenant extends CreateRecord
             'owner' => [
                 'name' => $data['owner_name'],
                 'email' => $data['owner_email'],
+                'phone' => $data['owner_phone'] ?? null,
             ],
         ], ownerMode: TenantBootstrapService::OWNER_MODE_INVITATION, invitedBy: $actor);
 

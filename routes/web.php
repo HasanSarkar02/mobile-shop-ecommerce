@@ -14,6 +14,7 @@ Route::domain(config('tenancy.central_domain'))
     ->group(function (): void {
         Route::get('/', fn () => view('platform.home'))->name('platform.home');
         Route::get('/signup', TenantSignupForm::class)->name('platform.signup');
+        Route::get('/signup/pending', fn () => view('platform.signup-pending'))->name('platform.signup.pending');
         Route::get('/platform-admin-invitation/{token}', [PlatformAdminInvitationController::class, 'show'])->name('platform.admin-invitation.show');
         Route::post('/platform-admin-invitation/{token}', [PlatformAdminInvitationController::class, 'accept'])
             ->middleware('throttle:5,1')
@@ -25,6 +26,7 @@ Route::domain('www.'.config('tenancy.central_domain'))
     ->group(function (): void {
         Route::get('/', fn () => view('platform.home'))->name('platform.home');
         Route::get('/signup', TenantSignupForm::class)->name('platform.signup');
+        Route::get('/signup/pending', fn () => view('platform.signup-pending'))->name('platform.signup.pending');
         Route::get('/platform-admin-invitation/{token}', [PlatformAdminInvitationController::class, 'show'])->name('platform.admin-invitation.show');
         Route::post('/platform-admin-invitation/{token}', [PlatformAdminInvitationController::class, 'accept'])
             ->middleware('throttle:5,1')

@@ -144,6 +144,33 @@ it('rolls back the whole bootstrap when owner creation fails', function (): void
         ->and(User::query()->where('email', 'taken@example.com')->count())->toBe(1);
 });
 
+it('stores the owner phone when provided', function (): void {
+    Notification::fake();
+
+    [$tenant, $owner] = app(TenantBootstrapService::class)->bootstrap([
+        'name' => 'Phone Shop',
+        'subdomain' => 'phoneshop',
+        'plan' => 'trial',
+        'owner' => ['name' => 'Rahim', 'email' => 'phone-owner@example.com', 'password' => 'secret1234', 'phone' => '01712345678'],
+    ]);
+
+    expect($owner->phone)->toBe('01712345678')
+        ->and($owner->tenant_id)->toBe($tenant->id);
+});
+
+it('leaves the owner phone null when not provided', function (): void {
+    Notification::fake();
+
+    [, $owner] = app(TenantBootstrapService::class)->bootstrap([
+        'name' => 'No Phone Shop',
+        'subdomain' => 'nophoneshop',
+        'plan' => 'trial',
+        'owner' => ['name' => 'Rahim', 'email' => 'nophone-owner@example.com', 'password' => 'secret1234'],
+    ]);
+
+    expect($owner->phone)->toBeNull();
+});
+
 it('rejects an unavailable plan', function (): void {
     expect(fn () => app(TenantBootstrapService::class)->bootstrap([
         'name' => 'No Plan Shop',

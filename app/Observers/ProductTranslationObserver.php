@@ -9,9 +9,7 @@ use App\Services\RedirectService;
 
 class ProductTranslationObserver
 {
-    public function __construct(private readonly RedirectService $redirects)
-    {
-    }
+    public function __construct(private readonly RedirectService $redirects) {}
 
     public function updated(ProductTranslation $translation): void
     {

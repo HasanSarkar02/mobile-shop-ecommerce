@@ -1,0 +1,1639 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property App\\Filament\\Store\\Pages\\GlobalStoreSettings\:\:\$form\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Store/Pages/GlobalStoreSettings.php
+
+		-
+			message: '#^Access to an undefined property App\\Filament\\Store\\Pages\\StoreSettings\:\:\$form\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Store/Pages/StoreSettings.php
+
+		-
+			message: '#^Access to an undefined property App\\Filament\\Store\\Pages\\ThemeSettings\:\:\$form\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Store/Pages/ThemeSettings.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Store/Resources/MenuResource/RelationManagers/ItemsRelationManager.php
+
+		-
+			message: '#^Job class App\\Jobs\\SendNotificationJob constructor invoked with 1 parameter in App\\Jobs\\SendNotificationJob\:\:dispatch\(\), 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Filament/Store/Resources/NotificationLogResource.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\NotificationStatus\:\:Failed will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Filament/Store/Resources/NotificationLogResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$order_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:displayName\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:effectiveBaseUrl\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Call to an undefined static method App\\Filament\\Store\\Resources\\OrderResource\:\:getTitle\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:mapWithKeys\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\<int, non\-falsy\-string\>, Closure\(App\\Models\\OrderPayment\)\: non\-empty\-array\<int, non\-falsy\-string\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\OrderPaymentStatus\:\:Pending will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 2
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Database\\Eloquent\\Relations\\HasMany\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>order_number" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:displayName\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Cannot access property \$status on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Cannot call method fulfillments\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: method.nonObject
+			count: 11
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:addInternalNote\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:amountPaid\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:amountRefunded\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:cancelOrder\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:refund\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:updateStatus\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Services\\Shipping\\CourierService\:\:sendFulfillment\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Filament/Store/Resources/PaymentMethodResource.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:variants\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Filament/Store/Resources/ProductResource/RelationManagers/AttributeValuesRelationManager.php
+
+		-
+			message: '#^Method App\\Filament\\Store\\Resources\\ProductResource\\RelationManagers\\AttributeValuesRelationManager\:\:dataTypeOf\(\) never returns App\\Enums\\AttributeDataType so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Filament/Store/Resources/ProductResource/RelationManagers/AttributeValuesRelationManager.php
+
+		-
+			message: '#^Method App\\Filament\\Store\\Resources\\ProductResource\\RelationManagers\\AttributeValuesRelationManager\:\:dataTypeOf\(\) should return App\\Enums\\AttributeDataType\|null but returns string\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Filament/Store/Resources/ProductResource/RelationManagers/AttributeValuesRelationManager.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Database\\Eloquent\\Model\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Filament/Store/Resources/ProductResource/RelationManagers/AttributeValuesRelationManager.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Filament/Store/Resources/ProductResource/RelationManagers/ProductRelationsRelationManager.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\ReviewStatus\:\:Approved will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Filament/Store/Resources/ProductReviewResource.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\ReviewStatus\:\:Rejected will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Filament/Store/Resources/ProductReviewResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$inventory_type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Store/Resources/StockItemResource.php
+
+		-
+			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:adjust\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/StockItemResource.php
+
+		-
+			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:restock\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/StockItemResource.php
+
+		-
+			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:stockStatus\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/StockItemResource.php
+
+		-
+			message: '#^Parameter \#2 \$location of method App\\Services\\InventoryService\:\:stockStatus\(\) expects App\\Models\\Location\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/StockItemResource.php
+
+		-
+			message: '#^Parameter \#3 \$location of method App\\Services\\InventoryService\:\:restock\(\) expects App\\Models\\Location\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/StockItemResource.php
+
+		-
+			message: '#^Parameter \#4 \$location of method App\\Services\\InventoryService\:\:adjust\(\) expects App\\Models\\Location\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Filament/Store/Resources/StockItemResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Product\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/CompareController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$availability\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Storefront/CompareController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$compare_at_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/CompareController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fulfillment_strategy\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Storefront/CompareController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/CompareController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/CompareController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/CompareController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>slug" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Storefront/CompareController.php
+
+		-
+			message: '#^Assign to protected\(set\) property App\\Support\\ProductFilterState\:\:\$page\.$#'
+			identifier: assign.propertyProtectedSet
+			count: 1
+			path: app/Http/Controllers/Storefront/PreorderController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$answer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$attributeValues\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$availability\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$backorder_policy\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$color\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$compare_at_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$expected_available_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fulfillment_strategy\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$group\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$question\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$region\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$storage_gb\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getMedia\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\:\:published\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Offset ''color'' on array\{\} on left side of \?\?\= does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Offset ''region'' on array\{\}\|array\{color\?\: array\{code\: ''color'', label\: ''Color'', suffix\: ''''\}, storage\?\: array\{code\: ''storage'', label\: ''Storage'', suffix\: ''GB''\}\} on left side of \?\?\= does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Offset ''storage'' on array\{\}\|array\{color\: array\{code\: ''color'', label\: ''Color'', suffix\: ''''\}\} on left side of \?\?\= does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{bank_name\: string, tenure\: int\<0, max\>, rate\: float\}, Closure\(App\\Models\\EmiPlan\)\: array\{bank_name\: string, tenure\: int\<0, max\>, rate\: float\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(App\\Models\\ProductAttributeValue\)\: bool given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:min\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model\)\: mixed\)\|string\|null, Closure\(App\\Models\\ProductAttributeValue\)\: mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sortBy\(\) expects array\<array\{string, ''asc''\|''desc''\|SortDirection\}\|\(callable\(Illuminate\\Database\\Eloquent\\Model, Illuminate\\Database\\Eloquent\\Model\)\: mixed\)\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|string\>\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|int\|string, Closure\(App\\Models\\ProductAttributeValue\)\: mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$groupBy of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:groupBy\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: \(int\|string\|Stringable\|UnitEnum\)\)\|list\<Closure\|string\>\|string, Closure\(App\\Models\\ProductAttributeValue\)\: mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$variants of method App\\Services\\InventoryService\:\:resolvePurchaseStates\(\) expects Illuminate\\Support\\Collection\<int, App\\Models\\ProductVariant\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Storefront/ProductController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$robots_txt_extra\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/RobotsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Product\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/SearchSuggestController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Product\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Storefront/SearchSuggestController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: \(Illuminate\\Database\\Eloquent\\Model\|null\), Closure\(App\\Models\\WishlistItem\)\: \(Illuminate\\Database\\Eloquent\\Model\|null\) given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Storefront/WishlistController.php
+
+		-
+			message: '#^Parameter \#1 \$products of method App\\Services\\Storefront\\ProductCardData\:\:forMany\(\) expects \(Illuminate\\Pagination\\LengthAwarePaginator&iterable\<App\\Models\\Product\>\)\|Illuminate\\Support\\Collection\<int, App\\Models\\Product\>, Illuminate\\Support\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\|null\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Storefront/WishlistController.php
+
+		-
+			message: '#^Parameter \#1 \$boolean of function abort_if expects bool, App\\Models\\Tenant\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/EnsureCentralDomain.php
+
+		-
+			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\Tenant\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Middleware/EnsureTenant.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Listeners/SendOrderCancelledNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/SendOrderCancelledNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/SendOrderCancelledNotifications.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Listeners/SendOrderCancelledNotifications.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>phone" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Listeners/SendOrderCancelledNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Listeners/SendOrderPlacedNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/SendOrderPlacedNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/SendOrderPlacedNotifications.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Listeners/SendOrderPlacedNotifications.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>phone" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Listeners/SendOrderPlacedNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Listeners/SendOrderStatusChangedNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/SendOrderStatusChangedNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/SendOrderStatusChangedNotifications.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Listeners/SendOrderStatusChangedNotifications.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>phone" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Listeners/SendOrderStatusChangedNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Listeners/SendPaymentRecordedNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/SendPaymentRecordedNotifications.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Listeners/SendPaymentRecordedNotifications.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Listeners\\SendPaymentRecordedNotifications\:\:buildOrderContext\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Listeners/SendPaymentRecordedNotifications.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Listeners\\SendPaymentRecordedNotifications\:\:customerRecipient\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Listeners/SendPaymentRecordedNotifications.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Listeners/SendPaymentRecordedNotifications.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>phone" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Listeners/SendPaymentRecordedNotifications.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:lineTotal\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Livewire/CartPage.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$gateway_driver\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/CheckoutPage.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$variant\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Livewire/CheckoutPage.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:lineTotal\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Livewire/CheckoutPage.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: app/Livewire/CheckoutPage.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>cost" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Livewire/CheckoutPage.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$requires_verification\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Livewire/ManualPaymentSubmission.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Livewire/ManualPaymentSubmission.php
+
+		-
+			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, App\\Models\\Order\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/ManualPaymentSubmission.php
+
+		-
+			message: '#^Parameter \#2 \$method of method App\\Services\\OrderService\:\:recordPayment\(\) expects App\\Models\\PaymentMethod\|null, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/ManualPaymentSubmission.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>requires_verification" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Livewire/ManualPaymentSubmission.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:lineTotal\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Livewire/MiniCart.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:published\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Livewire/ProductCatalog.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: string$#'
+			identifier: match.unhandled
+			count: 1
+			path: app/Livewire/ProductCatalog.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between non\-empty\-array\<mixed\> and array\{\} will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Livewire/ProductCatalog.php
+
+		-
+			message: '#^Cannot call method isFuture\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/Announcement.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/Announcement.php
+
+		-
+			message: '#^Call to function in_array\(\) with arguments string, array\{App\\Enums\\AttributeDataType\:\:Select, App\\Enums\\AttributeDataType\:\:MultiSelect\} and true will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Models/AttributeDefinition.php
+
+		-
+			message: '#^Call to an undefined method Spatie\\Image\\Drivers\\ImageDriver\:\:performOnCollections\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/Banner.php
+
+		-
+			message: '#^Cannot call method isFuture\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/Banner.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/Banner.php
+
+		-
+			message: '#^Cannot call method isFuture\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/Coupon.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/Coupon.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/CourierConnection.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$driver_class\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/CourierConnection.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:effectiveBaseUrl\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Models/CourierConnection.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>driver_class" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Models/CourierConnection.php
+
+		-
+			message: '#^Method App\\Models\\Customer\:\:defaultAddress\(\) should return App\\Models\\Address\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Customer.php
+
+		-
+			message: '#^Cannot call method isFuture\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/HomepageSection.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/HomepageSection.php
+
+		-
+			message: '#^Instanceof between string and App\\Enums\\LinkType will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Models/MenuItem.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Models/Order.php
+
+		-
+			message: '#^Instanceof between string and App\\Enums\\PaymentMethodType will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 3
+			path: app/Models/PaymentMethod.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 3
+			path: app/Models/PaymentMethod.php
+
+		-
+			message: '#^Method App\\Models\\Product\:\:translation\(\) should return App\\Models\\ProductTranslation\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Product.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ProductStatus\:\:Published will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/Product.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/ProductAttributeValue.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/ProductVariant.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Preorder will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Models/ProductVariant.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Observers/ProductObserver.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ProductStatus\:\:Published will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Observers/ProductObserver.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: \(int\|null\), Closure\(App\\Models\\ProductVariant\)\: \(int\|null\) given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Observers/ProductVariantObserver.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_variant_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/CartService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/CartService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_price\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/CartService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$variant\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CartService.php
+
+		-
+			message: '#^Method App\\Services\\CartService\:\:addItem\(\) should return App\\Models\\CartItem but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Services/CartService.php
+
+		-
+			message: '#^Parameter \#2 \$customer of method App\\Services\\CouponService\:\:computeForCart\(\) expects App\\Models\\Customer\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/CartService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>price" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/CartService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$variant\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:lineTotal\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\CouponCustomerEligibility\:\:All is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\CouponCustomerEligibility\:\:FirstOrderOnly is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\CouponCustomerEligibility\:\:SpecificCustomers is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\CouponType\:\:FixedAmount is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\CouponType\:\:FreeShipping is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\CouponType\:\:Percentage is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: string$#'
+			identifier: match.unhandled
+			count: 2
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Parameter \#2 \.\.\.\$arg1 of function min expects non\-empty\-array, int\<1, max\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\CouponEligibilityScope\:\:All will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\CouponScopeMode\:\:Exclude will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\CouponType\:\:FreeShipping will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/CouponService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Method App\\Services\\InventoryService\:\:commitSerialized\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Method App\\Services\\InventoryService\:\:guardNotSerialized\(\) returns void but does not have any side effects\.$#'
+			identifier: void.pure
+			count: 1
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Method App\\Services\\InventoryService\:\:resolvePurchaseStates\(\) should return Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: mixed, low_stock_threshold\: mixed\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Stock will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Dropship will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Preorder will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\InventoryType\:\:NotTracked will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\InventoryType\:\:Serialized will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 5
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>low_stock_threshold" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type mixed\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/InventoryService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Product\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_variant_id\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Anonymous function should return App\\Models\\OrderPayment but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Offset ''currency_code'' on array\{customer_id\?\: int\|null, guest_name\?\: string\|null, guest_email\?\: string\|null, guest_phone\?\: string\|null, shipping_address\?\: array, billing_address\?\: array, shipping_address_id\?\: int\|null, billing_address_id\?\: int\|null, \.\.\.\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Offset ''tenant_id'' on array\{customer_id\?\: int\|null, guest_name\?\: string\|null, guest_email\?\: string\|null, guest_phone\?\: string\|null, shipping_address\?\: array, billing_address\?\: array, shipping_address_id\?\: int\|null, billing_address_id\?\: int\|null, \.\.\.\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:logEvent\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#1 \$payment of event class App\\Events\\OrderPaymentRecorded constructor expects App\\Models\\OrderPayment in App\\Events\\OrderPaymentRecorded\:\:dispatch\(\), Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:commit\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:release\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 4
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:reserve\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:restockFromCancellation\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#1 \$variants of method App\\Services\\InventoryService\:\:lockStockItemsForVariants\(\) expects Illuminate\\Support\\Collection\<int, App\\Models\\ProductVariant\>, Illuminate\\Support\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#2 \$customer of method App\\Services\\CouponService\:\:lockAndComputeForCart\(\) expects App\\Models\\Customer\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Parameter \#3 \$customer of method App\\Services\\CouponService\:\:recordRedemption\(\) expects App\\Models\\Customer\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$gateway_driver\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/PaymentGatewayService.php
+
+		-
+			message: '#^Parameter \#2 \$method of method App\\Services\\OrderService\:\:recordPayment\(\) expects App\\Models\\PaymentMethod\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/PaymentGatewayService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/PaymentGateways/SslcommerzDriver.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/PaymentGateways/SslcommerzDriver.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/PaymentGateways/SslcommerzDriver.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>phone" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/PaymentGateways/SslcommerzDriver.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ProductAttributeValueService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\AttributeDataType\:\:Boolean is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/ProductAttributeValueService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\AttributeDataType\:\:Decimal is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/ProductAttributeValueService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\AttributeDataType\:\:MultiSelect is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/ProductAttributeValueService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\AttributeDataType\:\:Number is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/ProductAttributeValueService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\AttributeDataType\:\:Select is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/ProductAttributeValueService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\AttributeDataType\:\:Text is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/ProductAttributeValueService.php
+
+		-
+			message: '#^Match expression does not handle remaining value\: string$#'
+			identifier: match.unhandled
+			count: 1
+			path: app/Services/ProductAttributeValueService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/Shipping/CourierService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:displayName\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/Shipping/CourierService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:effectiveBaseUrl\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/Shipping/CourierService.php
+
+		-
+			message: '#^Offset ''phone'' on array\{\}\|string on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Services/Shipping/PathaoDriver.php
+
+		-
+			message: '#^Offset ''recipient_name'' on array\{\}\|string on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Services/Shipping/PathaoDriver.php
+
+		-
+			message: '#^Offset ''phone'' on array\{\}\|string on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Services/Shipping/SteadfastDriver.php
+
+		-
+			message: '#^Offset ''recipient_name'' on array\{\}\|string on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Services/Shipping/SteadfastDriver.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\:\:published\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Match arm comparison between null and ''best_selling'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Match arm comparison between null and ''category'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Match arm comparison between null and ''collection'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Match arm comparison between null and ''featured'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Match arm comparison between null and ''latest'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Match arm comparison between null and ''tag'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Offset ''brand_ids'' does not exist on array\{\}\|string\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Offset ''brand_ids'' on array\{\}\|string in empty\(\) does not exist\.$#'
+			identifier: empty.offset
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Offset ''category_id'' on \*NEVER\* on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Offset ''category_ids'' does not exist on array\{\}\|string\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Offset ''category_ids'' on array\{\}\|string in empty\(\) does not exist\.$#'
+			identifier: empty.offset
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Offset ''collection_id'' on \*NEVER\* on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Offset ''data_source'' on array\{\}\|string on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Offset ''limit'' on array\{\}\|string on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 3
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Offset ''tag_id'' on \*NEVER\* on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$availability\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$backorder_policy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fulfillment_strategy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Method App\\Services\\Storefront\\ProductCardData\:\:resolveStates\(\) should return Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Method App\\Services\\Storefront\\ProductCardData\:\:usableVariant\(\) should return App\\Models\\ProductVariant\|null but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sortBy\(\) expects array\<array\{string, ''asc''\|''desc''\|SortDirection\}\|\(callable\(Illuminate\\Database\\Eloquent\\Model, Illuminate\\Database\\Eloquent\\Model\)\: mixed\)\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|string\>\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|int\|string, Closure\(App\\Models\\ProductVariant\)\: int\<0, max\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Parameter \#1 \$variant of method App\\Services\\Storefront\\ProductCardData\:\:isPurchasable\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Parameter \#2 \$states of method App\\Services\\Storefront\\ProductCardData\:\:build\(\) expects Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\>, Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Stock will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Preorder will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\VariantAvailability\:\:Discontinued will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>slug" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Storefront/ProductCardData.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:inStock\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Storefront/ProductListingService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Services/VariantSignatureService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_variant_defining\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/VariantSignatureService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_variant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/VariantSignatureService.php
+
+		-
+			message: '#^Method App\\Services\\VariantSignatureService\:\:findConflictingVariant\(\) should return App\\Models\\ProductVariant\|null but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/VariantSignatureService.php
+
+		-
+			message: '#^Parameter \#1 \$variant of method App\\Services\\VariantSignatureService\:\:signature\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/VariantSignatureService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/WishlistService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_variant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/WishlistService.php
+
+		-
+			message: '#^Class Illuminate\\Database\\LockTimeoutException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Support/DatabaseLockRetry.php
+
+		-
+			message: '#^Trait App\\Traits\\TenantAwareJob is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: app/Traits/TenantAwareJob.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>currency" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/helpers.php

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Customer;
 use App\Models\User;
 
 return [
@@ -77,7 +78,7 @@ return [
 
         'customers' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_CUSTOMER_MODEL', \App\Models\Customer::class),
+            'model' => env('AUTH_CUSTOMER_MODEL', Customer::class),
         ],
 
         // 'users' => [

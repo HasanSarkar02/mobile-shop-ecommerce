@@ -39,6 +39,8 @@ class CheckoutPage extends Component
 
     public ?string $customerNote = null;
 
+    public bool $preorder_ack = false;
+
     // Secondary, UX-only guard against a rapid double-click sending two
     // near-simultaneous requests before the wire:loading disabled state (see
     // the checkout button markup) takes effect. The authoritative protection
@@ -82,11 +84,20 @@ class CheckoutPage extends Component
 
             $shipping = ShippingMethod::query()->find($this->shippingMethodId);
 
+            $cart->loadMissing('items.variant');
+            $hasPreorder = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'preorder');
+            if ($hasPreorder && ! $this->preorder_ack) {
+                $this->issues = ['Please acknowledge that pre-order items ship around their expected availability date.'];
+
+                return;
+            }
+
             $orderData = [
                 'shipping_method_id' => $this->shippingMethodId,
                 'payment_method_id' => $this->paymentMethodId,
                 'shipping_cost' => $shipping?->cost ?? 0,
                 'customer_note' => $this->customerNote,
+                'preorder_ack_at' => $hasPreorder && $this->preorder_ack ? now() : null,
             ];
 
             if ($customer) {
@@ -150,6 +161,18 @@ class CheckoutPage extends Component
         $couponResult = $coupons->computeForCart($cart, $customer);
         $shipping = ShippingMethod::query()->find($this->shippingMethodId);
 
+        $hasPreorder = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'preorder');
+        $hasStock = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'stock');
+        $isMixed = $hasPreorder && $hasStock;
+        $preorderEta = null;
+        if ($hasPreorder) {
+            $preorderEta = $cart->items
+                ->filter(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'preorder' && $item->variant?->expected_available_at)
+                ->map(fn ($item) => $item->variant->expected_available_at)
+                ->sort()
+                ->first();
+        }
+
         return view('livewire.checkout-page', [
             'customer' => $customer,
             'addresses' => $customer ? Address::query()->where('customer_id', $customer->id)->get() : collect(),
@@ -159,6 +182,9 @@ class CheckoutPage extends Component
             'subtotal' => $subtotal,
             'discount' => $couponResult->valid ? $couponResult->discountAmount : 0,
             'shippingCost' => $shipping?->cost ?? 0,
+            'hasPreorder' => $hasPreorder,
+            'isMixed' => $isMixed,
+            'preorderEta' => $preorderEta,
         ]);
     }
 }

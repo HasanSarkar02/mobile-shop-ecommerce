@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\FulfillmentStrategy;
 use App\Enums\OrderEventType;
 use App\Enums\OrderFulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
@@ -26,6 +27,7 @@ use App\Models\OrderPayment;
 use App\Models\PaymentMethod;
 use App\Models\ProductVariant;
 use App\Support\DatabaseLockRetry;
+use Carbon\CarbonInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
@@ -38,7 +40,7 @@ class OrderService
     ) {}
 
     /**
-     * @param  array{shipping_address?: array, billing_address?: array, shipping_address_id?: int, billing_address_id?: int, shipping_method_id?: int, payment_method_id?: int, customer_note?: string, guest_name?: string, guest_email?: string, guest_phone?: string, shipping_cost?: int, tax_total?: int}  $orderData
+     * @param  array{shipping_address?: array, billing_address?: array, shipping_address_id?: int, billing_address_id?: int, shipping_method_id?: int, payment_method_id?: int, customer_note?: string, guest_name?: string, guest_email?: string, guest_phone?: string, shipping_cost?: int, tax_total?: int, preorder_ack_at?: CarbonInterface|string|null}  $orderData
      */
     public function createFromCart(
         Cart $cart,
@@ -191,6 +193,7 @@ class OrderService
                     'billing_address_id' => $orderData['billing_address_id'] ?? null,
                     'billing_address_snapshot' => $orderData['billing_address'] ?? null,
                     'customer_note' => $orderData['customer_note'] ?? null,
+                    'preorder_ack_at' => $orderData['preorder_ack_at'] ?? null,
                     'reservation_expires_at' => now()->addHours((int) config('orders.reservation_hours')),
                     'active_reservation_key' => $reservationKey,
                     'placed_at' => now(),
@@ -208,17 +211,50 @@ class OrderService
                 throw $e;
             }
 
+            // Partition fulfillments by fulfillment_strategy (stock vs preorder vs dropship).
+            // Single strategy → one fulfillment (backward compat for all-stock tests).
+            // Mixed → one per strategy, preorder fulfillment gets earliest ETA.
+            $strategyGroups = [];
             foreach ($cart->items as $item) {
                 $variant = $variants->get($item->product_variant_id);
+                $strategy = $variant->fulfillment_strategy->value;
+                $strategyGroups[$strategy][] = $item;
+            }
+
+            $fulfillmentByStrategy = [];
+            foreach ($strategyGroups as $strategy => $groupItems) {
+                $expectedAt = null;
+                if ($strategy === FulfillmentStrategy::Preorder->value) {
+                    $etas = collect($groupItems)
+                        ->map(fn ($ci) => $variants->get($ci->product_variant_id)->expected_available_at)
+                        ->filter()
+                        ->sort();
+                    $expectedAt = $etas->first();
+                }
+
+                $fulfillmentByStrategy[$strategy] = $order->fulfillments()->create([
+                    'tenant_id' => $order->tenant_id,
+                    'status' => OrderFulfillmentStatus::Pending,
+                    'fulfillment_group' => $strategy,
+                    'expected_available_at' => $expectedAt,
+                ]);
+            }
+
+            foreach ($cart->items as $item) {
+                $variant = $variants->get($item->product_variant_id);
+                $strategy = $variant->fulfillment_strategy->value;
 
                 $order->items()->create([
                     'tenant_id' => $order->tenant_id,
+                    'order_fulfillment_id' => $fulfillmentByStrategy[$strategy]->id ?? null,
                     'product_variant_id' => $item->product_variant_id,
                     'product_name_snapshot' => $variant->product->name ?? $variant->sku,
                     'variant_sku_snapshot' => $variant->sku,
                     'unit_price' => (int) $variant->price,
                     'quantity' => $item->quantity,
                     'line_total' => (int) $variant->price * $item->quantity,
+                    'fulfillment_strategy' => $strategy,
+                    'expected_available_at' => $variant->expected_available_at,
                 ]);
 
                 $this->inventory->reserve($variant, $item->quantity, null, $order);
@@ -227,11 +263,6 @@ class OrderService
             // Authoritative totals single path — subtotal and grand_total are
             // derived here from the line items, never set independently.
             $this->recalculateTotals($order);
-
-            $order->fulfillments()->create([
-                'tenant_id' => $order->tenant_id,
-                'status' => OrderFulfillmentStatus::Pending,
-            ]);
 
             $status = OrderStatus::Pending->label();
 
@@ -245,6 +276,140 @@ class OrderService
 
             $cart->update(['converted_at' => now()]);
             $this->coupons->recordRedemption($order, $cart, $cart->customer, $discountTotal);
+            OrderPlaced::dispatch($order);
+
+            return $order;
+        });
+    }
+
+    /**
+     * Admin-originated order — no Cart, direct variant selection.
+     * Enterprise: deterministic variant/stock locks, full price & stock validation,
+     * split fulfillments, and OrderPlaced dispatch, without cart conversion or
+     * reservation-limit checks (admin bypass).
+     *
+     * @param  array<int, array{product_variant_id:int, quantity:int}>  $lines
+     * @param  array{customer_id?:?int, guest_name?:?string, guest_email?:?string, guest_phone?:?string, shipping_address?: array, billing_address?: array, shipping_address_id?:?int, billing_address_id?:?int, shipping_method_id?:?int, payment_method_id?:?int, customer_note?:?string, shipping_cost?:int, tax_total?:int, preorder_ack_at?:CarbonInterface|string|null}  $orderData
+     */
+    public function createFromAdmin(array $lines, array $orderData, OrderSource $source = OrderSource::Admin): Order
+    {
+        if ($lines === []) {
+            throw new \InvalidArgumentException('At least one line item is required.');
+        }
+
+        $customerId = $orderData['customer_id'] ?? null;
+
+        if (! $customerId && (empty($orderData['guest_name']) || empty($orderData['guest_email']) || empty($orderData['guest_phone']))) {
+            throw new \InvalidArgumentException('Guest orders require guest_name, guest_email, and guest_phone.');
+        }
+
+        return DatabaseLockRetry::run(function () use ($lines, $orderData, $source, $customerId): Order {
+            $tenantId = $orderData['tenant_id'] ?? tenant()?->id ?? throw new \RuntimeException('Tenant context required for admin order creation.');
+
+            $variantIds = collect($lines)->pluck('product_variant_id')->unique()->sort()->values();
+            $variants = ProductVariant::query()->whereIn('id', $variantIds->all())->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+
+            if ($variants->count() !== $variantIds->count()) {
+                throw new InvalidOrderStateException('A selected variant is no longer available in this store.');
+            }
+
+            $variants->load('product');
+            $this->inventory->lockStockItemsForVariants($variants);
+
+            foreach ($lines as $line) {
+                $variant = $variants->get($line['product_variant_id']);
+                $qty = (int) $line['quantity'];
+
+                if ($qty < 1) {
+                    throw new \InvalidArgumentException('Quantity must be at least 1.');
+                }
+
+                if (! $this->inventory->isPurchasable($variant, $qty)) {
+                    throw new InvalidOrderStateException("'{$variant->sku}' is no longer available in the requested quantity.");
+                }
+            }
+
+            $shippingCost = $orderData['shipping_cost'] ?? 0;
+            $discountTotal = 0;
+
+            $order = Order::query()->create([
+                'tenant_id' => $tenantId,
+                'order_number' => $this->sequences->nextFormatted($tenantId, 'order_number', 'ORD'),
+                'invoice_number' => $this->sequences->nextFormatted($tenantId, 'invoice_number', 'INV'),
+                'customer_id' => $customerId,
+                'guest_name' => $orderData['guest_name'] ?? null,
+                'guest_email' => $orderData['guest_email'] ?? null,
+                'guest_phone' => $orderData['guest_phone'] ?? null,
+                'status' => OrderStatus::Pending,
+                'order_source' => $source,
+                'sales_channel' => 'admin',
+                'payment_method_id' => $orderData['payment_method_id'] ?? null,
+                'shipping_method_id' => $orderData['shipping_method_id'] ?? null,
+                'currency_code' => $orderData['currency_code'] ?? 'BDT',
+                'currency_rate' => 1.000000,
+                'shipping_cost' => $shippingCost,
+                'discount_total' => $discountTotal,
+                'tax_total' => $orderData['tax_total'] ?? 0,
+                'shipping_address_id' => $orderData['shipping_address_id'] ?? null,
+                'shipping_address_snapshot' => $orderData['shipping_address'] ?? null,
+                'billing_address_id' => $orderData['billing_address_id'] ?? null,
+                'billing_address_snapshot' => $orderData['billing_address'] ?? null,
+                'customer_note' => $orderData['customer_note'] ?? null,
+                'preorder_ack_at' => $orderData['preorder_ack_at'] ?? null,
+                'reservation_expires_at' => now()->addHours((int) config('orders.reservation_hours')),
+                'active_reservation_key' => null,
+                'placed_at' => now(),
+            ]);
+
+            $strategyGroups = [];
+            foreach ($lines as $line) {
+                $variant = $variants->get($line['product_variant_id']);
+                $strategy = $variant->fulfillment_strategy->value;
+                $strategyGroups[$strategy][] = $line;
+            }
+
+            $fulfillmentByStrategy = [];
+            foreach ($strategyGroups as $strategy => $groupLines) {
+                $expectedAt = null;
+
+                if ($strategy === FulfillmentStrategy::Preorder->value) {
+                    $etas = collect($groupLines)->map(fn ($l) => $variants->get($l['product_variant_id'])->expected_available_at)->filter()->sort();
+                    $expectedAt = $etas->first();
+                }
+
+                $fulfillmentByStrategy[$strategy] = $order->fulfillments()->create([
+                    'tenant_id' => $order->tenant_id,
+                    'status' => OrderFulfillmentStatus::Pending,
+                    'fulfillment_group' => $strategy,
+                    'expected_available_at' => $expectedAt,
+                ]);
+            }
+
+            foreach ($lines as $line) {
+                $variant = $variants->get($line['product_variant_id']);
+                $qty = (int) $line['quantity'];
+                $strategy = $variant->fulfillment_strategy->value;
+
+                $order->items()->create([
+                    'tenant_id' => $order->tenant_id,
+                    'order_fulfillment_id' => $fulfillmentByStrategy[$strategy]->id ?? null,
+                    'product_variant_id' => $variant->id,
+                    'product_name_snapshot' => $variant->product->name ?? $variant->sku,
+                    'variant_sku_snapshot' => $variant->sku,
+                    'unit_price' => (int) $variant->price,
+                    'quantity' => $qty,
+                    'line_total' => (int) $variant->price * $qty,
+                    'fulfillment_strategy' => $strategy,
+                    'expected_available_at' => $variant->expected_available_at,
+                ]);
+
+                $this->inventory->reserve($variant, $qty, null, $order);
+            }
+
+            $this->recalculateTotals($order);
+
+            $this->logEvent($order, OrderEventType::StatusChanged, 'Order placed as '.OrderStatus::Pending->label().' (admin).', null, OrderStatus::Pending);
+
             OrderPlaced::dispatch($order);
 
             return $order;
@@ -394,6 +559,77 @@ class OrderService
                 && ($paidAlready + $amount) >= (int) $order->grand_total
             ) {
                 $this->updateStatus($order, OrderStatus::Confirmed, 'Confirmed — order fully paid.');
+            }
+
+            return $payment;
+        }, 3);
+    }
+
+    public function amountRefunded(Order $order): int
+    {
+        return (int) $order->payments()->where('status', OrderPaymentStatus::Refunded)->sum('amount');
+    }
+
+    /**
+     * Record a refund for an order — enterprise-grade partial/full support.
+     * Creates an OrderPayment with status Refunded, validates against paid/refunded totals,
+     * and auto-transitions to Refunded status when fully refunded from Cancelled/Delivered.
+     */
+    public function refund(Order $order, int $amount, string $reason, ?PaymentMethod $method = null, ?string $reference = null): OrderPayment
+    {
+        $reason = trim($reason);
+
+        if ($reason === '') {
+            throw new \InvalidArgumentException('A reason is required for a refund.');
+        }
+
+        return DB::transaction(function () use ($order, $amount, $reason, $method, $reference): OrderPayment {
+            if ($amount <= 0) {
+                throw new InvalidOrderStateException('Refund amount must be greater than zero.');
+            }
+
+            $paid = $this->amountPaid($order);
+            $refunded = $this->amountRefunded($order);
+            $refundable = $paid - $refunded;
+
+            if ($refundable <= 0) {
+                throw new InvalidOrderStateException('No refundable amount remains for this order.');
+            }
+
+            if ($amount > $refundable) {
+                throw new InvalidOrderStateException(
+                    'Refund of '.number_format($amount / 100, 2).' exceeds refundable amount of '.number_format($refundable / 100, 2).'.'
+                );
+            }
+
+            // Refunds are only meaningful for orders that were paid and are in a terminal or post-delivery state.
+            // We allow Cancelled and Delivered; Shipped is also allowed for enterprise flexibility, but Pending is not refundable without payment.
+            if (! in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Delivered, OrderStatus::Shipped, OrderStatus::Processing, OrderStatus::Confirmed], true) && $paid === 0) {
+                throw new InvalidOrderStateException('Refunds require a paid amount.');
+            }
+
+            $payment = $order->payments()->create([
+                'tenant_id' => $order->tenant_id,
+                'payment_method_id' => $method?->id ?? $order->payment_method_id,
+                'amount' => $amount,
+                'status' => OrderPaymentStatus::Refunded,
+                'transaction_reference' => $reference,
+                'paid_at' => null,
+            ]);
+
+            $this->logEvent(
+                $order,
+                OrderEventType::PaymentRecorded,
+                'Refund of '.number_format($amount / 100, 2).' recorded: '.$reason,
+                metadata: ['amount' => $amount, 'reason' => $reason, 'reference' => $reference],
+            );
+
+            OrderPaymentRecorded::dispatch($payment);
+
+            $newRefunded = $refunded + $amount;
+
+            if ($newRefunded >= $paid && in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Delivered], true)) {
+                $this->updateStatus($order->fresh(), OrderStatus::Refunded, 'Order fully refunded: '.$reason);
             }
 
             return $payment;

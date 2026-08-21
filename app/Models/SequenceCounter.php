@@ -11,5 +11,5 @@ class SequenceCounter extends Model
 {
     use BelongsToTenant;
 
-    protected $fillable = ['tenant_id','key', 'value'];
+    protected $fillable = ['tenant_id', 'key', 'value'];
 }

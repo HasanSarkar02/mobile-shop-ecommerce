@@ -13,5 +13,5 @@ class StoreSetting extends Model
 
     protected $table = 'store_settings';
 
-    protected $fillable = ['tenant_id','meta_title_template', 'meta_description_default', 'order_confirmation_note', 'robots_txt_extra'];
+    protected $fillable = ['tenant_id', 'meta_title_template', 'meta_description_default', 'order_confirmation_note', 'robots_txt_extra'];
 }
