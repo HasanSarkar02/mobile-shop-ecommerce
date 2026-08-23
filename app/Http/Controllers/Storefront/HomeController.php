@@ -13,6 +13,7 @@ class HomeController extends Controller
     {
         $sections = HomepageSection::query()
             ->currentlyActive()
+            ->orderBy('sort_order')
             ->get();
 
         return view('storefront.home', compact('sections'));

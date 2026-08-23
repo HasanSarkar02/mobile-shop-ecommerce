@@ -48,7 +48,11 @@ class HomepageSectionResource extends Resource
                 ->required()
                 ->live(),
             TextInput::make('title'),
-            Select::make('campaign_id')->relationship('campaign', 'name')->searchable()->preload(),
+            Select::make('campaign_id')
+                ->relationship('campaign', 'name')->searchable()->preload()
+                ->helperText('Products attached to this campaign will be shown.')
+                ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::ProductGrid->value
+                    && $get('config_data_source') === ProductGridDataSource::Campaign->value),
 
             Select::make('config_placement')
                 ->label('Which banner placement to show')
