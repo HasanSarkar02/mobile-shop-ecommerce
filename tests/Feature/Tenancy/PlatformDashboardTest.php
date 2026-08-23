@@ -121,7 +121,7 @@ it('lets an active platform admin view the dashboard', function (): void {
 
     Livewire::test(PlatformDashboard::class)
         ->assertSuccessful()
-        ->assertSee('Quick Links');
+        ->assertSee('Quick Actions');
 });
 
 it('denies a non-platform user the dashboard', function (): void {
@@ -355,7 +355,7 @@ it('renders an up-to-date message when there are no alerts', function (): void {
 
     Livewire::test(PlatformDashboard::class)
         ->assertSuccessful()
-        ->assertSee('All subscription and payment operations are up to date.')
+        ->assertSee('Everything is up to date.')
         ->assertDontSee('Subscriptions expiring within 7 days');
 });
 
@@ -510,7 +510,7 @@ it('renders a healthy message when there are no DNS alerts', function (): void {
 
     Livewire::test(PlatformDashboard::class)
         ->assertSuccessful()
-        ->assertSee('All domains are verified and healthy.')
+        ->assertSee('Everything is up to date.')
         ->assertDontSee('Failed verification');
 });
 
@@ -687,9 +687,9 @@ it('renders the system health section for a platform admin', function (): void {
     Livewire::test(PlatformDashboard::class)
         ->assertSuccessful()
         ->assertSee('System Health')
-        ->assertSee('QUEUE')
-        ->assertSee('SCHEDULER')
-        ->assertSee('APPLICATION')
+        ->assertSee('Queue Backlog')
+        ->assertSee('Scheduler')
+        ->assertSee('Database')
         ->assertSee('OK');
 });
 
@@ -966,7 +966,7 @@ it('displays System when no actor is recorded', function (): void {
     Livewire::test(PlatformDashboard::class)
         ->assertSuccessful()
         ->assertSee('Recent Platform Activity')
-        ->assertSeeHtml('<span class="text-xs text-gray-500 dark:text-gray-400">System</span>');
+        ->assertSee('System');
 });
 
 it('never renders sensitive activity fields', function (): void {

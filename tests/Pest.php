@@ -8,6 +8,7 @@ use App\Models\ProductTranslation;
 use App\Models\ProductVariant;
 use App\Models\Tenant;
 use App\Services\InventoryService;
+use App\Services\SubscriptionService;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -32,7 +33,13 @@ function seedBootstrapPlans(): void
 
 function actingAsTenant(array $overrides = []): Tenant
 {
+    if (Plan::query()->where('slug', 'trial')->doesntExist()) {
+        seedBootstrapPlans();
+    }
+
     $tenant = Tenant::factory()->create($overrides);
+    $trialPlan = Plan::query()->where('slug', 'trial')->firstOrFail();
+    app(SubscriptionService::class)->startTrial($tenant, $trialPlan, 14);
     app(Tenancy::class)->set($tenant);
 
     return $tenant;
