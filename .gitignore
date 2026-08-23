@@ -5,6 +5,7 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+/.claude/settings.local.json
 /.codex
 /.cursor/
 /.idea
@@ -19,9 +20,16 @@
 /public/hot
 /public/storage
 /storage/*.key
+/storage/media-library
 /storage/pail
 /vendor
 _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Local Pint / PHPStan / Pest run dumps — regenerated on demand, never shared.
+/pint_output.txt
+/stan_err.txt
+/stan_out.json
+/test_output.txt
