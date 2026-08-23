@@ -50,6 +50,9 @@
                                             @if ($domain['failure_message'] !== null)
                                                 <span>{{ $domain['failure_message'] }}</span>
                                             @endif
+                                            @if (($domain['attempts'] ?? 0) > 0)
+                                                <span>{{ $domain['attempts'] }} attempt(s)</span>
+                                            @endif
                                         </li>
                                     @endforeach
                                 </ul>

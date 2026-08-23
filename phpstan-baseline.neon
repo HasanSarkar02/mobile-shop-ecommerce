@@ -265,37 +265,7 @@ parameters:
 			path: app/Http/Controllers/Storefront/CompareController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$availability\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Storefront/CompareController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$compare_at_price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/CompareController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fulfillment_strategy\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Storefront/CompareController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/CompareController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/CompareController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Storefront/CompareController.php
@@ -307,73 +277,13 @@ parameters:
 			path: app/Http/Controllers/Storefront/CompareController.php
 
 		-
-			message: '#^Assign to protected\(set\) property App\\Support\\ProductFilterState\:\:\$page\.$#'
-			identifier: assign.propertyProtectedSet
-			count: 1
-			path: app/Http/Controllers/Storefront/PreorderController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$answer\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Storefront/ProductController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$attributeValues\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$availability\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$backorder_policy\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$color\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$compare_at_price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$expected_available_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fulfillment_strategy\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$group\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 4
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_active\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Storefront/ProductController.php
@@ -385,38 +295,8 @@ parameters:
 			path: app/Http/Controllers/Storefront/ProductController.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$question\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$region\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sku\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$storage_gb\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:getMedia\(\)\.$#'
-			identifier: method.notFound
 			count: 1
 			path: app/Http/Controllers/Storefront/ProductController.php
 
@@ -447,41 +327,11 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
-			count: 2
+			count: 1
 			path: app/Http/Controllers/Storefront/ProductController.php
 
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{bank_name\: string, tenure\: int\<0, max\>, rate\: float\}, Closure\(App\\Models\\EmiPlan\)\: array\{bank_name\: string, tenure\: int\<0, max\>, rate\: float\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:filter\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|null, Closure\(App\\Models\\ProductAttributeValue\)\: bool given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:min\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model\)\: mixed\)\|string\|null, Closure\(App\\Models\\ProductAttributeValue\)\: mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sortBy\(\) expects array\<array\{string, ''asc''\|''desc''\|SortDirection\}\|\(callable\(Illuminate\\Database\\Eloquent\\Model, Illuminate\\Database\\Eloquent\\Model\)\: mixed\)\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|string\>\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|int\|string, Closure\(App\\Models\\ProductAttributeValue\)\: mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Parameter \#1 \$groupBy of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:groupBy\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: \(int\|string\|Stringable\|UnitEnum\)\)\|list\<Closure\|string\>\|string, Closure\(App\\Models\\ProductAttributeValue\)\: mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Parameter \#1 \$variants of method App\\Services\\InventoryService\:\:resolvePurchaseStates\(\) expects Illuminate\\Support\\Collection\<int, App\\Models\\ProductVariant\>, Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/Storefront/ProductController.php
@@ -883,7 +733,31 @@ parameters:
 			path: app/Models/PaymentMethod.php
 
 		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProductAttributeValue\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/Product.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProductVariant\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/Product.php
+
+		-
+			message: '#^Method App\\Models\\Product\:\:attributeValues\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProductAttributeValue\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProductAttributeValue, \$this\(App\\Models\\Product\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Product.php
+
+		-
 			message: '#^Method App\\Models\\Product\:\:translation\(\) should return App\\Models\\ProductTranslation\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Product.php
+
+		-
+			message: '#^Method App\\Models\\Product\:\:variants\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProductVariant\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProductVariant, \$this\(App\\Models\\Product\)\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Models/Product.php
@@ -895,21 +769,15 @@ parameters:
 			path: app/Models/Product.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$label\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Models/ProductAttributeValue.php
-
-		-
-			message: '#^Cannot call method isPast\(\) on string\.$#'
-			identifier: method.nonObject
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProductAttributeValue\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
 			count: 1
 			path: app/Models/ProductVariant.php
 
 		-
-			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Preorder will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 2
+			message: '#^Method App\\Models\\ProductVariant\:\:attributeValues\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProductAttributeValue\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\ProductAttributeValue, \$this\(App\\Models\\ProductVariant\)\>\.$#'
+			identifier: return.type
+			count: 1
 			path: app/Models/ProductVariant.php
 
 		-
@@ -923,12 +791,6 @@ parameters:
 			identifier: identical.alwaysFalse
 			count: 1
 			path: app/Observers/ProductObserver.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: \(int\|null\), Closure\(App\\Models\\ProductVariant\)\: \(int\|null\) given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Observers/ProductVariantObserver.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_variant_id\.$#'
@@ -1051,63 +913,9 @@ parameters:
 			path: app/Services/CouponService.php
 
 		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 3
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Method App\\Services\\InventoryService\:\:commitSerialized\(\) is unused\.$#'
-			identifier: method.unused
-			count: 1
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Method App\\Services\\InventoryService\:\:guardNotSerialized\(\) returns void but does not have any side effects\.$#'
-			identifier: void.pure
-			count: 1
-			path: app/Services/InventoryService.php
-
-		-
 			message: '#^Method App\\Services\\InventoryService\:\:resolvePurchaseStates\(\) should return Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: mixed, low_stock_threshold\: mixed\}\>\.$#'
 			identifier: return.type
 			count: 1
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Stock will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 5
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Dropship will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 2
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Preorder will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 2
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\InventoryType\:\:NotTracked will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\InventoryType\:\:Serialized will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Unreachable statement \- code above always terminates\.$#'
-			identifier: deadCode.unreachable
-			count: 5
 			path: app/Services/InventoryService.php
 
 		-
@@ -1162,12 +970,6 @@ parameters:
 			message: '#^Anonymous function should return App\\Models\\OrderPayment but returns Illuminate\\Database\\Eloquent\\Model\.$#'
 			identifier: return.type
 			count: 2
-			path: app/Services/OrderService.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 4
 			path: app/Services/OrderService.php
 
 		-
@@ -1393,6 +1195,12 @@ parameters:
 			path: app/Services/Storefront/HomepageSectionRenderer.php
 
 		-
+			message: '#^Match arm comparison between null and ''campaign'' is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Storefront/HomepageSectionRenderer.php
+
+		-
 			message: '#^Match arm comparison between null and ''category'' is always false\.$#'
 			identifier: match.alwaysFalse
 			count: 1
@@ -1477,86 +1285,14 @@ parameters:
 			path: app/Services/Storefront/HomepageSectionRenderer.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$availability\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$backorder_policy\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$fulfillment_strategy\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
 			message: '#^Method App\\Services\\Storefront\\ProductCardData\:\:resolveStates\(\) should return Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/Storefront/ProductCardData.php
 
 		-
-			message: '#^Method App\\Services\\Storefront\\ProductCardData\:\:usableVariant\(\) should return App\\Models\\ProductVariant\|null but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 2
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:sortBy\(\) expects array\<array\{string, ''asc''\|''desc''\|SortDirection\}\|\(callable\(Illuminate\\Database\\Eloquent\\Model, Illuminate\\Database\\Eloquent\\Model\)\: mixed\)\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|string\>\|\(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: mixed\)\|int\|string, Closure\(App\\Models\\ProductVariant\)\: int\<0, max\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Parameter \#1 \$variant of method App\\Services\\Storefront\\ProductCardData\:\:isPurchasable\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 2
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
 			message: '#^Parameter \#2 \$states of method App\\Services\\Storefront\\ProductCardData\:\:build\(\) expects Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\>, Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> given\.$#'
 			identifier: argument.type
-			count: 1
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Stock will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\FulfillmentStrategy\:\:Preorder will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\VariantAvailability\:\:Discontinued will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 2
-			path: app/Services/Storefront/ProductCardData.php
-
-		-
-			message: '#^Unreachable statement \- code above always terminates\.$#'
-			identifier: deadCode.unreachable
 			count: 1
 			path: app/Services/Storefront/ProductCardData.php
 
@@ -1579,33 +1315,9 @@ parameters:
 			path: app/Services/Storefront/ProductListingService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Services/VariantSignatureService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$is_variant_defining\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/VariantSignatureService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_variant_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/VariantSignatureService.php
-
-		-
-			message: '#^Method App\\Services\\VariantSignatureService\:\:findConflictingVariant\(\) should return App\\Models\\ProductVariant\|null but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/VariantSignatureService.php
-
-		-
-			message: '#^Parameter \#1 \$variant of method App\\Services\\VariantSignatureService\:\:signature\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
+			message: '#^Strict comparison using \!\=\= between int and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
 			path: app/Services/VariantSignatureService.php
 
 		-
@@ -1621,10 +1333,10 @@ parameters:
 			path: app/Services/WishlistService.php
 
 		-
-			message: '#^Class Illuminate\\Database\\LockTimeoutException not found\.$#'
-			identifier: class.notFound
+			message: '#^Strict comparison using \!\=\= between non\-empty\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
 			count: 1
-			path: app/Support/DatabaseLockRetry.php
+			path: app/Support/WhatsApp.php
 
 		-
 			message: '#^Trait App\\Traits\\TenantAwareJob is used zero times and is not analysed\.$#'
