@@ -7,6 +7,7 @@ namespace App\View\Composers;
 use App\Models\Announcement;
 use App\Models\Category;
 use App\Models\Menu;
+use App\Models\Outlet;
 use App\Models\StaticPage;
 use App\Services\WishlistService;
 use Illuminate\Contracts\View\View;
@@ -32,6 +33,7 @@ class StorefrontLayoutComposer
                 ->where('status', 'published')
                 ->get()
                 ->groupBy('footer_group'),
+            'hasOutlets' => Outlet::query()->where('is_active', true)->exists(),
             'theme' => tenant()->themeSettings,
             'wishlistCount' => $this->wishlists->wishlistCount(),
             'headerCategories' => Category::query()

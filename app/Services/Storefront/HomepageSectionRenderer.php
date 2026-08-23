@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Storefront;
 
 use App\Models\Brand;
+use App\Models\Campaign;
 use App\Models\Category;
 use App\Models\Collection;
 use App\Models\HomepageSection;
@@ -28,8 +29,36 @@ class HomepageSectionRenderer
             'category' => $query->where('category_id', $config['category_id'] ?? 0)->limit($limit)->get(),
             'collection' => Collection::query()->find($config['collection_id'] ?? 0)?->products()->published()->limit($limit)->get() ?? collect(),
             'tag' => $query->whereHas('tags', fn ($q) => $q->where('tags.id', $config['tag_id'] ?? 0))->limit($limit)->get(),
+            'campaign' => $this->resolveCampaignProducts($section, $limit),
             default => $query->where('is_featured', true)->limit($limit)->get(),
         };
+    }
+
+    /**
+     * Campaign-sourced grid: only an eligible campaign's published attached
+     * products, in pivot order — same rule the offer pages enforce via
+     * Campaign::scopeEligible.
+     */
+    private function resolveCampaignProducts(HomepageSection $section, int $limit): EloquentCollection
+    {
+        $campaign = Campaign::query()
+            ->whereKey($section->campaign_id ?? 0)
+            ->eligible()
+            ->first();
+
+        if ($campaign === null) {
+            return new EloquentCollection;
+        }
+
+        return Product::query()
+            ->published()
+            ->with(['translations', 'variants', 'media', 'emiPlans'])
+            ->join('campaign_product', 'campaign_product.product_id', '=', 'products.id')
+            ->where('campaign_product.campaign_id', $campaign->getKey())
+            ->orderBy('campaign_product.sort_order')
+            ->select('products.*')
+            ->limit($limit)
+            ->get();
     }
 
     /**

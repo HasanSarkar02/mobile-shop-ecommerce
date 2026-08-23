@@ -50,7 +50,9 @@
         @yield('content')
     </main>
 
-    <x-storefront.footer :footer-menu="$footerMenu" :footer-pages="$footerPages" :theme="$theme" />
+    <x-storefront.footer :footer-menu="$footerMenu" :footer-pages="$footerPages" :theme="$theme" :has-outlets="$hasOutlets" />
+
+    @include('storefront.partials.whatsapp-widget')
 
     <x-storefront.mobile-bottom-nav :wishlist-count="$wishlistCount" />
 

@@ -34,7 +34,15 @@ class StaticPageResource extends Resource
         return $schema->components([
             TextInput::make('title')->required(),
             TextInput::make('slug')->required()->scopedUnique(ignoreRecord: true),
-            RichEditor::make('content'),
+            RichEditor::make('content')
+                ->toolbarButtons([
+                    ['h2', 'h3', 'h4'],
+                    ['bold', 'italic', 'underline'],
+                    ['link'],
+                    ['bulletList', 'orderedList', 'blockquote'],
+                    ['table'],
+                    ['horizontalRule', 'undo', 'redo', 'clearFormatting'],
+                ]),
             Select::make('status')
                 ->options(collect(StaticPageStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                 ->default(StaticPageStatus::Draft->value)

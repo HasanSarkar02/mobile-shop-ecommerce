@@ -50,6 +50,14 @@ class Banner extends Model implements HasMedia
         return $this->belongsTo(Campaign::class);
     }
 
+    /** WebP 'large' media URL, normalized to null when no image is attached. */
+    public function largeImageUrl(): ?string
+    {
+        $url = $this->getFirstMediaUrl('image', 'large');
+
+        return $url !== '' ? $url : null;
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('image')->singleFile();

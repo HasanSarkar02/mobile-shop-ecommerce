@@ -148,6 +148,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(CourierProviderSeeder::class);
+        $this->call(TrustContentSeeder::class);
 
         app(Tenancy::class)->set(null);
     }

@@ -14,11 +14,14 @@ class StoreThemeSetting extends Model
     protected $table = 'store_theme_settings';
 
     protected $fillable = [
-        'tenant_id', 'logo_path', 'favicon_path', 'primary_color', 'secondary_color', 'font_family', 'social_links', 'footer_text',
+        'tenant_id', 'logo_path', 'favicon_path', 'primary_color', 'secondary_color', 'font_family', 'social_links', 'whatsapp_widget_enabled', 'footer_text',
     ];
 
     protected function casts(): array
     {
-        return ['social_links' => 'array'];
+        return [
+            'social_links' => 'array',
+            'whatsapp_widget_enabled' => 'boolean',
+        ];
     }
 }

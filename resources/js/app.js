@@ -94,6 +94,41 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
+    // Offer countdown used by the reusable offers/countdown partial: segmented
+    // days/hours/minutes/seconds tiles ticking once per second, flipping to an
+    // "ended" state cleanly when the deadline passes.
+    Alpine.data('offerCountdown', (endsAtMs) => ({
+        live: Date.now() < endsAtMs,
+        days: '00',
+        hours: '00',
+        minutes: '00',
+        seconds: '00',
+        timer: null,
+
+        init() {
+            if (!this.live) return;
+            this.tick();
+            this.timer = setInterval(() => this.tick(), 1000);
+        },
+
+        destroy() {
+            clearInterval(this.timer);
+        },
+
+        tick() {
+            const diff = endsAtMs - Date.now();
+            if (diff <= 0) {
+                this.live = false;
+                clearInterval(this.timer);
+                return;
+            }
+            this.days = String(Math.floor(diff / 86400000)).padStart(2, '0');
+            this.hours = String(Math.floor((diff % 86400000) / 3600000)).padStart(2, '0');
+            this.minutes = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+            this.seconds = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+        },
+    }));
+
     // Shared wishlist state. Every product card and the PDP buy-box wishlist
     // button read/write this one store, so all instances of the same product
     // on a page stay in sync and the header/mobile count badge reacts to

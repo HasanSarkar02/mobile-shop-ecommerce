@@ -1,4 +1,4 @@
-@props(['footerMenu', 'footerPages', 'theme'])
+@props(['footerMenu', 'footerPages', 'theme', 'hasOutlets' => false])
 @php
     $socialLinks = collect($theme?->social_links ?? [])->filter();
 @endphp
@@ -65,6 +65,12 @@
                         <a href="{{ route('storefront.faq') }}"
                             class="text-sm text-white/85 hover:text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">FAQ</a>
                     </li>
+                    @if ($hasOutlets)
+                        <li>
+                            <a href="{{ route('storefront.outlets') }}"
+                                class="text-sm text-white/85 hover:text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Our Outlets</a>
+                        </li>
+                    @endif
                 </ul>
 
                 @auth('customer')
