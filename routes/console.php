@@ -45,3 +45,9 @@ Schedule::command(PingSchedulerHeartbeat::class)
     ->everyMinute()
     ->withoutOverlapping()
     ->onOneServer();
+
+use App\Console\Commands\RefreshCourierStatus;
+
+Schedule::command(RefreshCourierStatus::class)
+    ->hourly()
+    ->withoutOverlapping();
