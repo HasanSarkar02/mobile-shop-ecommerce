@@ -13,8 +13,8 @@ class FilterQueryParser
     {
         return new ProductFilterState(
             brandIds: array_map('intval', (array) $request->query('brand', [])),
-            priceMin: $request->filled('price_min') ? (int) round($request->float('price_min') * 100) : null,
-            priceMax: $request->filled('price_max') ? (int) round($request->float('price_max') * 100) : null,
+            priceMin: ProductFilterState::priceFromInput($request->query('price_min')),
+            priceMax: ProductFilterState::priceFromInput($request->query('price_max')),
             inStockOnly: $request->boolean('in_stock'),
             emiOnly: $request->boolean('emi'),
             warrantyOnly: $request->boolean('warranty'),

@@ -15,6 +15,15 @@ function galleryProduct(): array
     $variant = ProductVariant::factory()->for($product)->create();
     app(InventoryService::class)->restock($variant, 10);
 
+    // Attach two variant images so the gallery x-for renders <img> tags
+    // (the alt wiring under test only appears for serialized {src, alt} objects).
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+    foreach (['gallery-a.png', 'gallery-b.png'] as $name) {
+        $variant->addMediaFromString($png)
+            ->usingFileName($name)
+            ->toMediaCollection('images');
+    }
+
     $slug = $product->translation('en')->slug;
     $base = 'http://'.$tenant->subdomain.'.'.config('tenancy.central_domain');
 
@@ -29,7 +38,7 @@ it('wires media_alt into the main gallery, thumbnails and lightbox', function ()
     // Main image, thumbnail and lightbox all consume the alt from the
     // serialized {src, alt} image objects.
     expect(substr_count($html, ':alt="image.alt"'))->toBeGreaterThanOrEqual(3);
-    expect(substr_count($html, 'image.src === activeImage'))->toBeGreaterThanOrEqual(2);
+    expect(substr_count($html, 'image.src === resolvedActiveImage()'))->toBeGreaterThanOrEqual(2);
 });
 
 it('serializes gallery images as src/alt objects in the Alpine payload', function (): void {

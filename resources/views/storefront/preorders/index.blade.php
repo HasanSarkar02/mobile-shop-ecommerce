@@ -17,8 +17,8 @@
             </div>
         @else
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                @foreach ($products as $product)
-                    @include('storefront.partials.product-card', ['product' => $product])
+                @foreach ($cards as $card)
+                    @include('storefront.partials.product-card', ['card' => $card])
                 @endforeach
             </div>
             <div class="mt-8">{{ $products->links() }}</div>

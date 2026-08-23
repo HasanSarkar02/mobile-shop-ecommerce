@@ -11,6 +11,7 @@ use App\Enums\VariantAvailability;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\InventoryService;
+use App\Services\PurchasabilityPolicy;
 use App\Support\Tenancy\TenantUrlGenerator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -52,10 +53,11 @@ class ProductCardData
         }
 
         $states = $this->resolveStates($products);
+        $facts = $this->inventory->purchasabilityFacts($products->flatMap->variants->values());
         $wishlistedIds = $wishlistedProductIds ?? collect();
 
         return $products->values()
-            ->map(fn (Product $product): array => $this->build($product, $states, $wishlistedIds));
+            ->map(fn (Product $product): array => $this->build($product, $states, $facts, $wishlistedIds));
     }
 
     /**
@@ -89,13 +91,14 @@ class ProductCardData
 
     /**
      * @param  Collection<int, array{stock_status: StockStatus, available_quantity: int, low_stock_threshold: ?int}>  $states
+     * @param  Collection<int, array{discontinued: bool, non_stock: bool, serialized: bool, backorder_allowed: bool, serials_available: int}>  $facts
      * @param  Collection<int, int>  $wishlistedIds
      * @return array<string, mixed>
      */
-    private function build(Product $product, Collection $states, Collection $wishlistedIds): array
+    private function build(Product $product, Collection $states, Collection $facts, Collection $wishlistedIds): array
     {
         $translation = $product->translation('en');
-        $variant = $this->usableVariant($product, $states);
+        $variant = $this->usableVariant($product, $states, $facts);
 
         $image = $product->getFirstMediaUrl('images', 'thumb');
         $firstMedia = $product->media->first();
@@ -121,8 +124,8 @@ class ProductCardData
             'average_rating' => $product->average_rating !== null ? (string) $product->average_rating : null,
             'wishlisted' => $wishlistedIds->contains($product->id),
             'requires_selection' => $product->variants->where('is_active', true)->count() > 1,
-            'variant' => $variant !== null ? $this->variantView($variant, $states) : null,
-            'cta' => $this->ctaView($product, $states),
+            'variant' => $variant !== null ? $this->variantView($variant, $states, $facts) : null,
+            'cta' => $this->ctaView($product, $states, $facts),
         ];
     }
 
@@ -131,7 +134,7 @@ class ProductCardData
      * active variant is purchasable, falls back to the cheapest active one so
      * the card still shows a price and the correct out-of-stock state.
      */
-    private function usableVariant(Product $product, Collection $states): ?ProductVariant
+    private function usableVariant(Product $product, Collection $states, Collection $facts): ?ProductVariant
     {
         $active = $product->variants
             ->where('is_active', true)
@@ -143,7 +146,7 @@ class ProductCardData
         }
 
         foreach ($active as $variant) {
-            if ($this->isPurchasable($variant, $states)) {
+            if ($this->isPurchasable($variant, $states, $facts)) {
                 return $variant;
             }
         }
@@ -151,27 +154,34 @@ class ProductCardData
         return $active->first();
     }
 
-    private function isPurchasable(ProductVariant $variant, Collection $states): bool
+    /**
+     * Canonical rule via PurchasabilityPolicy — the same decision
+     * InventoryService::isPurchasable() makes, fed from batched facts.
+     */
+    private function isPurchasable(ProductVariant $variant, Collection $states, Collection $facts): bool
     {
-        if ($variant->availability === VariantAvailability::Discontinued) {
-            return false;
-        }
+        $fact = $facts->get($variant->id) ?? [
+            'discontinued' => false,
+            'non_stock' => false,
+            'serialized' => false,
+            'backorder_allowed' => false,
+            'serials_available' => 0,
+        ];
 
-        if ($variant->fulfillment_strategy !== FulfillmentStrategy::Stock) {
-            return true;
-        }
-
-        if ($variant->backorder_policy !== null && $variant->backorder_policy !== BackorderPolicy::Deny) {
-            return true;
-        }
-
-        return ($states->get($variant->id)['available_quantity'] ?? 0) >= 1;
+        return (new PurchasabilityPolicy)->evaluate(
+            discontinued: $fact['discontinued'],
+            nonStock: $fact['non_stock'],
+            serialized: $fact['serialized'],
+            backorderAllowed: $fact['backorder_allowed'],
+            availableQuantity: (int) ($states->get($variant->id)['available_quantity'] ?? 0),
+            serialsAvailable: $fact['serials_available'],
+        );
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function variantView(ProductVariant $variant, Collection $states): array
+    private function variantView(ProductVariant $variant, Collection $states, Collection $facts): array
     {
         $stockStatus = $states->get($variant->id)['stock_status'] ?? StockStatus::OutOfStock;
 
@@ -183,7 +193,7 @@ class ProductCardData
             'stock_status' => $stockStatus->value,
             'is_preorder' => $variant->fulfillment_strategy === FulfillmentStrategy::Preorder,
             'is_out_of_stock' => $stockStatus === StockStatus::OutOfStock || $variant->availability === VariantAvailability::Discontinued,
-            'purchasable' => $this->isPurchasable($variant, $states),
+            'purchasable' => $this->isPurchasable($variant, $states, $facts),
         ];
     }
 
@@ -196,7 +206,7 @@ class ProductCardData
      *
      * @return array{type: string, label: ?string, variant_id: ?int, url: string, disabled: bool}
      */
-    private function ctaView(Product $product, Collection $states): array
+    private function ctaView(Product $product, Collection $states, Collection $facts): array
     {
         $active = $product->variants->where('is_active', true)->values();
         $url = $this->urls->canonicalRoute(tenant(), 'storefront.product', [$product->translation('en')?->slug ?? $product->id]);
@@ -223,7 +233,7 @@ class ProductCardData
             ];
         }
 
-        if (! $this->isPurchasable($variant, $states)) {
+        if (! $this->isPurchasable($variant, $states, $facts)) {
             return [
                 'type' => 'disabled',
                 'label' => 'Out of Stock',

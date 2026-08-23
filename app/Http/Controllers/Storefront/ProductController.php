@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Storefront;
 
-use App\Enums\BackorderPolicy;
-use App\Enums\FulfillmentStrategy;
 use App\Enums\StaticPageStatus;
 use App\Enums\StockStatus;
 use App\Http\Controllers\Controller;
@@ -112,7 +110,9 @@ class ProductController extends Controller
         $requiresSelection = $activeVariants->count() > 1;
         $initialVariantId = $activeVariants->count() === 1 ? $activeVariants->first()->id : null;
 
-        $variantsData = $product->variants->map(function ($variant) use (&$dimensions, $purchaseStates, $imageAltFallback) {
+        $variantsData = [];
+
+        foreach ($product->variants as $variant) {
             $dims = [];
             $meta = [];
 
@@ -157,16 +157,11 @@ class ProductController extends Controller
                 'low_stock_threshold' => null,
             ];
 
-            // Mirrors InventoryService::isPurchasable() so the PDP never lets a
-            // shopper attempt an action the server would reject.
-            $purchasable = match (true) {
-                $variant->availability->value === 'discontinued' => false,
-                $variant->fulfillment_strategy !== FulfillmentStrategy::Stock => true,
-                $variant->backorder_policy !== null && $variant->backorder_policy !== BackorderPolicy::Deny => true,
-                default => $state['available_quantity'] >= 1,
-            };
+            // Canonical rule (InventoryService) so the PDP never lets a shopper
+            // attempt an action the server would reject.
+            $purchasable = $inventory->isPurchasable($variant, 1);
 
-            return [
+            $variantsData[] = [
                 'id' => $variant->id,
                 'price' => $variant->price,
                 'compare_at_price' => $variant->compare_at_price,
@@ -184,7 +179,7 @@ class ProductController extends Controller
                 ])->all(),
                 'dims' => $dims,
             ];
-        })->values();
+        }
 
         $dimensions = array_values($dimensions);
 
@@ -229,12 +224,12 @@ class ProductController extends Controller
             'description' => $translation?->description ? strip_tags($translation->description) : null,
             'sku' => $product->variants->first()?->sku,
             'brand' => $product->brand ? ['@type' => 'Brand', 'name' => $product->brand->name] : null,
-            'offers' => $variantsData->map(fn ($v) => [
+            'offers' => array_map(fn ($v) => [
                 '@type' => 'Offer',
                 'price' => number_format($v['price'] / 100, 2, '.', ''),
                 'priceCurrency' => tenant()->currency,
                 'availability' => $v['availability'] === 'in_stock' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-            ])->all(),
+            ], $variantsData),
             'aggregateRating' => $product->reviews_count > 0 ? [
                 '@type' => 'AggregateRating',
                 'ratingValue' => (string) $product->average_rating,

@@ -84,6 +84,7 @@ it('allows a preorder variant according to the existing stock rules', function (
     [$slug, $variant, $tenant, $base] = buyNowProduct([
         'inventory_type' => 'not_tracked',
         'fulfillment_strategy' => 'preorder',
+        'expected_available_at' => now()->addDays(14),
     ]);
 
     $this->from($base.'/product/'.$slug)

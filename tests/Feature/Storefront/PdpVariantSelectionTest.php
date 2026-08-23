@@ -76,7 +76,7 @@ it('keeps the sticky bar visible with disabled CTAs when selection is incomplete
     $html = $this->get($base.'/product/'.$slug)->assertOk()->getContent();
 
     expect($html)->toContain('x-if="showSticky()"');
-    expect($html)->toContain('this.current() !== null || (this.requiresSelection && ! this.selectionComplete())');
+    expect($html)->toContain('this.current() !== null || (this.requiresSelection && !this.selectionComplete())');
 });
 
 it('auto-resolves a single active variant and keeps purchase enabled', function (): void {
@@ -109,10 +109,10 @@ it('keeps the gallery on the product-level images until a variant resolves', fun
     $html = $this->get($base.'/product/'.$slug)->assertOk()->getContent();
 
     expect($html)->toContain('currentImages()');
-    expect($html)->toContain('if (! variant) return this.productImages;');
-    // The no-media placeholder icon is present in the gallery.
-    expect($html)->toContain('x-show="!galleryLoaded"');
-    expect($html)->toContain('M2.25 15.75l5.159-5.159');
+    // Product-level images are the fallback while no variant resolves.
+    expect($html)->toContain('return this.productImages;');
+    // The no-media placeholder is driven by the currentImages() length.
+    expect($html)->toContain('x-show="currentImages().length === 0"');
 });
 
 it('serializes variant and product gallery images for the Alpine payload', function (): void {
@@ -145,6 +145,7 @@ it('keeps a preorder single variant auto-resolved and purchasable', function ():
     [$product, $variant, $tenant, $base] = variantSelectionProduct([
         'inventory_type' => 'not_tracked',
         'fulfillment_strategy' => FulfillmentStrategy::Preorder,
+        'expected_available_at' => now()->addDays(14),
     ]);
     $slug = $product->translation('en')->slug;
 

@@ -180,21 +180,75 @@ class InventoryService
         });
     }
 
-    public function isPurchasable(ProductVariant $variant, int $quantity = 1, ?Location $location = null): bool
+    public function isPurchasable(ProductVariant $variant, int $quantity = 1): bool
     {
-        if ($variant->availability->value === 'discontinued') {
-            return false;
+        $facts = $this->purchasabilityFacts(collect([$variant]))[$variant->id];
+        $state = $this->resolvePurchaseStates(collect([$variant]))[$variant->id];
+
+        return $this->purchasability()->evaluate(
+            discontinued: $facts['discontinued'],
+            nonStock: $facts['non_stock'],
+            serialized: $facts['serialized'],
+            backorderAllowed: $facts['backorder_allowed'],
+            availableQuantity: (int) $state['available_quantity'],
+            serialsAvailable: $facts['serials_available'],
+            quantity: $quantity,
+        );
+    }
+
+    /**
+     * Batched purchasability FACTS (not decisions) per variant: the raw
+     * inputs PurchasabilityPolicy evaluates. Enum/model knowledge stays
+     * inside InventoryService; every consumer feeds plain scalars to the
+     * shared rule so no surface ever re-implements it.
+     *
+     * @param  Collection<int, ProductVariant>  $variants
+     * @return Collection<int, array{discontinued: bool, non_stock: bool, serialized: bool, backorder_allowed: bool, serials_available: int}>
+     */
+    public function purchasabilityFacts(Collection $variants): Collection
+    {
+        $serialCounts = $this->availableSerialCounts($variants);
+
+        return $variants->mapWithKeys(function (ProductVariant $variant) use ($serialCounts): array {
+            return [$variant->id => [
+                'discontinued' => $variant->availability->value === 'discontinued',
+                'non_stock' => $variant->fulfillment_strategy !== FulfillmentStrategy::Stock,
+                'serialized' => $variant->inventory_type === InventoryType::Serialized,
+                'backorder_allowed' => $variant->backorder_policy !== null && $variant->backorder_policy !== BackorderPolicy::Deny,
+                'serials_available' => (int) $serialCounts->get($variant->id, 0),
+            ]];
+        });
+    }
+
+    /**
+     * Available serial counts for a batch of variants, keyed by variant id —
+     * lets listing surfaces feed PurchasabilityPolicy without per-variant queries.
+     *
+     * @param  Collection<int, ProductVariant>  $variants
+     * @return Collection<int, int>
+     */
+    public function availableSerialCounts(Collection $variants): Collection
+    {
+        $serializedIds = $variants
+            ->filter(fn (ProductVariant $variant): bool => $variant->inventory_type === InventoryType::Serialized)
+            ->pluck('id')
+            ->values();
+
+        if ($serializedIds->isEmpty()) {
+            return collect();
         }
 
-        if ($variant->fulfillment_strategy !== FulfillmentStrategy::Stock) {
-            return true;
-        }
+        return SerialNumber::query()
+            ->whereIn('product_variant_id', $serializedIds)
+            ->where('status', SerialNumberStatus::Available->value)
+            ->selectRaw('product_variant_id, COUNT(*) as available_count')
+            ->groupBy('product_variant_id')
+            ->pluck('available_count', 'product_variant_id');
+    }
 
-        if ($variant->backorder_policy !== null && $variant->backorder_policy !== BackorderPolicy::Deny) {
-            return true;
-        }
-
-        return $this->availableQuantity($variant, $location) >= $quantity;
+    private function purchasability(): PurchasabilityPolicy
+    {
+        return new PurchasabilityPolicy;
     }
 
     public function reserve(ProductVariant $variant, int $quantity, ?Location $location = null, mixed $reference = null): void

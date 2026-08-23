@@ -80,11 +80,13 @@ class Product extends Model implements HasMedia
         return $this->translations->firstWhere('locale', $locale ?? app()->getLocale());
     }
 
+    /** @return HasMany<ProductVariant> */
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
     }
 
+    /** @return HasMany<ProductAttributeValue> */
     public function attributeValues(): HasMany
     {
         return $this->hasMany(ProductAttributeValue::class);

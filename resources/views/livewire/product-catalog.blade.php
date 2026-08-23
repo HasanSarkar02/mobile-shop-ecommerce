@@ -23,14 +23,15 @@
     </div>
 
     @if ($this->hasActiveFilters())
+        @php($brandChipLabels = $this->brandChipLabels())
         <div class="flex flex-wrap items-center gap-2 mb-5">
             @foreach ($brandIds as $id)
-                @php($brand = \App\Models\Brand::find($id))
-                @if ($brand)
+                @php($label = $brandChipLabels[$id] ?? null)
+                @if ($label)
                     <button wire:click="$set('brandIds', {{ json_encode(array_values(array_diff($brandIds, [$id]))) }})"
                         type="button"
                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                        {{ $brand->name }} <span class="text-gray-400">&times;</span>
+                        {{ $label }} <span class="text-gray-400">&times;</span>
                     </button>
                 @endif
             @endforeach

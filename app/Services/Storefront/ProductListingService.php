@@ -21,21 +21,42 @@ class ProductListingService
 
     public function paginate(Builder $query, ProductFilterState $filters): array
     {
-        $query = $query->clone();
+        $base = $query->clone();
 
         // Eager-load everything a product card renders (name/slug, image,
         // cheapest variant, EMI) so the grid never triggers per-card queries.
-        $query->with(['translations', 'variants', 'media', 'emiPlans']);
+        $base->with(['translations', 'variants', 'media', 'emiPlans']);
 
-        $this->applyStaticFilters($query, $filters);
-        $this->applyAttributeFilters($query, $filters);
+        $filtered = $base->clone();
+        $this->applyStaticFilters($filtered, $filters);
+        $this->applyAttributeFilters($filtered, $filters);
 
-        $facets = $this->facets->resolve($query);
+        // Standard faceted-search semantics: each facet sees every OTHER
+        // active filter but excludes its own dimension, so selecting one
+        // brand (or attribute value) never hides the remaining options.
+        $facets = $this->facets->resolve(
+            $filtered,
+            function (string $dimension) use ($base, $filters): Builder {
+                $candidate = $base->clone();
+                $skipBrand = $dimension === 'brand';
+                $skipAttributeCode = str_starts_with($dimension, 'attr:') ? substr($dimension, 5) : null;
 
-        $this->applySort($query, $filters->sort);
+                if (! $skipBrand) {
+                    $this->applyStaticFilters($candidate, $filters);
+                } else {
+                    $this->applyStaticFiltersExceptBrands($candidate, $filters);
+                }
+
+                $this->applyAttributeFilters($candidate, $filters, $skipAttributeCode);
+
+                return $candidate;
+            },
+        );
+
+        $this->applySort($filtered, $filters->sort);
 
         return [
-            'products' => $query->paginate($filters->perPage, ['products.*'], 'page', $filters->page)->withQueryString(),
+            'products' => $filtered->paginate($filters->perPage, ['products.*'], 'page', $filters->page)->withQueryString(),
             'facets' => $facets,
         ];
     }
@@ -46,6 +67,11 @@ class ProductListingService
             $query->whereIn('brand_id', $filters->brandIds);
         }
 
+        $this->applyStaticFiltersExceptBrands($query, $filters);
+    }
+
+    private function applyStaticFiltersExceptBrands(Builder $query, ProductFilterState $filters): void
+    {
         if ($filters->priceMin !== null || $filters->priceMax !== null) {
             $query->whereHas('variants', function (Builder $v) use ($filters): void {
                 $v->where('is_active', true);
@@ -89,10 +115,10 @@ class ProductListingService
         }
     }
 
-    private function applyAttributeFilters(Builder $query, ProductFilterState $filters): void
+    private function applyAttributeFilters(Builder $query, ProductFilterState $filters, ?string $skipCode = null): void
     {
         foreach ($filters->attributes as $code => $values) {
-            if ($values === []) {
+            if ($values === [] || $code === $skipCode) {
                 continue;
             }
 

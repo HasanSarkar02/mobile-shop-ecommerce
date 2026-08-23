@@ -52,6 +52,7 @@ it('resolves Pre-Order for a single active preorder variant', function (): void 
     $product = ctaProduct([], [
         'inventory_type' => 'not_tracked',
         'fulfillment_strategy' => FulfillmentStrategy::Preorder,
+        'expected_available_at' => now()->addDays(14),
     ]);
     $card = ctaView($product);
 

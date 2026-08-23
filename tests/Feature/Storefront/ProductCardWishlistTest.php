@@ -140,6 +140,7 @@ it('flags official imports and pre-order variants on the card', function (): voi
     $tenant = actingAsTenant(['status' => 'active']);
     $product = cardProduct(['is_official_import' => true], [
         'fulfillment_strategy' => FulfillmentStrategy::Preorder,
+        'expected_available_at' => now()->addDays(14),
     ]);
     $card = cardView($product);
 
@@ -169,7 +170,8 @@ it('renders the product card with a single discount badge', function (): void {
     // Product Card partial — the source of truth for card markup.
     $html = view('storefront.partials.product-card', ['card' => cardView($product)])->render();
 
-    expect(substr_count($html, '% OFF'))->toBe(1);
+    // 800000/1000000 = 20% discount, rendered as a single "-20%" badge.
+    expect(substr_count($html, '-20%'))->toBe(1);
 });
 
 it('renders the image fallback when the product has no image', function (): void {

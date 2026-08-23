@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -23,6 +24,13 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
+/**
+ * @property VariantAvailability $availability
+ * @property InventoryType $inventory_type
+ * @property FulfillmentStrategy $fulfillment_strategy
+ * @property BackorderPolicy|null $backorder_policy
+ * @property Carbon|null $expected_available_at
+ */
 class ProductVariant extends Model implements HasMedia
 {
     use BelongsToTenant;
@@ -82,6 +90,7 @@ class ProductVariant extends Model implements HasMedia
         return $this->belongsTo(Product::class);
     }
 
+    /** @return HasMany<ProductAttributeValue> */
     public function attributeValues(): HasMany
     {
         return $this->hasMany(ProductAttributeValue::class);

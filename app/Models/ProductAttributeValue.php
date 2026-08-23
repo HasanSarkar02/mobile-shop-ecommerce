@@ -36,11 +36,13 @@ class ProductAttributeValue extends Model
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 
+    /** @return BelongsTo<AttributeDefinition, $this> */
     public function attributeDefinition(): BelongsTo
     {
         return $this->belongsTo(AttributeDefinition::class);
     }
 
+    /** @return BelongsTo<AttributeOption, $this> */
     public function attributeOption(): BelongsTo
     {
         return $this->belongsTo(AttributeOption::class);

@@ -7,17 +7,31 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Models\ProductVariant;
 use App\Services\CartService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
-    public function store(Request $request, CartService $carts): RedirectResponse
+    /** Hard per-request sanity cap; stock-aware limits live in InventoryService. */
+    private const MAX_QUANTITY = 99;
+
+    public function store(Request $request, CartService $carts): RedirectResponse|JsonResponse
     {
         try {
             $this->addToCart($request, $carts);
         } catch (\RuntimeException $e) {
+            // JSON callers must see the real failure — a redirect would be
+            // silently followed by fetch and reported as a false success.
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
             return back()->with('error', $e->getMessage());
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Added to cart.']);
         }
 
         return back()->with('status', 'Added to cart.');
@@ -44,7 +58,7 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'product_variant_id' => ['required', 'integer', 'exists:product_variants,id'],
-            'quantity' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:'.self::MAX_QUANTITY],
         ]);
 
         $variant = ProductVariant::query()->findOrFail($data['product_variant_id']);

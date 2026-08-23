@@ -129,6 +129,24 @@ class ProductCatalog extends Component
             || array_filter($this->attr) !== [];
     }
 
+    /**
+     * Chip labels for the active brand filter, resolved in ONE query —
+     * never per-chip Brand::find() calls inside the Blade loop.
+     *
+     * @return array<int, string>
+     */
+    public function brandChipLabels(): array
+    {
+        if ($this->brandIds === []) {
+            return [];
+        }
+
+        return Brand::query()
+            ->whereIn('id', $this->brandIds)
+            ->pluck('name', 'id')
+            ->all();
+    }
+
     public function render(ProductListingService $listing, ProductCardData $cards, WishlistService $wishlists)
     {
         $baseQuery = $this->resolveBaseQuery();
@@ -203,8 +221,8 @@ class ProductCatalog extends Component
     {
         return new ProductFilterState(
             brandIds: array_map('intval', $this->brandIds),
-            priceMin: $this->priceMin !== null && $this->priceMin !== '' ? (int) round(((float) $this->priceMin) * 100) : null,
-            priceMax: $this->priceMax !== null && $this->priceMax !== '' ? (int) round(((float) $this->priceMax) * 100) : null,
+            priceMin: ProductFilterState::priceFromInput($this->priceMin),
+            priceMax: ProductFilterState::priceFromInput($this->priceMax),
             inStockOnly: $this->inStockOnly,
             emiOnly: $this->emiOnly,
             warrantyOnly: $this->warrantyOnly,
