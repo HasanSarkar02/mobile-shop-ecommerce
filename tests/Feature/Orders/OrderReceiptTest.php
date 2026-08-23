@@ -5,15 +5,12 @@ declare(strict_types=1);
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethodType;
-use App\Enums\SubscriptionStatus;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\PaymentMethod;
-use App\Models\Plan;
 use App\Models\ProductVariant;
 use App\Models\SerialNumber;
 use App\Models\Tenant;
-use App\Models\TenantSubscription;
 use App\Models\User;
 use App\Services\OrderService;
 use Illuminate\Support\Facades\Queue;
@@ -29,28 +26,9 @@ function receiptUrlForTenant(Tenant $tenant, Order $order): string
 
 function receiptTenant(array $overrides = []): Tenant
 {
-    $tenant = actingAsTenant($overrides);
-
-    if (Plan::query()->doesntExist()) {
-        seedBootstrapPlans();
-    }
-
-    $plan = Plan::query()->firstOrFail();
-    TenantSubscription::query()->create([
-        'tenant_id' => $tenant->id,
-        'plan_id' => $plan->id,
-        'status' => SubscriptionStatus::Active,
-        'current_period_starts_at' => now()->subDay(),
-        'current_period_ends_at' => now()->addMonth(),
-        'plan_name' => $plan->name,
-        'billing_period' => $plan->billing_period,
-        'price' => $plan->price,
-        'max_products' => $plan->max_products,
-        'max_staff' => $plan->max_staff,
-        'custom_domain_allowed' => $plan->custom_domain_allowed,
-    ]);
-
-    return $tenant;
+    // actingAsTenant() now provisions an eligible trial subscription
+    // (production-faithful fixture), so no manual TenantSubscription is needed.
+    return actingAsTenant($overrides);
 }
 
 /**
@@ -246,6 +224,7 @@ describe('ORDER RECEIPT content and historical data', function (): void {
 
     it('renders partial, empty-payment, and cancelled orders safely', function (): void {
         $tenant = receiptTenant();
+        // Distinct guest identities: production caps active Pending orders per identity.
         [$partial] = receiptMakeOrder();
         $method = PaymentMethod::query()->create([
             'tenant_id' => $tenant->id,
@@ -254,9 +233,12 @@ describe('ORDER RECEIPT content and historical data', function (): void {
             'is_active' => true,
         ]);
         app(OrderService::class)->recordPayment($partial, $method, 10000, OrderPaymentStatus::Paid);
-        [$cancelled] = receiptMakeOrder();
+        [$cancelled] = receiptMakeOrder(['guest_email' => 'cancelled-receipt@example.com']);
         app(OrderService::class)->cancelOrder($cancelled, 'Customer request');
-        [$noBilling] = receiptMakeOrder(['billing_address' => null]);
+        [$noBilling] = receiptMakeOrder([
+            'guest_email' => 'nobilling-receipt@example.com',
+            'billing_address' => null,
+        ]);
         $user = receiptStoreUser($tenant);
 
         $this->actingAs($user)

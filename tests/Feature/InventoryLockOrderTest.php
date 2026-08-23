@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\OrderStatus;
+use App\Exceptions\InsufficientStockException;
 use App\Exceptions\InvalidOrderStateException;
 use App\Models\Cart;
 use App\Models\Order;
@@ -155,7 +156,7 @@ it('reserves the same variant across carts without overselling', function () {
     app(OrderService::class)->createFromCart(p0dCartForVariants([$variant]), p0dOrderData('stock-b@example.com'));
 
     expect(fn () => app(OrderService::class)->createFromCart(p0dCartForVariants([$variant]), p0dOrderData('stock-c@example.com')))
-        ->toThrow(InvalidOrderStateException::class);
+        ->toThrow(InsufficientStockException::class);
 
     expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(2);
 });
@@ -219,9 +220,26 @@ it('retries a real lock-wait timeout and succeeds once the lock is released', fu
         expect($result)->toBe('ok');
         expect($attempts)->toBe(2);
     } finally {
-        $pdo->exec('COMMIT');
+        // Release the raw connection's locks AND close it before returning.
+        // RefreshDatabase treats the shared `:memory:`-named MySQL database as
+        // in-memory and runs migrate:fresh (DROP all tables) before every test;
+        // a lingering open PDO would hold metadata locks and deadlock that DDL.
+        try {
+            $pdo->exec('COMMIT');
+        } catch (Throwable) {
+            // Already committed inside the retry closure — nothing to release.
+        }
+
         DB::statement('SET SESSION innodb_lock_wait_timeout = DEFAULT');
-        $pdo->exec('DROP TABLE IF EXISTS _lock_retry_test');
+
+        try {
+            $pdo->exec('DROP TABLE IF EXISTS _lock_retry_test');
+        } catch (Throwable) {
+            // Table may already be gone if teardown raced ahead.
+        }
+
+        // Close the raw socket so no metadata locks survive into the next test.
+        $pdo = null;
     }
 });
 

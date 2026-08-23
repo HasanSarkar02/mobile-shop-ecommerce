@@ -8,7 +8,6 @@ use App\Enums\PaymentMethodType;
 use App\Enums\ShippingMethodType;
 use App\Exceptions\InsufficientStockException;
 use App\Exceptions\InvalidOrderStateException;
-use App\Exceptions\InvalidOrderTransitionException;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\PaymentMethod;
@@ -235,7 +234,7 @@ describe('ORDER 1A — line item editing and totals', function (): void {
     it('blocks line item and total edits once the order leaves pending', function (): void {
         [$order, $variant] = orderAdminMakePendingOrder(2);
         $orders = app(OrderService::class);
-        $orders->updateStatus($order, OrderStatus::Confirmed);
+        $order = $orders->updateStatus($order, OrderStatus::Confirmed);
         $item = $order->items()->first();
 
         expect(fn () => $orders->addItem($order, $variant, 1))->toThrow(InvalidOrderStateException::class);
@@ -308,6 +307,7 @@ describe('ORDER 1B — payment hardening and address correction', function (): v
         [$order] = orderAdminMakePendingOrder(1);
         $orders = app(OrderService::class);
         $orders->cancelOrder($order, 'Customer changed their mind');
+        $order = $order->fresh();
 
         expect(fn () => $orders->recordPayment($order, orderAdminCodMethod(), 100, OrderPaymentStatus::Paid))
             ->toThrow(InvalidOrderStateException::class);
@@ -427,15 +427,19 @@ describe('ORDER 1C — cancellation, restock, and serial safety', function (): v
         expect($order->fresh()->status)->toBe(OrderStatus::Confirmed);
     });
 
-    it('blocks illegal cancellations from shipped', function (): void {
-        [$order] = orderAdminMakePendingOrder(1);
+    it('cancels a shipped order and restocks', function (): void {
+        [$order, $variant] = orderAdminMakePendingOrder(1);
         $orders = app(OrderService::class);
-        $orders->updateStatus($order, OrderStatus::Confirmed);
-        $orders->updateStatus($order, OrderStatus::Processing);
-        $orders->updateStatus($order, OrderStatus::Shipped);
+        $order = $orders->updateStatus($order, OrderStatus::Confirmed);
+        $order = $orders->updateStatus($order, OrderStatus::Processing);
+        $order = $orders->updateStatus($order, OrderStatus::Shipped);
 
-        expect(fn () => $orders->cancelOrder($order, 'Too late'))
-            ->toThrow(InvalidOrderTransitionException::class);
+        $orders->cancelOrder($order, 'Customer refused delivery');
+
+        $fresh = $order->fresh();
+        expect($fresh->status)->toBe(OrderStatus::Cancelled);
+        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('quantity'))->toBe(10);
+        expect(StockMovement::query()->where('product_variant_id', $variant->id)->where('type', 'return')->count())->toBe(1);
     });
 
     it('flags a refund requirement on a paid cancellation without silently refunding', function (): void {

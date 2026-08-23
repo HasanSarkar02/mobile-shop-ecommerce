@@ -4,24 +4,10 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use Illuminate\Database\DeadlockException;
-use Illuminate\Database\LockTimeoutException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-/**
- * Runs a closure inside a single database transaction and retries the ENTIRE
- * transaction a bounded number of times, but ONLY when the failure is a
- * genuine database deadlock or lock-wait timeout (MySQL 1213 / 1205, or a
- * serialization failure 40001). Validation and business-rule exceptions are
- * never retried — they propagate to the caller immediately.
- *
- * The retry boundary is intentionally the outermost transaction of an
- * operation: a deadlock in InnoDB rolls back the whole transaction (not just a
- * nested savepoint), so nested inventory work must surface its deadlock here so
- * the entire affected operation is re-run from a clean state.
- */
 final class DatabaseLockRetry
 {
     private const MYSQL_DEADLOCK = 1213;
@@ -29,6 +15,8 @@ final class DatabaseLockRetry
     private const MYSQL_LOCK_WAIT_TIMEOUT = 1205;
 
     private const MYSQL_SERIALIZATION_FAILURE = 40001;
+
+    private const MYSQL_TABLE_DEF_CHANGED = 1412;
 
     /**
      * @template T
@@ -70,11 +58,8 @@ final class DatabaseLockRetry
 
     private static function isConcurrencyError(Throwable $e): bool
     {
-        if ($e instanceof DeadlockException || $e instanceof LockTimeoutException) {
-            return true;
-        }
 
-        $codes = [self::MYSQL_DEADLOCK, self::MYSQL_LOCK_WAIT_TIMEOUT, self::MYSQL_SERIALIZATION_FAILURE];
+        $codes = [self::MYSQL_DEADLOCK, self::MYSQL_LOCK_WAIT_TIMEOUT, self::MYSQL_SERIALIZATION_FAILURE, self::MYSQL_TABLE_DEF_CHANGED];
 
         $candidate = $e;
 

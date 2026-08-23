@@ -15,6 +15,7 @@ use App\Events\OrderPaymentRecorded;
 use App\Events\OrderPlaced;
 use App\Events\OrderStatusChanged;
 use App\Exceptions\CartAlreadyConvertedException;
+use App\Exceptions\InsufficientStockException;
 use App\Exceptions\InvalidOrderStateException;
 use App\Exceptions\InvalidOrderTransitionException;
 use App\Exceptions\ReservationLimitExceededException;
@@ -156,7 +157,7 @@ class OrderService
                 }
 
                 if (! $this->inventory->isPurchasable($variant, $item->quantity)) {
-                    throw new InvalidOrderStateException("'{$variant->sku}' is no longer available in the requested quantity.");
+                    throw new InsufficientStockException("'{$variant->sku}' is no longer available in the requested quantity.");
                 }
             }
 
@@ -325,7 +326,7 @@ class OrderService
                 }
 
                 if (! $this->inventory->isPurchasable($variant, $qty)) {
-                    throw new InvalidOrderStateException("'{$variant->sku}' is no longer available in the requested quantity.");
+                    throw new InsufficientStockException("'{$variant->sku}' is no longer available in the requested quantity.");
                 }
             }
 
@@ -416,9 +417,11 @@ class OrderService
         });
     }
 
-    public function updateStatus(Order $order, OrderStatus $newStatus, ?string $note = null): void
+    public function updateStatus(Order $order, OrderStatus $newStatus, ?string $note = null): Order
     {
-        DatabaseLockRetry::run(function () use ($order, $newStatus, $note): void {
+        $fresh = null;
+
+        DatabaseLockRetry::run(function () use ($order, $newStatus, $note, &$fresh): void {
             $lockedOrder = Order::query()
                 ->whereKey($order->getKey())
                 ->lockForUpdate()
@@ -426,7 +429,11 @@ class OrderService
 
             $this->assertStatusTransition($lockedOrder, $newStatus);
             $this->applyStatusTransition($lockedOrder, $newStatus, $note);
+
+            $fresh = $lockedOrder->fresh();
         });
+
+        return $fresh ?? $order->fresh();
     }
 
     private function assertStatusTransition(Order $order, OrderStatus $newStatus): void

@@ -5,6 +5,7 @@ use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Events\OrderCancelled;
 use App\Events\OrderPlaced;
+use App\Exceptions\InsufficientStockException;
 use App\Exceptions\InvalidOrderStateException;
 use App\Exceptions\InvalidOrderTransitionException;
 use App\Models\Cart;
@@ -116,7 +117,7 @@ it('rejects a competing stock reservation without creating a second order', func
     expect(fn () => $orders->createFromCart($secondCart, [
         'guest_name' => 'Second Buyer', 'guest_email' => 'second@example.com', 'guest_phone' => '01800000000',
     ]))
-        ->toThrow(InvalidOrderStateException::class);
+        ->toThrow(InsufficientStockException::class);
 
     expect(Order::query()->count())->toBe(1);
     expect($secondCart->fresh()->converted_at)->toBeNull();
