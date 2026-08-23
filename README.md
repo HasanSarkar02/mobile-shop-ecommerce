@@ -1,4 +1,4 @@
-# Mobile Shop E-commerce
+# SaaS E-commerce
 
 A multi-tenant **SaaS e-commerce platform** for selling mobile phones and accessories. Each store (tenant) gets its own subdomain, its own storefront, and its own admin panel. The platform operator manages plans and tenants.
 
@@ -8,17 +8,17 @@ Built with **Laravel 13**, **Filament 5** (admin panels), **Livewire**, **Alpine
 
 ## Tech Stack
 
-| Area       | Technology                                            |
-| ---------- | ----------------------------------------------------- |
-| Backend    | PHP ^8.3, Laravel ^13.8                               |
-| Admin      | Filament ^5.6 (Store + Platform panels)               |
-| Frontend   | Livewire, Alpine.js ^3, Tailwind CSS ^4, Vite ^8      |
-| Database   | MySQL (default), Eloquent, 91 migrations, 60 models   |
-| Search     | Laravel Scout (database driver)                       |
-| Sanitizer  | mews/purifier (HTMLPurifier) — extended for storefront |
-| Media      | Spatie Media Library                                  |
-| Logging    | Spatie Activity Log                                   |
-| Tests      | Pest ^4 (Feature + Unit)                              |
+| Area      | Technology                                             |
+| --------- | ------------------------------------------------------ |
+| Backend   | PHP ^8.3, Laravel ^13.8                                |
+| Admin     | Filament ^5.6 (Store + Platform panels)                |
+| Frontend  | Livewire, Alpine.js ^3, Tailwind CSS ^4, Vite ^8       |
+| Database  | MySQL (default), Eloquent, 119 migrations, 67 models   |
+| Search    | Laravel Scout (database driver)                        |
+| Sanitizer | mews/purifier (HTMLPurifier) — extended for storefront |
+| Media     | Spatie Media Library                                   |
+| Logging   | Spatie Activity Log                                    |
+| Tests     | Pest ^4 (Feature + Unit)                               |
 
 ---
 
@@ -74,11 +74,11 @@ composer dev           # runs server, queue worker, pail logs, vite
 
 The seeder creates a **Demo Store** on subdomain `demo` with sample data:
 
-| Role              | Email                 | Password  |
-| ----------------- | --------------------- | --------- |
-| Platform admin    | `admin@hasanmobileshop.com` | random — generated and printed to the console during `db:seed` |
-| Store owner       | `owner@demo.test`     | `password` |
-| Store customer    | `customer@demo.test`  | `password` |
+| Role           | Email                       | Password                                                       |
+| -------------- | --------------------------- | -------------------------------------------------------------- |
+| Platform admin | `admin@hasanmobileshop.com` | random — generated and printed to the console during `db:seed` |
+| Store owner    | `owner@demo.test`           | `password`                                                     |
+| Store customer | `customer@demo.test`        | `password`                                                     |
 
 Add `demo.mobile-shop-ecommerce.test` (and your `APP_URL` host) to your hosts file / local resolver, then open the storefront.
 
@@ -133,6 +133,7 @@ Do not use a blanket trusted-proxy or allowed-host wildcard in production. Produ
 ## What's Completed
 
 ### Platform / SaaS (central)
+
 - [x] Tenant management (subdomains, custom domains, status)
 - [x] Plans, subscriptions, trials (14-day), plan change requests
 - [x] Billing page per tenant, subscription events/logging
@@ -141,6 +142,7 @@ Do not use a blanket trusted-proxy or allowed-host wildcard in production. Produ
 - [x] `TenantRegistrationService`, `SubscriptionService`
 
 ### Store Admin (Filament Store panel)
+
 - [x] Catalog: products, variants (SKU, price, cost, regions, fulfillment strategies, expected availability), attributes & options, tags, translations, relations, EMI plans, media
 - [x] Inventory: locations, stock items, stock movements, serial numbers (IMEI), restock, low-stock widget
 - [x] Orders: order lifecycle, payments, fulfillments, order events, reservation expiry, double-submission protection
@@ -153,6 +155,7 @@ Do not use a blanket trusted-proxy or allowed-host wildcard in production. Produ
 - [x] Dashboard widgets (stats, recent orders, low stock)
 
 ### Storefront (public)
+
 - [x] Homepage builder rendering (banner carousel, category grid, product grid, custom HTML, trust badges, newsletter CTA)
 - [x] Catalog: categories list/detail, brands list/detail, collections, product pages (variants, reviews, related products)
 - [x] Product listing with facets/filters (brand, price range, attributes), sorting, filter chips, `ProductListingService` + `FacetResolver`
@@ -167,8 +170,9 @@ Do not use a blanket trusted-proxy or allowed-host wildcard in production. Produ
 - [x] SEO meta partial, theme toggle, desktop/header layout components
 
 ### Services & infrastructure
+
 - [x] `OrderService`, `CartService`, `InventoryService`, `CouponService`, `PaymentGatewayService` (+ driver interface), `WishlistService`, `CompareService`, `RecentlyViewedService`, `ProductListingService`, `NotificationService`, `RedirectService`, `SequenceGenerator`, `ProductService`, `ProductAttributeValueService`
-- [x] 91 migrations / 60 models covering the full domain
+- [x] 119 migrations / 67 models covering the full domain
 - [x] Tests: order service, inventory, coupon (incl. currency), payment gateway, checkout double-submission, payment callback idempotency, owner-only authorization, deletion protection, tenancy fail-closed, queue-after-commit
 
 ---
@@ -222,6 +226,22 @@ composer test        # config:clear + pest
 # or
 php artisan test
 ```
+
+No manual database setup is needed. The suite runs against MySQL on a dedicated
+`testing` database, and `tests/bootstrap.php` creates that database if it does not
+exist yet — so a fresh clone with MySQL running is enough.
+
+MySQL is a deliberate requirement rather than sqlite: `DatabaseLockRetry` decides
+what to retry by inspecting MySQL error codes, and `InventoryLockOrderTest`
+exercises real `lockForUpdate` row ordering. Both silently degrade to no-ops on
+sqlite, which would leave the concurrency tests passing while testing nothing.
+
+To point the suite at a different server (CI, Docker, a non-default port), export
+any of `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`. Real
+environment variables take precedence over the defaults in `phpunit.xml`.
+
+The suite is configured with `failOnRisky` and `failOnWarning`, so a test that
+asserts nothing is treated as a failure rather than a passing line of output.
 
 ---
 

@@ -7,6 +7,20 @@
 
 Verdicts: **EXISTS** = fully implemented · **PARTIAL** = implemented but incomplete · **MISSING** = not present.
 
+> **Reconciliation — 2026-08-23.** The findings below are preserved as they stood on
+> 2026-08-20; they are not rewritten. Six of them have since been disproved by shipped
+> code and are annotated inline with **→ 2026-08-23:**. Verified against the tree at
+> that date (suite green at 718/718, Pint clean, Larastan 0 errors):
+>
+> - Offers/campaigns, newsletter admin UI, outlets, WhatsApp widget and the refund
+>   workflow are all now implemented with tests — see PLAN.md #10, #26, #27, #30, #32.
+> - The "~200 modified + ~100 untracked files" working tree in §7 no longer exists; it
+>   has been reconciled into logical commits.
+>
+> Anything **not** annotated is still believed accurate. Read an un-annotated
+> **MISSING** as "was missing on 2026-08-20 and no evidence has been found since",
+> not as a fresh verification.
+
 ---
 
 ## 1. Storefront — feature inventory
@@ -32,10 +46,10 @@ Verdicts: **EXISTS** = fully implemented · **PARTIAL** = implemented but incomp
 | Product reviews (submit + display) | **EXISTS** | `ProductReviewController::store`; PDP reviews block |
 | Pre-order at variant level | **EXISTS (partial)** | `FulfillmentStrategy::Preorder`; PDP shows "Pre-Order Now" + expected availability; **no dedicated `/pre-order` listing page** |
 | EMI (PDP display, 0% EMI, modal, admin plans) | **EXISTS** | `EmiPlan` model + `product_emi_plan` pivot; PDP EMI modal; `EmiPlanResource`; `PdpEmiTest` |
-| Offers / campaigns | **PARTIAL** | `Campaign` model (status `draft/active/ended`, `starts_at/ends_at`) + `CampaignResource` exist; **no public `/offer` landing page with live countdown** (AG has this) |
-| Newsletter subscribe endpoint + CTA | **PARTIAL** | `NewsletterController::subscribe` + `NewsletterSubscriber` model + CTA section; **no admin subscriber UI** |
-| Outlets / store locator | **MISSING** | No outlet model or `/outlet/*` pages (AG lists 5 outlets + store pages) |
-| WhatsApp live-chat widget + per-product `wa.me` | **MISSING** | AG/GG both have it; not present |
+| Offers / campaigns | **PARTIAL** → **EXISTS** | `Campaign` model (status `draft/active/ended`, `starts_at/ends_at`) + `CampaignResource` exist; **no public `/offer` landing page with live countdown** (AG has this). **→ 2026-08-23:** shipped — `/offers` index + `/offer/{slug}` detail with Alpine D-H-M-S countdown, `campaign_product` pivot, `CampaignProductResolver`, campaign hero/card imagery with fallbacks; `OfferPageTest` (5) + `OfferCampaignProductsTest` (12) |
+| Newsletter subscribe endpoint + CTA | **PARTIAL** → **EXISTS** | `NewsletterController::subscribe` + `NewsletterSubscriber` model + CTA section; **no admin subscriber UI**. **→ 2026-08-23:** shipped — Filament `NewsletterSubscriberResource` (list, delete + bulk delete, per-view and full CSV export) |
+| Outlets / store locator | **MISSING** → **EXISTS** | No outlet model or `/outlet/*` pages (AG lists 5 outlets + store pages). **→ 2026-08-23:** shipped — `Outlet` model + `outlets` table, `/outlets` index, Filament `OutletResource`, footer locations link gated on `hasOutlets`; `OutletPageTest` |
+| WhatsApp live-chat widget + per-product `wa.me` | **MISSING** → **EXISTS** | AG/GG both have it; not present. **→ 2026-08-23:** shipped — `whatsapp_widget_enabled` theme toggle drives the floating widget, PDP "Ask about this product on WhatsApp" via `App\Support\WhatsApp::url()`; `WhatsAppWidgetTest` |
 | Mobile apps (iOS/Android) | **MISSING** | AG has both; long-term (public API) |
 | sitemap.xml / robots.txt | **EXISTS** | `SitemapController`, `RobotsController` |
 | Multi-currency | **PARTIAL** | Single BDT currency per store (`OrderService.php:185` hardcodes `currency_rate 1.0`) — acceptable vs both references (BDT-only) |
@@ -78,7 +92,7 @@ Verdicts: **EXISTS** = fully implemented · **PARTIAL** = implemented but incomp
 | SSLCommerz flow (pay/success/fail/cancel/IPN, idempotent) | **EXISTS** | `PaymentController` routes; `SslcommerzDriver`; `PaymentCallbackIdempotencyTest`; `.env:73-75` |
 | SSLCommerz credentials | **PARTIAL** | **sandbox placeholders** (`.env:73-75`) — not production |
 | bKash / Nagad / Aamarpay / Stripe / COD drivers | **MISSING** | `config/payment_gateways.php:8` — "Future gateways"; driver interface established |
-| Payment refunds / partial refunds | **MISSING** | `OrderService.php:327,489` — deferred; `OrderStatus` has no `Refunded`; dead `'refunded' => 'gray'` UI at `OrderResource.php:736` |
+| Payment refunds / partial refunds | **MISSING** → **EXISTS** | `OrderService.php:327,489` — deferred; `OrderStatus` has no `Refunded`; dead `'refunded' => 'gray'` UI at `OrderResource.php:736`. **→ 2026-08-23:** shipped — `OrderStatus::Refunded` live, `OrderService::refund()` with `amountPaid`/`amountRefunded`, refund header action on `ViewOrder` validating amount against refundable and capturing method/reason/reference; the `'refunded' => 'gray'` UI is now real, not dead |
 | Invoice PDF | **MISSING** | receipt page (HTML) exists; no PDF |
 | Email delivery | **EXISTS** | `EmailChannelDriver` (Mail::raw) + templates/logs; live SMTP configured (`.env`, gitignored) |
 | SMS delivery | **MISSING (stub)** | `SmsChannelDriver` logs `[SMS stub]` only (explicit placeholder) |
@@ -87,25 +101,29 @@ Verdicts: **EXISTS** = fully implemented · **PARTIAL** = implemented but incomp
 ## 5. Frontend build status
 
 - **Stack:** Laravel Blade + Tailwind + Alpine + Livewire, server-rendered (references are Next.js/React — no need to match framework).
-- **Verdict:** storefront is **feature-complete and functional**; the gap vs references is *depth/polish* (offer countdown pages, pre-order hub, outlets, WhatsApp chat, quick-view, infinite scroll) rather than missing core modules.
-- **In progress** (`TODO.md`): `ProductCatalog` Livewire polish, storefront brands/categories index pages, newsletter CTA wiring, layout/header/theme-toggle/mini-cart polish, Custom HTML section sanitizer (done, pending commit).
+- **Verdict:** storefront is **feature-complete and functional**; the gap vs references is *depth/polish* (offer countdown pages, pre-order hub, outlets, WhatsApp chat, quick-view, infinite scroll) rather than missing core modules. **→ 2026-08-23:** offer countdown pages, outlets and WhatsApp chat are now shipped; the remaining polish gap is the pre-order hub, quick-view and infinite scroll.
+- **In progress** (`TODO.md`): `ProductCatalog` Livewire polish, storefront brands/categories index pages, newsletter CTA wiring, layout/header/theme-toggle/mini-cart polish, Custom HTML section sanitizer (done, pending commit). **→ 2026-08-23:** all of these are committed; nothing here is "pending commit" any more.
 
 ## 6. Honest gap list vs references (priority-ranked)
 
-1. **Offers landing page** with live countdown timer + `/offer/{slug}` detail (Campaign entity exists — needs public pages).
+1. ~~**Offers landing page** with live countdown timer + `/offer/{slug}` detail~~ — **done 2026-08-23.**
 2. **Dedicated pre-order page** listing pre-order variants.
 3. **Production payment gateway(s)** — SSLCommerz prod creds + bKash/Nagad/COD drivers.
-4. **Refund workflow** — `OrderStatus::Refunded`, OrderResource refund action, remove dead UI.
-5. **Outlets / store locator** pages.
-6. **WhatsApp** chat widget + per-product `wa.me`.
-7. **Newsletter subscriber admin UI**.
+4. ~~**Refund workflow** — `OrderStatus::Refunded`, OrderResource refund action, remove dead UI.~~ — **done 2026-08-23.**
+5. ~~**Outlets / store locator** pages.~~ — **done 2026-08-23** (incl. footer links).
+6. ~~**WhatsApp** chat widget + per-product `wa.me`.~~ — **done 2026-08-23.**
+7. ~~**Newsletter subscriber admin UI**.~~ — **done 2026-08-23.**
 8. **Invoice PDF**.
 9. **Review reply + verified-buyer badge** on storefront.
 10. **SMS gateway** (real driver; currently stub).
-11. **Ops hardening** — full test suite run/fixes, Larastan/Pint, prod config caching, HTTPS, queue→redis, backups, monitoring, audit-log UI.
+11. **Ops hardening** — *partly done 2026-08-23*: full suite green (718/718) on a self-provisioning test database, Larastan 0 errors and Pint clean. **Still open:** 41 remaining `phpstan-baseline.neon` suppressions, prod config caching, HTTPS, queue→redis, backups, monitoring, audit-log UI.
 12. **Commerce polish (backlog)** — quick-view/zoom/360, infinite scroll, compare/wishlist account persistence, recently-viewed pruning, multi-currency, search engine (Meilisearch), CSV import/export, reorder alerts.
 13. **Long-term** — public API / mobile apps / PWA, i18n UI, multi-location shipping, analytics dashboard.
 
 ## 7. Confidence note
 
 This audit was performed against the **current working tree** (last commit `e1358d4`; working tree has ~200 modified + ~100 untracked files). Everything is cited from real source; no item is assumed. Where a feature is claimed complete, tests exist (`tests/Feature/**`) or the resource/route is present.
+
+**→ 2026-08-23:** that uncommitted tree is gone — it has been reconciled into logical
+commits, so the findings above can now be traced to real history rather than to a
+snapshot that only existed on one machine.

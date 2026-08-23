@@ -1,6 +1,6 @@
 # PLAN — Completing the system (unified master plan)
 
-**Last updated:** 2026-08-22
+**Last updated:** 2026-08-23 (working tree reconciled into logical commits; test environment made self-contained. Offers/campaign system, courier engine, admin orders, refunds, trust content verified against code; Phase F — Catalog & PDP Stabilization + Multi-Vertical UX Architecture added, audits not yet started)
 **Scope:** commerce correctness + content/trust + **multi-vertical, Bangla, courier-ready** architecture, plus shop-approval governance.
 **Companion docs:** `AUDIT.md` (feature inventory) · `ARCHITECTURE-VERTICALS.md` (multi-vertical/Bangla/courier blueprint).
 **Legend:** `[ ]` pending · `[~]` in progress · `[x]` done
@@ -24,13 +24,13 @@ Public signup currently grants an instantly-live trial store with a reserved sub
 ## Phase 1 — Commerce correctness (P0)
 
 7. [x] **Payment configuration foundation (shop-owned, COD/manual MFS first).** Additive `payment_methods` columns (`2026_08_22_000001_add_payment_method_configuration_to_payment_methods_table.php`): `code`, `display_name`, `provider`, `account_number/name`, `bank_name/branch_name`, `instructions`, `gateway_mode`, `credentials` `encrypted:array`, `fee_type/value`, `min/max_order_amount`, `requires_verification`, `gateway_ownership=shop`. `PaymentMethodType` `ManualMfs/OnlineGateway` (Aggregator deprecated, `PaymentMethod.php:46` encrypted cast). Filament `PaymentMethodResource.php:34` shop-owned CRUD (owner dashboard, `RestrictsToOwner`), checkout `checkout-page.blade.php:90` instructions + manual card, `ManualPaymentSubmission.php:13` Pending→ verification via `OrderResource.php:346` `verify/reject`, `OrderService.php:347` `recordPayment` idempotency on `tenant_id,transaction_reference`. Fees stored only (calculation deferred). No gateway drivers yet — platform can later add driver + one `config/payment_gateways.php:6` line.
-8. [ ] **bKash / Nagad / Online gateway drivers.** Registry at `config/payment_gateways.php:8` — one driver class + one config line (pattern: `app/Services/PaymentGateways/SslcommerzDriver.php`). Blocked until API creds arrive — foundation ready.
+8. [ ] **bKash / Nagad / Online gateway drivers.** Registry at `config/payment_gateways.php:8` — one driver class + one config line (pattern: `app/Services/PaymentGateways/SslcommerzDriver.php`, implemented and live in checkout). bKash/Nagad blocked until API creds arrive — foundation ready.
 9. [ ] **Production payments (live creds).** Real SSLCommerz creds in server `.env` (`SSLCOMMERZ_STORE_ID/PASSWORD`, `SSLCOMMERZ_SANDBOX=false`); verify IPN + idempotency. Needs driver above.
-10. [ ] **Refund workflow.** Add `OrderStatus::Refunded`; refund action on `OrderResource`; wire `OrderService` refund path; remove dead `'refunded' => 'gray'` UI (`OrderResource.php:815`).
-11. [ ] **Fix known test failures** (full suite green): `OrderSerialLinkageTest.php:72`; `OrderAdminOperationsTest.php:241,313`; `CheckoutConfirmationTest` (3, routing/tenancy 404); `CheckoutDoubleSubmissionTest` (tenant_id 1364); `PurchaseStateTest` 10× 404 (pre-existing, tenant factory scoping).
-12. [ ] **Static analysis + lint** (Pint, Larastan per `pint.json`, `phpstan.neon`); address findings (Pint 397 files; Larastan 348 errors at level 5 — mostly Filament generics + dead refund UI).
-13. [ ] **Security housekeeping.** Rotate live SMTP password in `.env:51-58`; ensure `.env` stays gitignored; add `SSLCOMMERZ_*` (and new gateway vars) to `.env.example`.
-14. [ ] **Filesystem config sync.** Local `config/filesystems.php:44` still uses `rtrim(env('APP_URL'))` — align with server fix (`'/storage'` host-relative) and commit.
+10. [x] **Refund workflow.** `OrderStatus::Refunded` live; `OrderService::refund()` (`OrderService.php:585`) + `amountPaid/amountRefunded`; refund header action on `ViewOrder.php:55-63` (amount validated against refundable, method/reason/reference captured); dead `'refunded' => 'gray'` UI now real.
+11. [x] **Fix known test failures** (full suite green). Order/checkout failures (`OrderSerialLinkageTest`, `OrderAdminOperationsTest`, `CheckoutConfirmationTest`, `CheckoutDoubleSubmissionTest`, `PurchaseStateTest`) and the `PlatformDashboardTest` 6 (dashboard copy had been redesigned; assertions realigned to `Quick Actions` / `Everything is up to date.` / `Queue Backlog|Scheduler|Database`) are all resolved. **718/718 passing, 2948 assertions, 0 risky** on 2026-08-23, verified from a dropped database. The suite no longer needs manual DB setup — `tests/bootstrap.php` creates the `testing` database — and runs with `failOnRisky`/`failOnWarning` so a zero-assertion test can no longer pass silently (the one offender, `tests/Feature/DebugAccountTest.php`, was a scratch file asserting nothing and has been deleted).
+12. [~] **Static analysis + lint** (Pint, Larastan per `pint.json`, `phpstan.neon`). Both gates are green as of 2026-08-23: **Pint reports 0 files needing changes** (the old "397 files" figure was a count of files scanned, not violations) and **Larastan reports 0 errors at level 5** — the earlier "348 errors" are gone. **Remaining:** 41 lines of suppressions still sit in `phpstan-baseline.neon` (down from 329), so the level-5 pass is green *behind a baseline* rather than genuinely clean; retiring the rest is the open work here.
+13. [~] **Security housekeeping.** `.env` is gitignored (`.gitignore:3`) and `SSLCOMMERZ_STORE_ID/PASSWORD/SANDBOX` are now in `.env.example`, which also records that courier credentials are deliberately per-shop encrypted rows rather than env vars. **Remaining:** rotate the live SMTP password that was committed in a previous `.env` — a code change cannot undo an exposed credential, this must be done in the mail provider.
+14. [x] **Filesystem config sync.** `config/filesystems.php:44` is already `'url' => '/storage'` (host-relative); local and server config agree. No change needed — this item was stale.
 
 ---
 
@@ -47,43 +47,48 @@ Public signup currently grants an instantly-live trial store with a reserved sub
 
 ---
 
-## Phase 1c — Admin order creation (owner panel, next)
+## Phase 1c — Admin order creation (owner panel) — DONE
 
-**Gap:** `OrderResource.php:36` is view-only (no `form()`, only `index|view` `830`, `ListOrders.php:13` no CreateAction). `OrderService.php:43` only `createFromCart(Cart)`, but `OrderSource.php:10` already has `Admin='admin'` unused. Admin cannot originate an order — must go storefront→cart.
-
-21. [ ] **Admin Create Order (Filament Store, cartless).** New `OrderService::createFromAdmin(array variantId=>qty, Customer|guest, addresses, payment/shipping, preorder_ack_at, source Admin)` reusing `createFromCart` locks (`variantIds sort lockForUpdate:121`, `lockStockItemsForVariants`, `isPurchasable:174`, `reserve:224`, `recalculateTotals`, split fulfillments `211`), bypass `Cart`/`converted_at`/`ReservationLimitExceededException` (`active_reservation_key` admin bypass or null). Filament `OrderResource/Pages/CreateOrder` (`ListOrders` header `CreateAction`) with customer selector (search `Customer` or guest fields `guest_name/email/phone`), repeater `variant_id search `variantOptions:714` + quantity, address snapshot, payment/shipping, preorder_ack auto, `OrderSource::Admin`. Keep all `Pending`-only mutators (`addItem:518`, etc.) untouched. Enterprise: `DB::transaction` + `lockForUpdate` deterministic order, `OrderPlaced` dispatch, `OrderEvent` audit.
+21. [x] **Admin Create Order (Filament Store, cartless).** `OrderService::createFromAdmin()` (`OrderService.php:295`, `DatabaseLockRetry` + stock locks reused, `order_source` snapshot), Filament `OrderResource/Pages/CreateOrder.php` (customer select, lines repeater, addresses, payment/shipping, preorder ack auto) reachable from `ListOrders`. Pending-only mutators untouched.
 
 ---
 
-## Phase 1d — Pluggable courier engine (Steadfast + Pathao, platform registry + shop credentials, one-click)
+## Phase 1d — Pluggable courier engine (Steadfast + Pathao, platform registry + shop credentials, one-click) — D.1–D.3 DONE
 
-**Honest audit of proposal:** Your “platform registers base_url, shop connects via API key — new courier without code” is 90% true. A DB-registered provider row (base_url_sandbox/live, auth_type, required_fields JSON, driver_class) lets non-dev add metadata without deploy, but a *new* provider with different API shape still needs a driver class (`SteadfastDriver`, `PathaoDriver`) — you cannot generalize away provider differences. Hardcoding base URLs in drivers is the anti-pattern you flagged; DB registry fixes it. Copy `config/payment_gateways.php:6` + `PaymentMethod.php:46` encrypted pattern exactly.
+**Honest audit of proposal:** Your "platform registers base*url, shop connects via API key — new courier without code" is 90% true. A DB-registered provider row (base_url_sandbox/live, auth_type, required_fields JSON, driver_class) lets non-dev add metadata without deploy, but a \_new* provider with different API shape still needs a driver class (`SteadfastDriver`, `PathaoDriver`) — you cannot generalize away provider differences. Hardcoding base URLs in drivers is the anti-pattern you flagged; DB registry fixes it. Copy `config/payment_gateways.php:6` + `PaymentMethod.php:46` encrypted pattern exactly.
 
 **Steadfast API (portal.packzy.com/api/v1):** `Api-Key/Secret-Key` headers, `POST /create_order` (`invoice` unique, `recipient_name/phone 11 digits`, `recipient_address 250c`, `cod_amount`, `delivery_type 0/1`), `POST /create_order/bulk-order` data JSON 500 max, `GET /status_by_cid|invoice|trackingcode`, `GET /get_balance`, `GET /police_stations`, `POST /create_return_request`. Statuses `pending/in_review/delivered/...`.
 
 **Pathao API (courier-api-sandbox.pathao.com):** OAuth `POST /aladdin/api/v1/issue-token` (`client_id/secret + grant_type password|refresh_token + username/password` → `access_token 432000s`), `POST /stores` (`city_id/zone_id/area_id`), `POST /orders` (`store_id, merchant_order_id, recipient_*, delivery_type 48|12, item_type 1|2, item_weight 0.5-10kg, amount_to_collect`), `GET /city-list|zone-list|area-list`, `POST /merchant/price-plan`.
 
-22. [ ] **Phase D.1 — Platform registry.** Migration `create_courier_providers` **without** `BelongsToTenant` (central): `code unique` (`steadfast|pathao`), `name`, `display_name`, `base_url`, `base_url_sandbox`, `base_url_live`, `auth_type` (`api_key|oauth`), `required_fields JSON` (`["api_key","secret_key"]` vs `["client_id","client_secret","username","password"]`), `driver_class` (FQCN), `is_active`, `sort_order`. `config/couriers.php` drivers map (`steadfast=>SteadfastDriver`, `pathao=>PathaoDriver`) — one line per driver future. Platform Filament `CourierProviderResource` (`/platform`, `EnsureCentralDomain`, `is_platform_admin` like `PlatformPanelProvider:28`).
-23. [ ] **Phase D.2 — Shop connection (owner dashboard, encrypted).** Migration `create_courier_connections` with `BelongsToTenant.php:12` (`tenant_id` auto + scoped): `tenant_id FK`, `courier_provider_id FK`, `credentials encrypted:array` (`Steadfast: api_key/secret_key`, `Pathao: client_id/secret + username/password + access_token/refresh_token/expires_at/store_id`), `is_active`, `is_default`, `sandbox bool`, `sort_order`, unique `(tenant_id,courier_provider_id)`. Filament Store `CourierConnectionResource` (`RestrictsToOwner:PaymentMethodResource:8`, options `array_keys(config('couriers.drivers'))` → provider Select, dynamic fields from `required_fields`, sandbox Toggle, Test Connection button (`GET /get_balance` / `GET /city-list`)).
-24. [ ] **Phase D.3 — One-click & bulk shipment (live).** Interface `CourierDriver { createShipment(Order, OrderFulfillment, credentials): ShipmentResult; createBulk(array, credentials): BulkResult; fetchStatus(tracking, credentials): ShipmentStatus; fetchBalance(credentials): float }`. Drivers `SteadfastDriver` (`Http::withHeaders Api-Key/Secret-Key`, base from provider row), `PathaoDriver` (token issue/refresh + `Authorization: Bearer`, store_id lookup `GET /stores`). `ViewOrder.php:48` header action `Send to Courier` — Select `courier_connection` (active), Select `fulfillment` if `count>1` (like split logic), `cod_amount = grand_total - amountPaid` (preorder full-upfront already paid → 0), map `recipient_*` from `shipping_address_snapshot` (`Order.php:52`), `invoice=order_number` idempotency, bulk via `ListOrders` bulk action (Steadfast 500 limit). Persist `fulfillment.tracking_number/courier_name/consignment_id` + `expected_available_at`, log `FulfillmentUpdated:OrderEventType:11` + `OrderEvent`. Handle `invoice unique` bulk per-item error array.
-25. [ ] **Phase D.4 — Status sync + timeline.** Unified `ShipmentStatus` `pending/in_review/delivered/...` mapped from Steadfast + Pathao, cron `tenants:refresh-courier-status` `GET /status_by_*`, update `OrderFulfillment.status` (`Pending|Packed|Shipped|Delivered|Failed:OrderFulfillmentStatus:7`), surface in `track-order/result:32` + `account/orders/show:21` (already loops all fulfillments), add webhook endpoint `track-order/result.blade.php:23-43` slot later if provider webhooks arrive.
+22. [x] **Phase D.1 — Platform registry.** `create_courier_providers_table` (`2026_08_22_000004`, central): `code unique`, display/base URLs sandbox+live, `auth_type`, `required_fields JSON`, `driver_class`, `is_active`, sort. Platform Filament resource for provider rows.
+23. [x] **Phase D.2 — Shop connection (owner dashboard, encrypted).** `create_courier_connections_table` (`2026_08_22_000005`, tenant-scoped): encrypted `credentials:array`, `is_active/is_default/sandbox/sort`, unique `(tenant,courier_provider)`; Filament Store `CourierConnectionResource` with dynamic fields from `required_fields`, sandbox toggle.
+24. [x] **Phase D.3 — One-click & bulk shipment (live).** `CourierDriver` interface (`app/Services/Shipping/CourierDriver.php`: `createShipment/createBulk/fetchStatus/fetchBalance`) + `SteadfastDriver`/`PathaoDriver`; `CourierService::sendFulfillment/syncStatus`; `ViewOrder.php:130` Send-to-Courier action (connection + fulfillment select, COD = grand_total − paid); bulk send on `ListOrders` (`OrderResource.php:65` → driver `createBulk`, per-invoice result notifications).
+25. [~] **Phase D.4 — Status sync + timeline.** Manual status sync action live on `ViewOrder` (`CourierService::syncStatus` → fulfillment status + timeline). Automated cron now shipped: `tenants:refresh-courier-status` (`app/Console/Commands/RefreshCourierStatus.php`) walks trial + active tenants, polls only in-flight fulfillments that carry a tracking number, resolves the tenant's connection by the courier name recorded at shipment time (zero or ambiguous matches are logged and skipped, never guessed), isolates per-consignment failures so one provider outage cannot abort the run, and always clears tenant context in a `finally`. Scheduled hourly `withoutOverlapping` (`routes/console.php`), covered by `tests/Feature/Console/RefreshCourierStatusTest.php`. **Remaining:** add `->onOneServer()` to the schedule before multi-server deploy (every other schedule entry has it); verify storefront surfacing on `track-order/result` + account pages; webhook endpoint deferred until providers offer them.
 
 ---
 
 ## Phase 2 — Content & discovery
 
-26. [ ] **Offers landing page.** `/offer` grid + `/offer/{slug}` using existing `Campaign` (`starts_at/ends_at`, status); live countdown (Alpine); seed demo campaigns.
-27. [ ] **Newsletter admin UI.** Filament resource for `NewsletterSubscriber` (list/export/remove) + wire CTA (storefront subscribe + throttled `NewsletterController.php:55` already exists).
+26. [x] **Offers landing page.** Done and expanded well beyond the original line — see "Offer module" subsection below.
+27. [x] **Newsletter admin UI.** Filament `NewsletterSubscriberResource` (list, delete + bulk delete, per-view and full CSV export); storefront subscribe form + throttled `NewsletterController` were already live.
 28. [ ] **Review reply + verified-buyer badge** on PDP; keep moderation (`ReviewStatus`), pre-order ETA now consistent.
 29. [ ] **Invoice PDF** for orders (receipt `OrderReceiptController.php:72` HTML exists — add downloadable PDF via `barryvdh/laravel-dompdf`).
+
+### Offer module (2026-08-22, beyond original #26)
+
+- [x] **Campaign ↔ product system.** `campaign_product` pivot (sort_order) + `Campaign::products()`; single-source eligibility `Campaign::scopeEligible()/isEligible()`; shared `CampaignProductResolver` (publication + pivot order + batched max-discount); homepage grid source `'campaign'` wired in `HomepageSectionRenderer`; Filament products attach on `CampaignResource`.
+- [x] **Storefront pages.** `/offers` index (brand-gradient hero, sortable Newest/Ending Soon, colorful offer cards 1/2/3-col with accent_color + preset tint fallbacks, short_tagline, date-range pills, "Up to X% OFF" computed from compare-at prices, trust-badge strip, empty-state) + `/offer/{slug}` show (hero w/ artwork, segmented D-H-M-S Alpine countdown in `partials/offers/countdown.blade.php`, copyable coupon row via `HasSchedule::currentlyActive`, campaign product grid reusing `product-card`, CTA to on-page deals). Fixed latent bug: `/offer/{slug}` always 404'd (route-param/binding mismatch).
+- [x] **Campaign imagery.** Nullable `hero_image`/`card_image` columns + Filament uploads (`FileUpload->directory('campaign-heroes'/'campaign-cards')`, image validation, size limits, previews); predictable fallbacks — card: card_image → hero_image → banner WebP ('large') → tint+icon; hero: hero_image → banner → generated placeholder. Mobile-first hero (artwork stacks under content), 16:9 card band (object-cover uploads / object-contain banners), reserved aspect ratios, lazy/eager loading split.
+- [x] **Tests.** `tests/Feature/Storefront/OfferPageTest.php` (5) + `OfferCampaignProductsTest.php` (12): eligibility, draft-product exclusion, pivot ordering, both sorts, discount calc + no-false-discount, coupon validity gating, homepage source eligibility, image rendering + fallbacks.
 
 ---
 
 ## Phase 3 — Trust & support
 
-30. [ ] **Outlets / store locator.** `Outlet` model + `/outlet/{slug}` pages + footer locations (mirror AG).
-31. [ ] **Policy & help pages.** Seed static-page system with EMI, warranty, exchange, refund, return, delivery, privacy, pre-order policies; FAQ entries.
-32. [ ] **WhatsApp widget.** Settings-driven floating chat + per-product `wa.me` (AG/GG parity, `ThemeSettings.php:51` `social_links.whatsapp` already stored).
+30. [x] **Outlets / store locator.** `Outlet` model + `create_outlets_table` (`2026_08_22_100002`), `/outlets` index (`OutletController.php`, active + sort), Filament `OutletResource`, `OutletPageTest`. Footer wiring is done too: `StorefrontLayoutComposer` passes `hasOutlets` and `components/storefront/footer.blade.php:68-71` renders the locations link only when the shop actually has outlets.
+31. [x] **Policy & help pages.** `TrustContentSeeder` seeds all 8 policy pages (delivery, warranty, return, exchange, refund, privacy, EMI/payment, pre-order) + general FAQ entries per tenant; idempotent (safe on existing tenants); PDP policy strip + footer resolve against these slugs.
+32. [x] **WhatsApp widget.** `whatsapp_widget_enabled` toggle (`2026_08_22_100001` + `ThemeSettings.php`) drives floating widget (`partials/whatsapp-widget.blade.php`); PDP "Ask about this product on WhatsApp" uses `social_links.whatsapp` via `App\Support\WhatsApp::url()`; tests in `WhatsAppWidgetTest`.
 
 ---
 
@@ -91,6 +96,26 @@ Public signup currently grants an instantly-live trial store with a reserved sub
 
 33. [ ] **Commerce polish (backlog picks).** Quick-view / gallery zoom; infinite scroll on listing; compare/wishlist account persistence; recently-viewed pruning + widget.
 34. [ ] **Ops hardening.** Prod config caching, HTTPS enforcement, queue driver review, backups, monitoring/rate-limit review.
+
+---
+
+## Phase F — Catalog & PDP Stabilization + Multi-Vertical UX Architecture
+
+**Governing rule (unchanged):** vertical-specific behavior is data/configuration and shared components — never duplicated application code or per-vertical page implementations.
+**Order of work:** read-only audits first; NO immediate product-card or PDP redesign. Bugs found are triaged into "fix now" vs "defer to foundation".
+
+57. [~] **F.0 — Read-only Catalog audit.** ~~Brand-facet bug (selecting Apple hides other brands/facets)~~ — **already fixed**: `FacetResolver::resolve()` now takes a `?\Closure $candidatesFor` so each dimension counts against a query with its *own* filter excluded, and attribute counts are de-duplicated per product. Proven by `tests/Feature/Storefront/CatalogFixesTest.php` ("keeps other brands visible in facets when one brand is selected", "keeps unselected attribute options visible…", "still respects other dimensions while excluding a facet own dimension"); price-input hardening covered too ("ignores negative zero and non numeric price inputs"). **Still to audit:** category filtering, sorting, pagination, query/filter state persistence, filter reset, desktop filter UX, mobile filter UX/drawer, empty states, loading states.
+58. [~] **F.1 — Read-only Product Card audit.** ~~Wishlist broken on cards~~ — **already fixed and covered**: `tests/Feature/Storefront/ProductCardWishlistTest.php` (16 tests: SSR wishlist seeding on wishlist + collection pages, JSON toggle state, non-JSON redirect/flash, unknown product rejected, cross-tenant leakage, no per-card N+1) and `ProductCardCtaTest.php` (11 tests: Add-to-Cart / Pre-Order / Backorder / disabled / no-CTA / Select-Options resolution). Card variant/stock/pre-order state and badge/pricing selection now run through the shared `PurchasabilityPolicy` + `ProductCardData`. **Still to audit:** image handling, responsive behavior, accessibility, loading/error states.
+59. [ ] **F.2 — Read-only PDP audit.** Variant selection correctness, gallery, wishlist, Add to Cart, Buy Now, stock/pre-order behavior, pricing display, responsive/mobile UX, related products rails, reviews, trust information.
+60. [ ] **F.3 — Read-only Product/Variant/Attribute architecture audit.** EAV attribute system coverage vs deprecated phone-first variant columns; whether existing variant data can express storage/RAM/color, size/color, pack/unit, material/color/dimensions without schema duplication.
+61. [ ] **F.4 — Define shared UI primitives** (single implementations): `ProductImage`, `ProductPrice`, `ProductRating`, `WishlistButton`, `VariantSelector`, `AddToCartButton`, `DiscountBadge`, `StockBadge`, `Gallery` — extracted from current partials, not forked.
+62. [ ] **F.5 — Define industry composition/config presets** (`config/industries.php` extension): Electronics/Mobile, Fashion, Grocery, Sports, Furniture, General fallback. Industry controls: component composition, information priority, attribute presentation, card layout, PDP layout, gallery behavior, CTA behavior, design tokens.
+63. [ ] **F.6 — Card hover-preview gallery decision (audit + configure, never auto-enable).** Desktop-only: hovering a product card with multiple images previews/advances through the gallery; mouse-leave returns to the primary image; touch devices never depend on hover. Per-industry default: fashion = strongly useful · electronics/mobile = useful · furniture = useful · sports = optional · grocery = usually unnecessary. Final toggle resolved per storefront/industry preset during F.5.
+64. [ ] **F.7 — Card Add-to-Cart / variant-modal behavior.** One shared variant-selection engine (the PDP's), never two implementations.
+    - Product has selectable variants → Card "Add to Cart" opens Variant Selection Modal → valid combination chosen → add to cart.
+    - No selection required → direct add-to-cart from card.
+    Modal must express any attribute type so future verticals work without new code: mobile (storage/RAM/color), clothing (size/color), grocery (pack/unit where applicable), furniture (material/color/dimensions).
+65. [ ] **F.8 — Triage + roadmap write-back.** Split audit findings into (a) bugs that must be fixed immediately vs (b) redesign work deferred to the Multi-Vertical Foundation; record the split in this PLAN.md before any implementation begins.
 
 ---
 
@@ -115,7 +140,7 @@ Public signup currently grants an instantly-live trial store with a reserved sub
 42. [ ] **Design tokens.** `--color-*` scale in `@theme` (`resources/css/app.css:10-18`); wire dead `secondary_color` + `font_family` (`ThemeSettings.php:47-48`) to real CSS vars.
 43. [ ] **Per-vertical theme presets** (grocery=green/friendly, electronics=blue/spec-led, fashion=minimal/large-imagery); owner overrides anytime.
 44. [ ] **De-brand structural surfaces.** Footer/header to neutral surfaces with brand accents (`footer.blade.php:5`, `desktop-header.blade.php:138`); add layout/header style options.
-45. [ ] **Fix homepage reorder.** `orderBy('sort_order')` in `HomeController.php:14-16` (currently broken — Filament reorder is decorative).
+45. [x] **Fix homepage reorder.** `HomeController.php:16` now has `->orderBy('sort_order')`, so Filament's reorder actually drives homepage section order. Covered by `tests/Feature/Storefront/HomepageSectionSortingTest.php`.
 
 ---
 
@@ -145,16 +170,22 @@ Public signup currently grants an instantly-live trial store with a reserved sub
 53. [ ] **Grocery preset UI.** Category-tile-dominant home, "quick-add +" cards, city/area selector bar, delivery-fee-by-area display, unit/pack-size facets.
 54. [ ] **Fashion preset UI.** Large-imagery cards, size/color facet-first, minimal chrome.
 55. [ ] **Electronics preset UI.** Spec-led PDP + facet rail (mostly exists — make locale-aware).
+    55.1. [ ] **Furniture preset UI.**
 56. [ ] **Fallback to `general`** preset for anything unmapped; all via config + Blade components — no per-vertical codebases.
 
 ---
 
 ## Sequencing
-- **Now:** Phase 1c (admin order creation) → Phase 1d (pluggable courier: platform registry + shop credentials + one-click shipment, Steadfast/Pathao).
-- **Parallel after P1c/d:** Phase 1 (refund, test green, lint, security) with Phase 2 + 3 (content/trust) and Phase A (Bangla) + Phase B (verticals) — per `PLAN:120` parallel rule.
-- **Then:** Phase C (grocery model) → Phase D remaining (BD hierarchy, ShippingService quote) → Phase E (per-vertical UI).
+
+- **Done (earlier revision):** Phase 1c (admin order creation), Phase 1d D.1–D.3 (courier engine), refunds (#10), offers/campaign module + campaign imagery (#26), newsletter admin (#27), outlets core (#30), policy/FAQ seeding (#31), WhatsApp widget (#32).
+- **Done (2026-08-23):** courier status-sync cron (#25 cron part) · outlet footer links (#30 complete) · homepage reorder (#45) · full suite green at 718/718 with a self-provisioning test database (#11) · Pint + Larastan gates green (#12, baseline residue aside) · `.env.example` gateway keys (#13, SMTP rotation still outstanding) · filesystem config confirmed already correct (#14).
+- **Next — small polish batch:** `->onOneServer()` on the courier schedule before multi-server deploy · retire the remaining 41 baseline suppressions (#12) · rotate the exposed SMTP password (#13) · add real coverage for customer login + `/account` (currently **zero** tests — the only file that touched those routes was a scratch debug test that asserted nothing and has been deleted).
+- **Then:** Phase 2 leftovers (#28 review replies, #29 invoice PDF) and Phase A (Bangla) + Phase B (verticals/design tokens) in parallel.
+- **After:** Phase C (grocery model) → Phase D remaining (BD hierarchy, ShippingService quote) → Phase E (per-vertical UI).
+- **Before Phase A/B UI work:** run Phase F (F.0–F.3 read-only audits → F.4/F.5 primitives & presets definition) so catalog/PDP fixes and vertical theming land once, on shared components, instead of twice. F.0/F.1 are partly discharged — the specific brand-facet and card-wishlist bugs are fixed and tested; the UX/accessibility halves of those audits are still open.
 
 ## Deferred (later)
+
 - Real gateway drivers (bKash/Nagad live — foundation ready in Phase 1 #7-8).
 - Subscription auto-renewal / dunning / plan-upgrade end-to-end.
 - Search engine upgrade (Scout database → Meilisearch/Algolia), filters-in-URL.
@@ -163,5 +194,6 @@ Public signup currently grants an instantly-live trial store with a reserved sub
 - Demo content seeder (categories, products, images, reviews).
 
 ## Verification per task
+
 - Each behavior task ships with or updates a `tests/Feature/**` test; `composer test` stays green.
 - Storefront verified against `applegadgetsbd.com`, `gadgetandgear.com` (electronics), `chaldal.com`, `daraz.com.bd` (grocery/multi-vertical + Bangla) reference behavior.
