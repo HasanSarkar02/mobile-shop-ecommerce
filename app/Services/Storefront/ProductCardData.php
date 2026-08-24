@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\InventoryService;
 use App\Services\PurchasabilityPolicy;
+use App\Support\IndustryConfig;
 use App\Support\Tenancy\TenantUrlGenerator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -108,6 +109,30 @@ class ProductCardData
             $discount = (int) round((($variant->compare_at_price - $variant->price) / $variant->compare_at_price) * 100);
         }
 
+        // Gallery for hover-preview (F.6): additive, never required. Limit to
+        // 5 images to keep the card payload small. When `media` is already
+        // eager-loaded (the mandate for forMany callers) we filter the loaded
+        // relation to avoid an N+1; otherwise fall back to getMedia().
+        $mediaCollection = $product->relationLoaded('media')
+            ? $product->media->where('collection_name', 'images')->take(5)
+            : $product->getMedia('images')->take(5);
+
+        $fallbackName = $translation !== null ? $translation->name : '';
+        $galleryImages = collect($mediaCollection)->map(fn ($media) => [
+            'src' => $media->getUrl('thumb'),
+            'alt' => media_alt($media, $fallbackName),
+        ])->values()->all();
+
+        // Per-industry hover toggle (F.5 config). "never auto-enable" means
+        // this stays false for every preset until a storefront explicitly opts
+        // in; general is the safe fallback when the tenant has no industry yet
+        // (Phase B will add Tenant.industry).
+        $industry = null;
+        if (function_exists('tenant') && tenant() !== null) {
+            $industry = tenant()->getAttribute('industry');
+        }
+        $hoverGalleryEnabled = (bool) IndustryConfig::get($industry, 'card.hover_gallery_enabled', false);
+
         return [
             'id' => $product->id,
             'url' => $this->urls->canonicalRoute(tenant(), 'storefront.product', [$translation?->slug ?? $product->id]),
@@ -117,6 +142,8 @@ class ProductCardData
                 ? media_alt($firstMedia, $translation?->name ?? '')
                 : ($translation?->name ?? ''),
             'has_image' => (bool) $image,
+            'gallery_images' => $galleryImages,
+            'hover_gallery_enabled' => $hoverGalleryEnabled && count($galleryImages) > 1,
             'is_official_import' => (bool) $product->is_official_import,
             'discount_percentage' => $discount,
             'emi_available' => $this->emiAvailable($product),

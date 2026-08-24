@@ -13,7 +13,7 @@
     <a href="{{ $card['url'] }}"
         class="flex flex-1 flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 rounded-2xl">
         {{-- Image area --}}
-        <x-storefront.product-image :src="$card['has_image'] ? $card['image'] : null" :alt="$card['image_alt']" :dimmed="$outOfStock">
+        <x-storefront.product-image :src="$card['has_image'] ? $card['image'] : null" :alt="$card['image_alt']" :dimmed="$outOfStock" :gallery="$card['gallery_images'] ?? []" :hover-enabled="$card['hover_gallery_enabled'] ?? false">
             {{-- Badge stack: top-left, stacked vertically, never overlapping wishlist button (top-right) --}}
             <div class="pointer-events-none absolute left-2 top-2 flex flex-col items-start gap-1">
                 <x-storefront.discount-badge :percentage="$discount" />
