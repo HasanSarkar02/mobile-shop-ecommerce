@@ -16,8 +16,57 @@ class Tenant extends Model
 
     protected $fillable = [
         'name', 'subdomain', 'status', 'plan',
-        'currency',  'contact_email', 'contact_phone',
+        'currency', 'locales', 'preferred_locale', 'contact_email', 'contact_phone',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'locales' => 'array',
+            'preferred_locale' => 'string',
+        ];
+    }
+
+    /**
+     * Locales the tenant has enabled (always at least ['en']). Additive column
+     * added in 2026_08_25_000001 — existing tenants were backfilled to ['en'].
+     *
+     * @return array<int, string>
+     */
+    public function enabledLocales(): array
+    {
+        /** @var mixed $locales */
+        $locales = $this->locales;
+
+        if (! is_array($locales) || $locales === []) {
+            return ['en'];
+        }
+
+        // Normalise to lower-case, unique, and ensure 'en' is always present
+        // (EN is the root URL default per Phase A decision).
+        $normalised = array_values(array_unique(array_map(
+            fn (mixed $v): string => strtolower((string) $v),
+            $locales,
+        )));
+
+        if (! in_array('en', $normalised, true)) {
+            array_unshift($normalised, 'en');
+        }
+
+        return $normalised;
+    }
+
+    public function supportsLocale(string $locale): bool
+    {
+        return in_array(strtolower($locale), $this->enabledLocales(), true);
+    }
+
+    public function preferredLocale(): string
+    {
+        $preferred = strtolower((string) ($this->preferred_locale ?? 'en'));
+
+        return $this->supportsLocale($preferred) ? $preferred : 'en';
+    }
 
     public function domains(): HasMany
     {

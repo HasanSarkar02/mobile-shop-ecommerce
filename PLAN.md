@@ -140,9 +140,9 @@ Public signup currently grants an instantly-live trial store with a reserved sub
 
 **Decision:** English = root URL default; Bangla optional via `/bn/`; each tenant enables its own language set + preferred locale. Western numerals (matches Chaldal/Daraz).
 
-35. [ ] **Translation files.** `lang/en.json`, `lang/bn.json`; sweep all hardcoded storefront strings → `__()`.
+35. [x] **Translation files (A-1, 2026-08-25).** `lang/en.json` (25 keys, values = keys) + `lang/bn.json` (25 Bangla values) created; additive skeletons for `__()` — full sweep deferred to A-2/A-3.
 36. [ ] **Locale middleware** `SetLocale`: tenant enabled-locales → URL prefix (`/bn/`) → browser → persisted user pref → tenant preferred locale; `App::setLocale()`.
-37. [ ] **Tenant locale columns.** `locales` (array) + `preferred_locale`; signup/admin UI to configure.
+37. [x] **Tenant locale columns (A-1, 2026-08-25).** Additive `2026_08_25_000001_add_locale_columns_to_tenants_table.php`: `locales JSON nullable` + `preferred_locale VARCHAR(5) default 'en'`; existing rows backfilled to `['en']`; `Tenant.php:22-68` casts + `enabledLocales()/supportsLocale()/preferredLocale()` (always at least `['en']`, lower-cased unique, tenant-isolated). Covered by `tests/Feature/Locale/TenantLocaleTest.php` (7 tests).
 38. [ ] **Serve stored translations.** Replace hardcoded `translation('en')` with `translation($locale)` at `Product.php:60`, `ProductCardData.php:97,202`, `ProductController.php:105,218`, `show.blade.php:3-91`; make sort joins + Scout search locale-aware (`ProductListingService.php:128`, `Product::toSearchableArray` `Product.php:155-165`).
 39. [ ] **Bangla font** self-hosted with Bengali unicode-range (Hind Siliguri / Noto Sans Bengali) in Vite build; **keep Western numerals**.
 40. [ ] **Centralize money.** `money()` helper (locale-aware `Number::format`, symbol via `app/helpers.php:25-36`); remove ~30 hardcoded `৳` sites. **F.2 audit (2026-08-24): scope extension — the JS mirrors must be included:** PDP `formatPrice()` hardcodes `'৳' + toLocaleString()` (`products/show.blade.php:1056`) and four EMI `number_format` blocks render server-side fallbacks (lines 290, 317, 342, 351). A PHP-only sweep leaves the buy box wrong under Bangla locale/numerals.
