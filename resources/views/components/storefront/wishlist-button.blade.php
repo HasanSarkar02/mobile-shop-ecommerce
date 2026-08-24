@@ -1,0 +1,22 @@
+@props(['id', 'wishlisted'])
+
+{{-- Shared wishlist-button primitive (F.4): circular overlay toggle backed by
+     the Alpine wishlist store. Sibling of the card link so it stays its own
+     focusable/clickable control. Extracted verbatim from
+     storefront/partials/product-card.blade.php (the `seed(ID, true|false)`
+     init string is asserted by ProductCardWishlistTest — do not reformat). --}}
+<button type="button"
+    x-init="$store.wishlist.seed({{ $id }}, {{ $wishlisted ? 'true' : 'false' }})"
+    @click="$store.wishlist.toggle({{ $id }})"
+    :disabled="$store.wishlist.pending[{{ $id }}]"
+    :aria-busy="$store.wishlist.pending[{{ $id }}] ? 'true' : 'false'"
+    :aria-pressed="$store.wishlist.isWishlisted({{ $id }}) ? 'true' : 'false'"
+    :aria-label="$store.wishlist.isWishlisted({{ $id }}) ? 'Remove from wishlist' : 'Add to wishlist'"
+    class="absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-gray-600 shadow-sm ring-1 ring-black/5 transition duration-150 hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] active:scale-90 disabled:opacity-70 dark:bg-gray-900/90 dark:text-gray-300 dark:ring-white/10">
+    <span x-show="!$store.wishlist.isWishlisted({{ $id }})">
+        <x-ui.icon name="heart" class="h-[18px] w-[18px]" />
+    </span>
+    <span x-show="$store.wishlist.isWishlisted({{ $id }})" x-cloak>
+        <x-ui.icon name="heart-solid" :solid="true" class="h-[18px] w-[18px] text-red-500" />
+    </span>
+</button>
