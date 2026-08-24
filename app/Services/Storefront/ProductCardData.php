@@ -132,6 +132,15 @@ class ProductCardData
             $industry = tenant()->getAttribute('industry');
         }
         $hoverGalleryEnabled = (bool) IndustryConfig::get($industry, 'card.hover_gallery_enabled', false);
+        $requiresSelection = $product->variants->where('is_active', true)->count() > 1;
+
+        $modalVariants = [];
+        $modalDimensions = [];
+        if ($requiresSelection) {
+            $modalPayload = $this->variantModalPayload($product, $states, $facts);
+            $modalVariants = $modalPayload['variants'];
+            $modalDimensions = $modalPayload['dimensions'];
+        }
 
         return [
             'id' => $product->id,
@@ -150,9 +159,11 @@ class ProductCardData
             'reviews_count' => (int) ($product->reviews_count ?? 0),
             'average_rating' => $product->average_rating !== null ? (string) $product->average_rating : null,
             'wishlisted' => $wishlistedIds->contains($product->id),
-            'requires_selection' => $product->variants->where('is_active', true)->count() > 1,
+            'requires_selection' => $requiresSelection,
             'variant' => $variant !== null ? $this->variantView($variant, $states, $facts) : null,
             'cta' => $this->ctaView($product, $states, $facts),
+            'modal_variants' => $modalVariants,
+            'modal_dimensions' => $modalDimensions,
         ];
     }
 
@@ -222,6 +233,95 @@ class ProductCardData
             'is_out_of_stock' => $stockStatus === StockStatus::OutOfStock || $variant->availability === VariantAvailability::Discontinued,
             'purchasable' => $this->isPurchasable($variant, $states, $facts),
         ];
+    }
+
+    /**
+     * Build the per-card variant-selection payload for the F.7 modal. Uses the
+     * same dims/meta logic as ProductController::show so the modal can reuse
+     * the shared `x-storefront.variant-selector` and `variantSelectionState`
+     * engine without a second implementation. Tenant isolation is preserved
+     * because variants are already tenant-scoped via the product.
+     *
+     * @return array{variants: array<int, array<string, mixed>>, dimensions: array<int, array<string, string>>}
+     */
+    private function variantModalPayload(Product $product, Collection $states, Collection $facts): array
+    {
+        // Ensure variant attribute values are available for dimension building
+        // without issuing per-variant queries when the relation is already eager-loaded.
+        $product->loadMissing('variants.attributeValues.attributeDefinition', 'variants.attributeValues.attributeOption');
+
+        /** @var array<string, array{code: string, label: string, suffix: string}> $dimensions */
+        $dimensions = [];
+        $variantsData = [];
+
+        foreach ($product->variants as $variant) {
+            /** @var array<string, string> $dims */
+            $dims = [];
+            /** @var array<string, array{code: string, label: string, suffix: string}> $meta */
+            $meta = [];
+
+            if ($variant->color !== null) {
+                $dims['color'] = (string) $variant->color;
+                if (! isset($meta['color'])) {
+                    $meta['color'] = ['code' => 'color', 'label' => 'Color', 'suffix' => ''];
+                }
+            }
+            if ($variant->storage_gb !== null) {
+                $dims['storage'] = (string) $variant->storage_gb;
+                if (! isset($meta['storage'])) {
+                    $meta['storage'] = ['code' => 'storage', 'label' => 'Storage', 'suffix' => 'GB'];
+                }
+            }
+            if ($variant->region !== null) {
+                $dims['region'] = (string) $variant->region;
+                if (! isset($meta['region'])) {
+                    $meta['region'] = ['code' => 'region', 'label' => 'Region', 'suffix' => ''];
+                }
+            }
+
+            foreach ($variant->attributeValues as $value) {
+                if ($value->product_variant_id === null || $value->attributeDefinition === null || ! $value->attributeDefinition->is_variant_defining) {
+                    continue;
+                }
+                $code = $value->attributeDefinition->code;
+                $optionValue = $value->attributeOption !== null ? $value->attributeOption->value : '';
+                if (! isset($dims[$code])) {
+                    $dims[$code] = $value->displayValue() ?? (string) $optionValue;
+                }
+                if (! isset($meta[$code])) {
+                    $meta[$code] = [
+                        'code' => $code,
+                        'label' => $value->attributeDefinition->label,
+                        'suffix' => (string) ($value->attributeDefinition->unit ?? ''),
+                    ];
+                }
+            }
+
+            foreach ($meta as $code => $definition) {
+                if (! isset($dimensions[$code])) {
+                    $dimensions[$code] = $definition;
+                }
+            }
+
+            $state = $states->get($variant->id) ?? ['stock_status' => StockStatus::OutOfStock, 'available_quantity' => 0];
+            $purchasable = $this->isPurchasable($variant, $states, $facts);
+
+            $variantsData[] = [
+                'id' => $variant->id,
+                'price' => (int) $variant->price,
+                'compare_at_price' => $variant->compare_at_price !== null ? (int) $variant->compare_at_price : null,
+                'availability' => $variant->availability->value,
+                'fulfillment_strategy' => $variant->fulfillment_strategy->value,
+                'purchase_state' => $state['stock_status']->value,
+                'available_quantity' => $state['available_quantity'],
+                'backorder_policy' => $variant->backorder_policy?->value,
+                'purchasable' => $purchasable,
+                'is_active' => (bool) $variant->is_active,
+                'dims' => $dims,
+            ];
+        }
+
+        return ['variants' => $variantsData, 'dimensions' => array_values($dimensions)];
     }
 
     /**

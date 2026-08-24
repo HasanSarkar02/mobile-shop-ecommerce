@@ -17,6 +17,85 @@ import collapse from '@alpinejs/collapse';
 
 Alpine.plugin(collapse);
 
+// Shared variant-selection engine (F.7): single source of truth for
+// dimension-driven selection. Both the PDP (`productDetail`) and the card
+// variant modal reuse this — no second implementation.
+window.variantSelectionState = function (variants, dimensions, requiresSelection, initialVariantId) {
+    return {
+        variants: variants || [],
+        dimensions: dimensions || [],
+        requiresSelection: !!requiresSelection,
+        selected: {},
+        currentVariantId: initialVariantId || null,
+        unavailable: false,
+        activeVariants() {
+            return this.variants.filter((v) => v.is_active);
+        },
+        missingDimensions() {
+            if (!this.requiresSelection) return [];
+            return this.dimensions.filter((d) => this.selected[d.code] === undefined || this.selected[d.code] === null);
+        },
+        selectionComplete() {
+            return this.missingDimensions().length === 0;
+        },
+        selectionIssueType() {
+            if (!this.requiresSelection) return null;
+            if (!this.selectionComplete()) return 'incomplete';
+            if (!this.current()) return 'invalid';
+            return null;
+        },
+        selectionMessage() {
+            if (this.requiresSelection && !this.selectionComplete()) {
+                const missing = this.missingDimensions().map((d) => d.label);
+                if (missing.length === 0) return 'Please select all product options';
+                return 'Please select ' + missing.join(' and ');
+            }
+            return 'This combination of options is not available.';
+        },
+        current() {
+            if (this.unavailable) return null;
+            if (this.requiresSelection) {
+                if (!this.selectionComplete()) return null;
+                const matches = this.activeVariants().filter((v) => this.dimensions.every((d) => v.dims[d.code] === this.selected[d.code]));
+                return matches.length === 1 ? matches[0] : null;
+            }
+            return this.activeVariants().find((v) => v.id === this.currentVariantId) ?? null;
+        },
+        updateVariant() {
+            const match = this.current();
+            if (match) {
+                this.unavailable = false;
+                this.currentVariantId = match.id;
+            } else if (this.requiresSelection && !this.selectionComplete()) {
+                this.unavailable = false;
+                this.currentVariantId = null;
+            } else {
+                this.unavailable = true;
+                this.currentVariantId = null;
+            }
+        },
+        dimensionOptions(code) {
+            return [...new Set(this.activeVariants().map((v) => v.dims[code]).filter((v) => v !== undefined && v !== null))];
+        },
+        formatPrice(cents) {
+            return '৳' + Math.round(cents / 100).toLocaleString();
+        },
+        ctaLabel() {
+            const v = this.current();
+            if (!v) {
+                if (this.requiresSelection && !this.selectionComplete()) return 'Select Options';
+                return 'Unavailable';
+            }
+            if (!v.purchasable) {
+                return v.purchase_state === 'discontinued' ? 'Discontinued' : 'Out of Stock';
+            }
+            if (v.purchase_state === 'preorder') return 'Pre-Order Now';
+            if (v.purchase_state === 'out_of_stock' && v.backorder_policy === 'notify') return 'Backorder Now';
+            return 'Add to Cart';
+        },
+    };
+};
+
 // Global UI state that needs to be triggered from more than one place in the
 // DOM tree (the mobile header's hamburger button, and the "Categories" tab
 // in the mobile bottom nav both open the same drawer, but sit in separate

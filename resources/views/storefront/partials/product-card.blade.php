@@ -83,10 +83,7 @@
                 </span>
             </button>
         @elseif ($cta && $cta['type'] === 'select_options')
-            <a href="{{ $cta['url'] }}"
-                class="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-gray-300 px-3 text-xs font-semibold text-gray-800 transition hover:border-[var(--brand)] hover:text-[var(--brand)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--brand)] dark:border-gray-700 dark:text-gray-100 dark:focus-visible:ring-offset-gray-900 sm:text-sm">
-                Select Options
-            </a>
+            <x-storefront.variant-modal :card="$card" />
         @elseif ($cta && $cta['type'] === 'disabled')
             <button type="button" disabled
                 class="flex h-9 w-full cursor-not-allowed items-center justify-center rounded-xl bg-gray-100 px-3 text-xs font-semibold text-gray-400 dark:bg-gray-800 dark:text-gray-500 sm:text-sm">

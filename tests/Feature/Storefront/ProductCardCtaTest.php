@@ -160,7 +160,9 @@ it('renders the Select Options link for a multi-active-variant product', functio
 
     expect($html)->toContain('Select Options');
     expect($html)->toContain(app(TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.product', [$product->translation('en')->slug]));
-    expect($html)->not->toContain('$store.cart.add(');
+    // F.7: Select Options now opens the variant modal which reuses the shared
+    // selector engine and ultimately calls $store.cart.add for the chosen variant.
+    expect($html)->toContain('variantSelectionState');
 });
 
 it('renders a disabled CTA for an out-of-stock product', function (): void {
