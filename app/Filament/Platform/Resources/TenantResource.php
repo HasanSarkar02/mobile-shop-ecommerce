@@ -7,6 +7,7 @@ namespace App\Filament\Platform\Resources;
 use App\Enums\DeploymentMode;
 use App\Enums\DomainStatus;
 use App\Enums\SubscriptionStatus;
+use App\Enums\TenantIndustry;
 use App\Filament\Platform\Resources\TenantResource\Pages;
 use App\Filament\Platform\Resources\TenantResource\RelationManagers\DomainsRelationManager;
 use App\Filament\Platform\Resources\TenantResource\RelationManagers\OwnersRelationManager;
@@ -54,6 +55,12 @@ class TenantResource extends Resource
                 ->required()
                 ->unique(ignoreRecord: true)
                 ->rules([new ValidSubdomain]),
+            Select::make('industry')
+                ->label('Industry')
+                ->options(TenantIndustry::options())
+                ->default(TenantIndustry::General->value)
+                ->required()
+                ->helperText('Determines starter categories, homepage and theme preset (fully customizable after).'),
             Select::make('plan')
                 ->label('Plan')
                 ->options(fn (): array => Plan::query()
@@ -131,6 +138,16 @@ class TenantResource extends Resource
                         TextEntry::make('name')->label('Name'),
                         TextEntry::make('subdomain')->label('Subdomain'),
                         TextEntry::make('status')->label('Status')->badge(),
+                        TextEntry::make('industry')
+                            ->label('Industry')
+                            ->badge()
+                            ->state(function (Tenant $record): string {
+                                /** @var mixed $industry */
+                                $industry = $record->industry;
+
+                                return $industry instanceof TenantIndustry ? $industry->label() : (string) ($industry ?? 'general');
+                            })
+                            ->placeholder('—'),
                         TextEntry::make('contact_email')->label('Contact email')->placeholder('—'),
                         TextEntry::make('contact_phone')->label('Contact phone')->placeholder('—'),
                         TextEntry::make('created_at')->label('Created')->dateTime(),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Enums\TenantIndustry;
 use Illuminate\Support\Arr;
 
 /**
@@ -48,14 +49,53 @@ final class IndustryConfig
     /**
      * Dot-notation lookup inside a resolved preset,
      * e.g. get('fashion', 'pdp.layout') or get(null, 'card.hover_gallery_enabled').
+     * When $industry is null, the current tenant's industry is used.
      */
     public static function get(?string $industry, string $key, mixed $default = null): mixed
     {
         return Arr::get(self::resolve($industry), $key, $default);
     }
 
+    /**
+     * Resolve for the current tenant (reads Tenant::industry, falls back to general).
+     *
+     * @return array<string, mixed>
+     */
+    public static function current(): array
+    {
+        return self::resolve(null);
+    }
+
+    /**
+     * Get a value for the current tenant's industry.
+     */
+    public static function currentGet(string $key, mixed $default = null): mixed
+    {
+        return self::get(null, $key, $default);
+    }
+
     private static function normalize(?string $industry): string
     {
+        // When no explicit industry is given, use the current tenant's
+        // industry (Phase B data layer). Falls back to general if no tenant
+        // or tenant has no industry yet (pre-migration).
+        if ($industry === null || trim($industry) === '') {
+            /** @var mixed $tenantIndustry */
+            $tenantIndustry = null;
+            if (function_exists('tenant') && ($tenant = tenant()) !== null) {
+                /** @var mixed $tenantIndustry */
+                $tenantIndustry = $tenant->industry;
+
+                if ($tenantIndustry instanceof TenantIndustry) {
+                    $tenantIndustry = $tenantIndustry->value;
+                }
+            }
+
+            if (is_string($tenantIndustry) && trim($tenantIndustry) !== '') {
+                $industry = $tenantIndustry;
+            }
+        }
+
         $code = trim((string) $industry);
 
         $codes = self::codes();

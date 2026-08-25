@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\TenantIndustry;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,7 @@ class Tenant extends Model
 
     protected $fillable = [
         'name', 'subdomain', 'status', 'plan',
-        'currency', 'locales', 'preferred_locale', 'contact_email', 'contact_phone',
+        'currency', 'locales', 'preferred_locale', 'industry', 'contact_email', 'contact_phone',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class Tenant extends Model
         return [
             'locales' => 'array',
             'preferred_locale' => 'string',
+            'industry' => TenantIndustry::class,
         ];
     }
 
@@ -66,6 +68,22 @@ class Tenant extends Model
         $preferred = strtolower((string) ($this->preferred_locale ?? 'en'));
 
         return $this->supportsLocale($preferred) ? $preferred : 'en';
+    }
+
+    public function industryCode(): string
+    {
+        /** @var mixed $industry */
+        $industry = $this->industry;
+
+        if ($industry instanceof TenantIndustry) {
+            return $industry->value;
+        }
+
+        if (is_string($industry) && $industry !== '') {
+            return strtolower($industry);
+        }
+
+        return 'general';
     }
 
     public function domains(): HasMany

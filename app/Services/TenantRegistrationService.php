@@ -18,12 +18,13 @@ class TenantRegistrationService
     /**
      * @return array{0: Tenant, 1: User}
      */
-    public function register(string $businessName, string $subdomain, string $ownerName, string $ownerEmail, string $password, string $ownerPhone = ''): array
+    public function register(string $businessName, string $subdomain, string $ownerName, string $ownerEmail, string $password, string $ownerPhone = '', string $industry = 'general'): array
     {
         [$tenant, $owner] = app(TenantBootstrapService::class)->bootstrap([
             'name' => $businessName,
             'subdomain' => $subdomain,
             'plan' => 'trial',
+            'industry' => $industry,
             'owner' => [
                 'name' => $ownerName,
                 'email' => $ownerEmail,

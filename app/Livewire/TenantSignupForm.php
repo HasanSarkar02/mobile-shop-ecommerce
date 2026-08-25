@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Enums\TenantIndustry;
 use App\Rules\BangladeshiPhone;
 use App\Rules\ValidSubdomain;
 use App\Services\TenantRegistrationService;
@@ -32,6 +33,8 @@ class TenantSignupForm extends Component
 
     public string $password_confirmation = '';
 
+    public string $industry = 'general';
+
     public function updatedBusinessName(): void
     {
         if (! $this->subdomain) {
@@ -50,6 +53,7 @@ class TenantSignupForm extends Component
         return [
             'business_name' => ['required', 'string', 'max:255'],
             'subdomain' => ['required', 'string', new ValidSubdomain],
+            'industry' => ['required', 'string', Rule::in(array_keys(TenantIndustry::options()))],
             'owner_name' => ['required', 'string', 'max:255'],
             'owner_email' => [
                 'required',
@@ -72,6 +76,7 @@ class TenantSignupForm extends Component
             $this->owner_email,
             $this->password,
             $this->owner_phone,
+            $this->industry,
         );
 
         if ($tenant->getAttribute('status') === 'pending') {

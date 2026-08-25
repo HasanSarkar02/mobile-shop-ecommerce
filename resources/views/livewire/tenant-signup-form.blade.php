@@ -139,6 +139,18 @@
                     <x-ui.input name="owner_phone" type="tel" label="Mobile number" placeholder="e.g. 01712345678"
                         wire:model.live.blur="owner_phone" :error="$errors->first('owner_phone')" />
 
+                    <div>
+                        <label for="industry" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">What do you sell?</label>
+                        <select id="industry" wire:model="industry"
+                            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm transition focus:border-[var(--brand)] focus:ring-[var(--brand)] dark:border-gray-700 dark:bg-gray-800 {{ $errors->has('industry') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '' }}">
+                            @foreach (\App\Enums\TenantIndustry::cases() as $case)
+                                <option value="{{ $case->value }}">{{ $case->label() }}</option>
+                            @endforeach
+                        </select>
+                        @error('industry') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose the closest — you can customise everything after.</p>
+                    </div>
+
                     <div class="grid gap-5 sm:grid-cols-2">
                         <x-ui.input name="password" type="password" label="Password" placeholder="Min 8 characters"
                             wire:model="password" :error="$errors->first('password')" />
