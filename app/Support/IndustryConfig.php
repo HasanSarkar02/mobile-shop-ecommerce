@@ -35,7 +35,7 @@ final class IndustryConfig
      *
      * @return array<string, mixed>
      */
-    public static function resolve(?string $industry): array
+    public static function resolve(TenantIndustry|string|null $industry): array
     {
         $code = self::normalize($industry);
 
@@ -50,8 +50,10 @@ final class IndustryConfig
      * Dot-notation lookup inside a resolved preset,
      * e.g. get('fashion', 'pdp.layout') or get(null, 'card.hover_gallery_enabled').
      * When $industry is null, the current tenant's industry is used.
+     * Accepts TenantIndustry enum directly to avoid strict-typing collisions
+     * after Tenant.industry was cast to enum in B-1.
      */
-    public static function get(?string $industry, string $key, mixed $default = null): mixed
+    public static function get(TenantIndustry|string|null $industry, string $key, mixed $default = null): mixed
     {
         return Arr::get(self::resolve($industry), $key, $default);
     }
@@ -74,8 +76,14 @@ final class IndustryConfig
         return self::get(null, $key, $default);
     }
 
-    private static function normalize(?string $industry): string
+    private static function normalize(TenantIndustry|string|null $industry): string
     {
+        // Direct enum pass-through (e.g. tenant()->industry from ProductCardData)
+        // — extract the backing value before string normalization.
+        if ($industry instanceof TenantIndustry) {
+            $industry = $industry->value;
+        }
+
         // When no explicit industry is given, use the current tenant's
         // industry (Phase B data layer). Falls back to general if no tenant
         // or tenant has no industry yet (pre-migration).

@@ -125,13 +125,10 @@ class ProductCardData
 
         // Per-industry hover toggle (F.5 config). "never auto-enable" means
         // this stays false for every preset until a storefront explicitly opts
-        // in; general is the safe fallback when the tenant has no industry yet
-        // (Phase B will add Tenant.industry).
-        $industry = null;
-        if (function_exists('tenant') && tenant() !== null) {
-            $industry = tenant()->getAttribute('industry');
-        }
-        $hoverGalleryEnabled = (bool) IndustryConfig::get($industry, 'card.hover_gallery_enabled', false);
+        // in; general is the safe fallback when the tenant has no industry yet.
+        // Uses currentGet so TenantIndustry enum (B-1 cast) is resolved via
+        // IndustryConfig::normalize without a strict string type collision.
+        $hoverGalleryEnabled = (bool) IndustryConfig::currentGet('card.hover_gallery_enabled', false);
         $requiresSelection = $product->variants->where('is_active', true)->count() > 1;
 
         $modalVariants = [];
