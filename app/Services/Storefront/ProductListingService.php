@@ -149,11 +149,15 @@ class ProductListingService
 
     private function applyNameSort(Builder $query): void
     {
+        $locale = app()->getLocale();
         $query->select('products.*')
-            ->join('product_translations as pt_sort', function ($join): void {
-                $join->on('pt_sort.product_id', '=', 'products.id')->where('pt_sort.locale', '=', 'en');
+            ->leftJoin('product_translations as pt_sort', function ($join) use ($locale): void {
+                $join->on('pt_sort.product_id', '=', 'products.id')->where('pt_sort.locale', '=', $locale);
             })
-            ->orderBy('pt_sort.name');
+            ->leftJoin('product_translations as pt_sort_en', function ($join): void {
+                $join->on('pt_sort_en.product_id', '=', 'products.id')->where('pt_sort_en.locale', '=', 'en');
+            })
+            ->orderByRaw('COALESCE(pt_sort.name, pt_sort_en.name)');
     }
 
     private function applyBestSellingSort(Builder $query): void

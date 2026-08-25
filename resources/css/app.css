@@ -8,13 +8,20 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Instrument Sans', 'Hind Siliguri', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
     /* Softer, larger-blur shadows read more premium than Tailwind's default
        shadow scale — used for header, dropdowns, cards, and drawers. */
     --shadow-soft: 0 2px 10px -2px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
     --shadow-elevated: 0 20px 40px -12px rgb(0 0 0 / 0.16), 0 4px 12px -4px rgb(0 0 0 / 0.08);
+}
+
+/* Bengali script: only load Hind Siliguri for U+0980-09FF, keep Western numerals */
+@font-face {
+    font-family: 'Hind Siliguri';
+    font-display: swap;
+    unicode-range: U+0980-09FF;
 }
 
 /* Alpine sets [x-cloak] on elements before it boots; without this rule the

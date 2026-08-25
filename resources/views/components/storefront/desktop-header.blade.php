@@ -60,7 +60,7 @@
                                                 x-text="p.name"></p>
                                         </div>
                                         <span class="text-sm font-semibold text-[var(--brand)] flex-shrink-0"
-                                            x-text="p.price ? '৳' + p.price.toLocaleString() : ''"></span>
+                                            x-text="p.price ? window.money(p.price * 100, 'BDT', document.documentElement.lang, false) : ''"></span>
                                     </a>
                                 </template>
                             </div>

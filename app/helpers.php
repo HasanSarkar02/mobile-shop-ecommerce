@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Tenant;
 use App\Support\Tenancy\Tenancy;
+use Illuminate\Support\Number;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 if (! function_exists('tenant')) {
@@ -34,6 +35,40 @@ if (! function_exists('currency_symbol')) {
         $currency ??= tenant()?->currency ?? 'BDT';
 
         return $symbols[$currency] ?? $currency.' ';
+    }
+}
+
+if (! function_exists('money')) {
+    /**
+     * Format an integer minor-unit amount (e.g. 120000 = ৳1,200.00) with
+     * locale-aware grouping via Number::format but Western numerals (Chaldal/
+     * Daraz). Currency symbol via currency_symbol(). Keeps int contract.
+     */
+    function money(int $minor, ?string $currency = null, ?string $locale = null, bool $withTrailingZeros = true): string
+    {
+        $locale ??= app()->getLocale();
+        // Use en-BD grouping for both en and bn to keep Western numerals;
+        // bn-BD would emit Bengali digits which we then map back.
+        $localeTag = $locale === 'bn' ? 'bn-BD' : 'en-BD';
+        $symbol = currency_symbol($currency);
+        $major = $minor / 100;
+
+        $formatted = Number::format($major, precision: $withTrailingZeros ? 2 : 0, locale: $localeTag);
+
+        // Force Western numerals even when locale is bn-BD
+        $formatted = strtr($formatted, [
+            '০' => '0', '১' => '1', '২' => '2', '৩' => '3', '৪' => '4',
+            '৫' => '5', '৬' => '6', '৭' => '7', '৮' => '8', '৯' => '9',
+        ]);
+
+        return $symbol.$formatted;
+    }
+}
+
+if (! function_exists('money_without_trailing_zeros')) {
+    function money_without_trailing_zeros(int $minor, ?string $currency = null, ?string $locale = null): string
+    {
+        return money($minor, $currency, $locale, false);
     }
 }
 

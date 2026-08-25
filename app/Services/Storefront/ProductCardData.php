@@ -98,7 +98,7 @@ class ProductCardData
      */
     private function build(Product $product, Collection $states, Collection $facts, Collection $wishlistedIds): array
     {
-        $translation = $product->translation('en');
+        $translation = $product->translation() ?? $product->translation('en');
         $variant = $this->usableVariant($product, $states, $facts);
 
         $image = $product->getFirstMediaUrl('images', 'thumb');
@@ -336,7 +336,8 @@ class ProductCardData
     private function ctaView(Product $product, Collection $states, Collection $facts): array
     {
         $active = $product->variants->where('is_active', true)->values();
-        $url = $this->urls->canonicalRoute(tenant(), 'storefront.product', [$product->translation('en')?->slug ?? $product->id]);
+        $localeTranslation = $product->translation() ?? $product->translation('en');
+        $url = $this->urls->canonicalRoute(tenant(), 'storefront.product', [$localeTranslation?->slug ?? $product->id]);
 
         if ($active->count() > 1) {
             return [

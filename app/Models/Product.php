@@ -57,7 +57,14 @@ class Product extends Model implements HasMedia
 
     protected function name(): Attribute
     {
-        return Attribute::make(get: fn () => $this->translation('en')?->name);
+        return Attribute::make(get: function (): ?string {
+            $t = $this->translation();
+            if ($t !== null && $t->name !== '') {
+                return $t->name;
+            }
+
+            return $this->translation('en')?->name;
+        });
     }
 
     public function brand(): BelongsTo
@@ -156,7 +163,7 @@ class Product extends Model implements HasMedia
 
     public function toSearchableArray(): array
     {
-        $translation = $this->translation('en');
+        $translation = $this->translation() ?? $this->translation('en');
 
         return [
             'id' => $this->id,

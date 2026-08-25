@@ -25,7 +25,7 @@ class SearchSuggestController extends Controller
         $products = Product::query()->published()->whereIn('id', $productIds)->with('translations')->get()
             ->map(fn (Product $p) => [
                 'name' => $p->name,
-                'url' => $urls->canonicalRoute(tenant(), 'storefront.product', [$p->translation('en')?->slug]),
+                'url' => $urls->canonicalRoute(tenant(), 'storefront.product', [($p->translation() ?? $p->translation('en'))?->slug]),
                 'thumb' => $p->getFirstMediaUrl('images', 'thumb'),
                 'price' => $p->base_price / 100,
             ]);

@@ -100,7 +100,8 @@ class ProductController extends Controller
 
         $dimensions = [];
         $purchaseStates = $inventory->resolvePurchaseStates($product->variants);
-        $imageAltFallback = $product->translation('en')?->name ?: '';
+        $t = $product->translation();
+        $imageAltFallback = (($t !== null ? $t->name : null) ?? $product->translation('en')?->name) ?: '';
 
         // A product needs explicit option selection only when more than one
         // ACTIVE variant exists. A single active variant is auto-resolved on
@@ -210,7 +211,7 @@ class ProductController extends Controller
             })
             ->sortBy(fn (array $group): array => [$group['group_sort_order'], $group['group']])
             ->values();
-        $translation = $product->translation('en');
+        $translation = $product->translation() ?? $product->translation('en');
         $canonicalProductUrl = $translation?->slug
             ? $urls->canonicalRoute(tenant(), 'storefront.product', [$translation->slug])
             : null;

@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureCentralDomain;
 use App\Http\Middleware\EnsureTenant;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\ResolveSupportSession;
+use App\Http\Middleware\SetLocale;
 use App\Support\Tenancy\TenantContextResolver;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -46,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(IdentifyTenant::class);
 
         $middleware->web(append: [
+            SetLocale::class,
             AssignStorefrontTokens::class,
             ResolveSupportSession::class,
         ]);

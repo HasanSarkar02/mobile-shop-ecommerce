@@ -12,6 +12,10 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
+                bunny('Hind Siliguri', {
+                    weights: [400, 500, 600],
+                    display: 'swap',
+                }),
             ],
         }),
         tailwindcss(),

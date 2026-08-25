@@ -17,6 +17,23 @@ import collapse from '@alpinejs/collapse';
 
 Alpine.plugin(collapse);
 
+// Shared money helper (Phase A): locale-aware grouping via Intl.NumberFormat
+// but Western numerals (matches Chaldal/Daraz). Keeps int minor-unit contract.
+window.money = function (cents, currency = 'BDT', locale = null, withTrailingZeros = true) {
+    const loc = locale || document.documentElement.lang || 'en';
+    const tag = loc === 'bn' ? 'bn-BD' : 'en-BD';
+    const symbol = { BDT: '৳', USD: '$', EUR: '€', GBP: '£', INR: '₹', PKR: '₨' }[currency] || (currency + ' ');
+    const major = cents / 100;
+    const opts = { minimumFractionDigits: withTrailingZeros ? 2 : 0, maximumFractionDigits: withTrailingZeros ? 2 : 0 };
+    let formatted = new Intl.NumberFormat(tag, opts).format(major);
+    // Force Western numerals even for bn-BD
+    formatted = formatted.replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+    return symbol + formatted;
+};
+window.moneyWithoutTrailingZeros = function (cents, currency = 'BDT', locale = null) {
+    return window.money(cents, currency, locale, false);
+};
+
 // Shared variant-selection engine (F.7): single source of truth for
 // dimension-driven selection. Both the PDP (`productDetail`) and the card
 // variant modal reuse this — no second implementation.
@@ -78,7 +95,7 @@ window.variantSelectionState = function (variants, dimensions, requiresSelection
             return [...new Set(this.activeVariants().map((v) => v.dims[code]).filter((v) => v !== undefined && v !== null))];
         },
         formatPrice(cents) {
-            return '৳' + Math.round(cents / 100).toLocaleString();
+            return window.money(cents, 'BDT', document.documentElement.lang || 'en', true);
         },
         ctaLabel() {
             const v = this.current();

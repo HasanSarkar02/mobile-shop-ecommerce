@@ -9,6 +9,7 @@ use App\Enums\DomainStatus;
 use App\Models\Domain;
 use App\Models\Tenant;
 use App\Services\SubscriptionService;
+use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 
 final class TenantUrlGenerator
@@ -20,6 +21,12 @@ final class TenantUrlGenerator
 
     public function storefront(Tenant $tenant, string $path = '/'): string
     {
+        $path = '/'.ltrim($path, '/');
+        $locale = function_exists('app') ? app()->getLocale() : 'en';
+        if ($locale === 'bn' && $tenant->supportsLocale('bn')) {
+            $path = '/bn'.($path === '/' ? '' : $path);
+        }
+
         return $this->absolute($this->resolver->tenantHost($tenant), $path);
     }
 
@@ -71,13 +78,26 @@ final class TenantUrlGenerator
 
     public function canonicalPath(Tenant $tenant, string $path = '/'): string
     {
+        $path = '/'.ltrim($path, '/');
+        // Prefix /bn when current locale is bn and tenant supports it (Phase A).
+        // English stays at root per decision; no query-string locale.
+        $locale = function_exists('app') ? app()->getLocale() : 'en';
+        if ($locale === 'bn' && $tenant->supportsLocale('bn')) {
+            $path = '/bn'.($path === '/' ? '' : $path);
+        }
+
         return $this->absolute($this->canonicalHost($tenant), $path);
     }
 
     /** @param array<string|int, mixed> $parameters */
     public function canonicalRoute(Tenant $tenant, string $route, array $parameters = []): string
     {
-        return $this->canonicalPath($tenant, route($route, $parameters, false));
+        $locale = function_exists('app') ? app()->getLocale() : 'en';
+        if ($locale === 'bn' && $tenant->supportsLocale('bn') && Route::has('bn.'.$route)) {
+            return $this->absolute($this->canonicalHost($tenant), route('bn.'.$route, $parameters, false));
+        }
+
+        return $this->absolute($this->canonicalHost($tenant), route($route, $parameters, false));
     }
 
     private function absolute(string $host, string $path): string

@@ -1,13 +1,13 @@
 @extends('storefront.layout')
 
-@section('title', ($product->translation('en')?->name ?? 'Product') . ' - ' . tenant()->name)
+@section('title', (($product->translation() ?? $product->translation('en'))?->name ?? 'Product') . ' - ' . tenant()->name)
 
 @section('content')
     @php
-        $productDescription = $product->translation('en')?->sanitizedDescription();
+        $productDescription = ($product->translation() ?? $product->translation('en'))?->sanitizedDescription();
         $showSpecifications = $specificationGroups->isNotEmpty();
         $showDescription = filled($productDescription);
-        $showWarranty = filled($product->translation('en')?->warranty_info);
+        $showWarranty = filled(($product->translation() ?? $product->translation('en'))?->warranty_info);
         $showReviews = $product->reviews_count > 0;
         $showFaqs = $product->faqs->isNotEmpty();
         $navSections = collect([
@@ -30,7 +30,7 @@
         $policyLinks = collect($policyLinks ?? []);
         $warrantyPolicyLink = $policyLinks->first(fn($link) => $link['label'] === 'Warranty');
         $canonicalProductUrl = app(\App\Support\Tenancy\TenantUrlGenerator::class)
-            ->canonicalRoute(tenant(), 'storefront.product', [$product->translation('en')?->slug]);
+            ->canonicalRoute(tenant(), 'storefront.product', [($product->translation() ?? $product->translation('en'))?->slug]);
 
         // Server-rendered EMI figures (progressive enhancement baseline). Uses
         // the first variant's price — the same variant Alpine starts on — and
@@ -49,7 +49,7 @@
     @endphp
 
     @include('storefront.partials.seo-meta', [
-        'description' => $product->translation('en')?->meta_description,
+        'description' => ($product->translation() ?? $product->translation('en'))?->meta_description,
         'canonical' => $canonicalProductUrl,
     ])
 
@@ -88,7 +88,7 @@
                     class="hover:text-[var(--brand)]">{{ $product->category->name }}</a>
             @endif
             <span class="mx-1">/</span>
-            <span class="text-gray-700 dark:text-gray-300">{{ $product->translation('en')?->name }}</span>
+            <span class="text-gray-700 dark:text-gray-300">{{ ($product->translation() ?? $product->translation('en'))?->name }}</span>
         </nav>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -107,7 +107,7 @@
                                 <x-ui.badge variant="neutral">Official Product</x-ui.badge>
                             @endif
                         </div>
-                        <h1 class="text-2xl font-bold mt-1">{{ $product->translation('en')?->name }}</h1>
+                        <h1 class="text-2xl font-bold mt-1">{{ ($product->translation() ?? $product->translation('en'))?->name }}</h1>
                         @if ($product->reviews_count > 0)
                             <div class="mt-2">
                                 <x-ui.rating-stars :rating="$product->average_rating" :count="$product->reviews_count" />
@@ -124,8 +124,8 @@
                                 'border-gray-300 dark:border-gray-700'"
                             :aria-pressed="$store.wishlist.isWishlisted({{ $product->id }})"
                             :aria-label="$store.wishlist.isWishlisted({{ $product->id }}) ?
-                                'Remove {{ $product->translation('en')?->name }} from wishlist' :
-                                'Add {{ $product->translation('en')?->name }} to wishlist'">
+                                'Remove {{ ($product->translation() ?? $product->translation('en'))?->name }} from wishlist' :
+                                'Add {{ ($product->translation() ?? $product->translation('en'))?->name }} to wishlist'">
                             <span x-show="!$store.wishlist.isWishlisted({{ $product->id }})"><x-ui.icon name="heart"
                                     class="w-5 h-5" /></span>
                             <span x-show="$store.wishlist.isWishlisted({{ $product->id }})" x-cloak><x-ui.icon
@@ -196,7 +196,7 @@
                             <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
                                 <span class="text-gray-900 dark:text-gray-100">EMI from</span>
                                 <span class="font-bold text-gray-900 dark:text-gray-100 tabular-nums"
-                                    x-text="emiHeadline()">৳{{ number_format(($emiFromMonthly ?? 0) / 100) }}/month</span>
+                                    x-text="emiHeadline()">{{ money((int) ($emiFromMonthly ?? 0)) }}/month</span>
                             </p>
                             @if ($emiHasZero)
                                 <p class="mt-1 text-xs text-green-600 dark:text-green-400 font-medium">0% EMI available</p>
@@ -223,7 +223,7 @@
                                             class="text-lg font-bold text-gray-900 dark:text-gray-100">EMI Plans</h2>
                                         <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
                                             <span
-                                                x-text="emiHeadline()">৳{{ number_format(($emiFromMonthly ?? 0) / 100) }}/month</span>
+                                                x-text="emiHeadline()">{{ money((int) ($emiFromMonthly ?? 0)) }}/month</span>
                                         </p>
                                     </div>
                                     <button type="button" x-ref="emiClose" @click="closeEmi()"
@@ -248,7 +248,7 @@
                                                 </p>
                                                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                                                     <span class="tabular-nums"
-                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}))">৳{{ number_format(round(($emiBasePrice * (1 + $planRate / 100)) / $plan->tenure_months) / 100) }}</span>/month
+                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}))">{{ money((int) round(($emiBasePrice * (1 + $planRate / 100)) / $plan->tenure_months)) }}</span>/month
                                                     for {{ $plan->tenure_months }} months
                                                 </p>
                                             </div>
@@ -257,7 +257,7 @@
                                                 <p
                                                     class="text-sm font-medium text-gray-900 dark:text-gray-100 tabular-nums">
                                                     <span
-                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}) * {{ $plan->tenure_months }})">৳{{ number_format((round(($emiBasePrice * (1 + $planRate / 100)) / $plan->tenure_months) * $plan->tenure_months) / 100) }}</span>
+                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}) * {{ $plan->tenure_months }})">{{ money((int) (round(($emiBasePrice * (1 + $planRate / 100)) / $plan->tenure_months) * $plan->tenure_months)) }}</span>
                                                     total
                                                 </p>
                                             </div>
@@ -338,7 +338,7 @@
 
         @php
             $waNumber = tenant()?->themeSettings?->social_links['whatsapp'] ?? null;
-            $waUrl = \App\Support\WhatsApp::url(is_string($waNumber) ? $waNumber : null, 'Hi, I am interested in '.$product->translation('en')?->name.' ('.url()->current().')');
+            $waUrl = \App\Support\WhatsApp::url(is_string($waNumber) ? $waNumber : null, 'Hi, I am interested in '.($product->translation() ?? $product->translation('en'))?->name.' ('.url()->current().')');
         @endphp
         @if ($waUrl)
             <div class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
@@ -463,7 +463,7 @@
                 aria-labelledby="warranty-heading">
                 <h2 id="warranty-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Warranty</h2>
                 <div class="prose dark:prose-invert max-w-none mt-5">
-                    {!! nl2br(e($product->translation('en')->warranty_info)) !!}
+                    {!! nl2br(e(($product->translation() ?? $product->translation('en'))->warranty_info)) !!}
                 </div>
                 @if ($warrantyPolicyLink)
                     <div class="mt-5">

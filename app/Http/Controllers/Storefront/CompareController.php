@@ -127,7 +127,7 @@ class CompareController extends Controller
         return [
             'id' => $product->id,
             'name' => $product->name,
-            'url' => $urls->canonicalRoute(tenant(), 'storefront.product', [$product->translation('en')?->slug ?? $product->id]),
+            'url' => $urls->canonicalRoute(tenant(), 'storefront.product', [(($product->translation() ?? $product->translation('en'))?->slug) ?? $product->id]),
             'image' => $product->getFirstMediaUrl('images', 'thumb') ?: null,
             'brand' => $product->brand?->name,
             'price' => $price !== null ? '৳'.number_format($price / 100) : null,
