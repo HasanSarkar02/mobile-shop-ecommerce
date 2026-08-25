@@ -19,13 +19,13 @@
                             <span class="ml-1 inline-flex px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-xs">PRE-ORDER</span>
                         @endif
                     </span>
-                    <span>৳{{ number_format($item->line_total / 100) }}</span>
+                    <span>{{ money((int) $item->line_total) }}</span>
                 </div>
                 @if (($item->fulfillment_strategy ?? null) === 'preorder' && $item->expected_available_at)
                     <p class="text-xs text-purple-600 -mt-1 mb-2">Expected availability {{ $item->expected_available_at->format('M j, Y') }}</p>
                 @endif
             @endforeach
-            <p class="text-right font-bold mt-4">Total: ৳{{ number_format($order->grand_total / 100) }}</p>
+            <p class="text-right font-bold mt-4">Total: {{ money((int) $order->grand_total) }}</p>
         </div>
 
         @if ($order->fulfillments->isNotEmpty())

@@ -27,7 +27,7 @@
                                     <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">PRE-ORDER</span>
                                 @endif
                             </span>
-                            <span class="font-medium">৳{{ number_format($item->line_total / 100) }}</span>
+                            <span class="font-medium">{{ money((int) $item->line_total) }}</span>
                         </div>
                         @if (($item->fulfillment_strategy ?? null) === 'preorder' && $item->expected_available_at)
                             <p class="text-xs text-purple-600 dark:text-purple-400 -mt-2">Expected availability {{ $item->expected_available_at->format('M j, Y') }} — estimate</p>
@@ -35,7 +35,7 @@
                     @endforeach
                 </div>
                 <div class="flex justify-between text-lg font-bold pt-3 mt-3 border-t border-gray-200 dark:border-gray-800">
-                    <span>Total</span><span>৳{{ number_format($order->grand_total / 100) }}</span>
+                    <span>{{ __('Total') }}</span><span>{{ money((int) $order->grand_total) }}</span>
                 </div>
                 @if ($order->paymentMethod)
                     <p class="mt-3 text-sm text-gray-500">Payment method: <span class="font-medium text-gray-700 dark:text-gray-200">{{ $order->paymentMethod->displayName() }}</span></p>

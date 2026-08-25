@@ -64,8 +64,8 @@
                         </td>
                         <td class="fi-order-items-sku">{{ $item->variant_sku_snapshot }}</td>
                         <td class="fi-order-items-number">{{ $item->quantity }}</td>
-                        <td class="fi-order-items-number fi-order-items-price">৳ {{ number_format($item->unit_price / 100, 2) }}</td>
-                        <td class="fi-order-items-number fi-order-items-total">৳ {{ number_format($item->line_total / 100, 2) }}</td>
+                        <td class="fi-order-items-number fi-order-items-price">{{ money((int) $item->unit_price) }}</td>
+                        <td class="fi-order-items-number fi-order-items-total">{{ money((int) $item->line_total) }}</td>
                     </tr>
                 @endforeach
             </tbody>

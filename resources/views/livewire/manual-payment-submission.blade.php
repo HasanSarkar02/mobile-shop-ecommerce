@@ -19,7 +19,7 @@
             @if ($paymentMethod->instructions)
                 <p class="whitespace-pre-line pt-2 text-amber-900 dark:text-amber-100">{{ $paymentMethod->instructions }}</p>
             @endif
-            <p class="text-xs pt-1">Amount: ৳{{ number_format($order->grand_total / 100, 2) }} · Reference: use your Order Number <strong>{{ $order->order_number }}</strong></p>
+            <p class="text-xs pt-1">Amount: {{ money((int) $order->grand_total) }} · Reference: use your Order Number <strong>{{ $order->order_number }}</strong></p>
         </div>
     @endif
 

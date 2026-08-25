@@ -42,7 +42,7 @@
     <div class="rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 dark:border-gray-800 dark:bg-gray-900">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Order placed</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('Order placed') }}</p>
                 <h1 class="mt-1 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">{{ $order->order_number }}</h1>
                 <p class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     {{ $order->placed_at?->format('F j, Y g:i A') ?? '—' }}
@@ -93,14 +93,14 @@
                                         <p class="mt-0.5 text-xs text-purple-600 dark:text-purple-400">Expected {{ $item->expected_available_at->format('M j, Y') }}</p>
                                     @endif
                                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 sm:hidden">
-                                        {{ $item->quantity }} × ৳{{ number_format($item->unit_price / 100, 2) }}
+                                        {{ $item->quantity }} × {{ money((int) $item->unit_price) }}
                                     </p>
                                 </div>
                             </div>
 
                             <div class="ml-20 flex items-center justify-between gap-4 sm:ml-auto sm:flex-none sm:text-right">
-                                <span class="text-sm text-gray-500 dark:text-gray-400 sm:hidden">Total</span>
-                                <span class="text-sm font-semibold text-gray-900 dark:text-white">৳{{ number_format($item->line_total / 100, 2) }}</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400 sm:hidden">{{ __('Total') }}</span>
+                                <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ money((int) $item->line_total) }}</span>
                             </div>
                         </div>
                     @endforeach
@@ -147,35 +147,35 @@
         <div class="mt-6 space-y-6 lg:mt-0">
             {{-- Summary --}}
             <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Order summary</h2>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('Order summary') }}</h2>
                 <dl class="mt-4 space-y-3 text-sm">
                     <div class="flex justify-between">
-                        <dt class="text-gray-500 dark:text-gray-400">Subtotal</dt>
-                        <dd class="font-medium text-gray-900 dark:text-white">৳{{ number_format($order->subtotal / 100, 2) }}</dd>
+                        <dt class="text-gray-500 dark:text-gray-400">{{ __('Subtotal') }}</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">{{ money((int) $order->subtotal) }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-gray-500 dark:text-gray-400">Discount</dt>
-                        <dd class="font-medium text-gray-900 dark:text-white">−৳{{ number_format($order->discount_total / 100, 2) }}</dd>
+                        <dt class="text-gray-500 dark:text-gray-400">{{ __('Discount') }}</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">−{{ money((int) $order->discount_total) }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-gray-500 dark:text-gray-400">Shipping</dt>
-                        <dd class="font-medium text-gray-900 dark:text-white">৳{{ number_format($order->shipping_cost / 100, 2) }}</dd>
+                        <dt class="text-gray-500 dark:text-gray-400">{{ __('Shipping') }}</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">{{ money((int) $order->shipping_cost) }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-gray-500 dark:text-gray-400">Tax</dt>
-                        <dd class="font-medium text-gray-900 dark:text-white">৳{{ number_format($order->tax_total / 100, 2) }}</dd>
+                        <dd class="font-medium text-gray-900 dark:text-white">{{ money((int) $order->tax_total) }}</dd>
                     </div>
                     <div class="flex justify-between border-t border-gray-200 pt-3 dark:border-gray-800">
-                        <dt class="text-base font-semibold text-gray-900 dark:text-white">Grand total</dt>
-                        <dd class="text-base font-bold text-gray-900 dark:text-white">৳{{ number_format($order->grand_total / 100, 2) }}</dd>
+                        <dt class="text-base font-semibold text-gray-900 dark:text-white">{{ __('Grand total') }}</dt>
+                        <dd class="text-base font-bold text-gray-900 dark:text-white">{{ money((int) $order->grand_total) }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-gray-500 dark:text-gray-400">Amount paid</dt>
-                        <dd class="font-medium text-green-600 dark:text-green-400">৳{{ number_format($amountPaid / 100, 2) }}</dd>
+                        <dt class="text-gray-500 dark:text-gray-400">{{ __('Amount paid') }}</dt>
+                        <dd class="font-medium text-green-600 dark:text-green-400">{{ money((int) $amountPaid) }}</dd>
                     </div>
                     <div class="flex justify-between">
-                        <dt class="text-gray-500 dark:text-gray-400">Amount due</dt>
-                        <dd class="font-medium {{ $amountDue > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400' }}">৳{{ number_format($amountDue / 100, 2) }}</dd>
+                        <dt class="text-gray-500 dark:text-gray-400">{{ __('Amount due') }}</dt>
+                        <dd class="font-medium {{ $amountDue > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-green-600 dark:text-green-400' }}">{{ money((int) $amountDue) }}</dd>
                     </div>
                 </dl>
             </div>
@@ -231,7 +231,7 @@
                             </p>
                         </div>
                         <div class="shrink-0 text-right">
-                            <p class="font-semibold text-gray-900 dark:text-white">৳{{ number_format($payment->amount / 100, 2) }}</p>
+                            <p class="font-semibold text-gray-900 dark:text-white">{{ money((int) $payment->amount) }}</p>
                             <p class="mt-0.5 text-xs font-medium text-gray-500 dark:text-gray-400">{{ $payment->status->label() }}</p>
                         </div>
                     </div>

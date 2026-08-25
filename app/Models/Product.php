@@ -163,13 +163,28 @@ class Product extends Model implements HasMedia
 
     public function toSearchableArray(): array
     {
-        $translation = $this->translation() ?? $this->translation('en');
+        // Locale-aware: index all translations so Scout (database driver for
+        // now, Meilisearch later) matches either language. Keep `name` as
+        // combined for backward compat, plus per-locale fields for future
+        // locale-scoped ranking.
+        $names = $this->translations->pluck('name')->filter()->implode(' ');
+        $descriptions = $this->translations->pluck('description')->filter()->implode(' ');
+
+        // Fallback to current-locale translation when relation not yet loaded
+        // (e.g. during factory creation before translations exist).
+        if ($names === '') {
+            $t = $this->translation() ?? $this->translation('en');
+            $names = $t !== null ? $t->name : '';
+            $descriptions = $t !== null ? $t->description : '';
+        }
 
         return [
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
-            'name' => $translation?->name,
-            'description' => $translation?->description,
+            'name' => $names,
+            'description' => $descriptions,
+            'name_en' => $this->translation('en')?->name,
+            'name_bn' => $this->translation('bn')?->name,
         ];
     }
 

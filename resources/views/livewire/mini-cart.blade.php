@@ -10,7 +10,7 @@
                         class="absolute -top-1 -right-1.5 bg-[var(--brand)] text-white text-[9px] font-semibold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5">{{ $itemCount }}</span>
                 @endif
             </span>
-            <span>Cart</span>
+            <span>{{ __('Cart') }}</span>
         </a>
     @else
         <button @click="open = !open" @keydown.escape.window="open = false" :aria-expanded="open.toString()"
@@ -29,7 +29,7 @@
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
             class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-elevated z-50">
             <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                <p class="text-sm font-semibold">Shopping Cart</p>
+                <p class="text-sm font-semibold">{{ __('Shopping Cart') }}</p>
                 <span class="text-xs text-gray-400" x-text="'{{ $itemCount }} {{ $itemCount === 1 ? 'item' : 'items' }}'"></span>
             </div>
 
@@ -50,18 +50,18 @@
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-gray-800 dark:text-gray-100 truncate">{{ $product->name ?? $item->variant?->sku }}</p>
                             <p class="text-xs text-gray-400">
-                                {{ $item->quantity }} × ৳{{ number_format($item->unit_price / 100) }}
+                                {{ $item->quantity }} × {{ money((int) $item->unit_price) }}
                             </p>
                         </div>
                         <span class="text-sm font-semibold text-gray-900 dark:text-gray-100 flex-shrink-0">
-                            ৳{{ number_format($item->lineTotal() / 100) }}
+                            {{ money((int) $item->lineTotal()) }}
                         </span>
                     </div>
                 @empty
                     <div class="px-4 py-8 text-center">
-                        <p class="text-sm text-gray-400">Your cart is empty</p>
+                        <p class="text-sm text-gray-400">{{ __('Your cart is empty') }}</p>
                         <a href="{{ route('storefront.home') }}"
-                            class="inline-block mt-3 text-sm font-semibold text-[var(--brand)] hover:underline underline-offset-2">Start shopping</a>
+                            class="inline-block mt-3 text-sm font-semibold text-[var(--brand)] hover:underline underline-offset-2">{{ __('Start shopping') }}</a>
                     </div>
                 @endforelse
             </div>
@@ -69,14 +69,14 @@
             @if ($itemCount > 0)
                 <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-800">
                     <div class="flex justify-between items-center mb-3">
-                        <span class="text-sm text-gray-500 dark:text-gray-400">Subtotal</span>
-                        <span class="text-base font-bold">৳{{ number_format($subtotal / 100) }}</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ __('Subtotal') }}</span>
+                        <span class="text-base font-bold">{{ money((int) $subtotal) }}</span>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <x-ui.button variant="secondary" size="sm" class="w-full"
                             onclick="window.location='{{ route('storefront.cart') }}'">View Cart</x-ui.button>
                         <x-ui.button variant="primary" size="sm" class="w-full"
-                            onclick="window.location='{{ route('storefront.checkout') }}'">Checkout</x-ui.button>
+                            onclick="window.location='{{ route('storefront.checkout') }}'">{{ __('Checkout') }}</x-ui.button>
                     </div>
                 </div>
             @endif

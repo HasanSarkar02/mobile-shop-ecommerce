@@ -30,9 +30,7 @@
                             autocomplete="off" role="combobox" aria-expanded="false" :aria-expanded="open.toString()"
                             class="w-full pl-12 pr-16 py-2.5 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition shadow-sm">
                         <button type="submit"
-                            class="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-2 rounded-full bg-[var(--brand)] text-white text-sm font-semibold hover:brightness-110 transition">
-                            Search
-                        </button>
+                            class="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-2 rounded-full bg-[var(--brand)] text-white text-sm font-semibold hover:brightness-110 transition">{{ __('Search') }}</button>
                     </div>
                 </form>
 

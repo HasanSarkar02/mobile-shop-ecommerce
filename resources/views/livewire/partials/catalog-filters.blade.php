@@ -1,7 +1,7 @@
 <div class="space-y-6">
     {{-- Price range --}}
     <div>
-        <p class="text-sm font-semibold mb-2.5">Price Range (৳)</p>
+        <p class="text-sm font-semibold mb-2.5">{{ __('Price Range') }} ({{ currency_symbol() }})</p>
         <div class="flex items-center gap-2">
             <input type="number" wire:model.live.debounce.600ms="priceMin" placeholder="Min" min="0"
                 class="w-full rounded-lg border-gray-200 dark:border-gray-800 dark:bg-gray-900 text-sm focus:border-[var(--brand)] focus:ring-[var(--brand)] transition">
@@ -11,8 +11,8 @@
         </div>
         @if ($facets['price_range']?->min_price !== null)
             <p class="text-xs text-gray-400 mt-1.5">
-                ৳{{ number_format($facets['price_range']->min_price / 100) }} &ndash;
-                ৳{{ number_format($facets['price_range']->max_price / 100) }} available
+                {{ money((int) $facets['price_range']->min_price) }} &ndash;
+                {{ money((int) $facets['price_range']->max_price) }} available
             </p>
         @endif
     </div>

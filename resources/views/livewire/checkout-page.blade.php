@@ -1,6 +1,6 @@
 {{-- resources/views/livewire/checkout-page.blade.php --}}
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8">
-    <h1 class="text-2xl font-bold tracking-tight mb-6">Checkout</h1>
+    <h1 class="text-2xl font-bold tracking-tight mb-6">{{ __('Checkout') }}</h1>
 
     @if ($issues)
         <div class="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 rounded-2xl p-4 mb-6">
@@ -17,7 +17,7 @@
                 <div class="flex items-center gap-2 mb-4">
                     <span
                         class="w-6 h-6 rounded-full bg-[var(--brand)] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
-                    <h2 class="font-semibold">Shipping Address</h2>
+                    <h2 class="font-semibold">{{ __('Shipping Address') }}</h2>
                 </div>
                 @if ($customer)
                     <div class="space-y-2">
@@ -65,7 +65,7 @@
                 <div class="flex items-center gap-2 mb-4">
                     <span
                         class="w-6 h-6 rounded-full bg-[var(--brand)] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
-                    <h2 class="font-semibold">Shipping Method</h2>
+                    <h2 class="font-semibold">{{ __('Shipping Method') }}</h2>
                 </div>
                 <div class="space-y-2">
                     @foreach ($shippingMethods as $method)
@@ -80,7 +80,7 @@
                                     class="text-[var(--brand)] focus:ring-[var(--brand)]">
                                 <span class="text-sm font-medium">{{ $method->name }}</span>
                             </span>
-                            <span class="text-sm text-gray-500">৳{{ number_format($method->cost / 100) }}</span>
+                            <span class="text-sm text-gray-500">{{ money((int) $method->cost) }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -176,9 +176,7 @@
             </div>
 
             <x-ui.button type="submit" variant="primary" size="lg" class="w-full hidden lg:flex"
-                loading-target="placeOrder">
-                Place Order
-            </x-ui.button>
+                loading-target="placeOrder">{{ __('Place Order') }}</x-ui.button>
         </form>
 
         {{-- Order summary --}}
@@ -212,26 +210,26 @@
                                     <p class="text-xs text-purple-600 dark:text-purple-400">ETA {{ $item->variant->expected_available_at->format('M j, Y') }}</p>
                                 @endif
                             </div>
-                            <p class="text-sm font-medium flex-shrink-0">৳{{ number_format($item->lineTotal() / 100) }}
+                            <p class="text-sm font-medium flex-shrink-0">{{ money((int) $item->lineTotal()) }}
                             </p>
                         </div>
                     @endforeach
                 </div>
                 <div class="space-y-1.5 text-sm mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                     <div class="flex justify-between"><span
-                            class="text-gray-500">Subtotal</span><span>৳{{ number_format($subtotal / 100) }}</span>
+                            class="text-gray-500">{{ __('Subtotal') }}</span><span>{{ money((int) $subtotal) }}</span>
                     </div>
                     @if ($discount > 0)
                         <div class="flex justify-between text-green-600">
-                            <span>Discount</span><span>-৳{{ number_format($discount / 100) }}</span>
+                            <span>{{ __('Discount') }}</span><span>-{{ money((int) $discount) }}</span>
                         </div>
                     @endif
                     <div class="flex justify-between"><span
-                            class="text-gray-500">Shipping</span><span>৳{{ number_format($shippingCost / 100) }}</span>
+                            class="text-gray-500">{{ __('Shipping') }}</span><span>{{ money((int) $shippingCost) }}</span>
                     </div>
                     <div
                         class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200 dark:border-gray-800">
-                        <span>Total</span><span>৳{{ number_format(($subtotal - $discount + $shippingCost) / 100) }}</span>
+                        <span>{{ __('Total') }}</span><span>{{ money((int) ($subtotal - $discount + $shippingCost)) }}</span>
                     </div>
                 </div>
             </div>
@@ -243,7 +241,7 @@
         class="lg:hidden fixed bottom-16 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 px-4 py-3">
         <x-ui.button type="button" onclick="document.querySelector('form').requestSubmit()" variant="primary"
             size="lg" class="w-full" loading-target="placeOrder">
-            Place Order — ৳{{ number_format(($subtotal - $discount + $shippingCost) / 100) }}
+            Place Order — {{ money((int) ($subtotal - $discount + $shippingCost)) }}
         </x-ui.button>
     </div>
 </div>

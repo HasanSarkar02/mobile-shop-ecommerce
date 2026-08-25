@@ -371,7 +371,7 @@
                                                 <span class="text-green-600 dark:text-green-400 font-medium">Free</span>
                                             @else
                                                 <span
-                                                    class="tabular-nums">৳{{ number_format($method->cost / 100) }}</span>
+                                                    class="tabular-nums">{{ money((int) $method->cost) }}</span>
                                             @endif
                                         </li>
                                     @endforeach
@@ -937,7 +937,7 @@
                     return 'Add to Cart';
                 },
                 formatPrice(cents) {
-                    return '৳' + Math.round(cents / 100).toLocaleString();
+                    return window.money(cents, 'BDT', document.documentElement.lang || 'en', true);
                 },
                 // Mirrors the original PDP formula exactly:
                 // round(price * (1 + rate/100) / tenure) in cents.

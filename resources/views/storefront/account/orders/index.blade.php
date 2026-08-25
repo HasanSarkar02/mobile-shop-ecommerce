@@ -9,7 +9,7 @@
             class="flex justify-between py-3 border-b border-gray-100 dark:border-gray-800">
             <span>{{ $order->order_number }}</span>
             <span>{{ $order->status->label() }}</span>
-            <span>৳{{ number_format($order->grand_total / 100) }}</span>
+            <span>{{ money((int) $order->grand_total) }}</span>
         </a>
     @empty
         <p class="text-gray-500">No orders yet.</p>

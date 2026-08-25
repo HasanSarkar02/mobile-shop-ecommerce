@@ -45,7 +45,7 @@
                                 aria-label="Increase quantity">+</button>
                         </div>
                         <span
-                            class="w-24 text-right font-semibold flex-shrink-0">৳{{ number_format($item->lineTotal() / 100) }}</span>
+                            class="w-24 text-right font-semibold flex-shrink-0">{{ money((int) $item->lineTotal()) }}</span>
                     </div>
                 @endforeach
             </div>
@@ -69,15 +69,15 @@
 
                     <div class="space-y-1.5 text-sm">
                         <div class="flex justify-between"><span
-                                class="text-gray-500">Subtotal</span><span>৳{{ number_format($subtotal / 100) }}</span>
+                                class="text-gray-500">{{ __('Subtotal') }}</span><span>{{ money((int) $subtotal) }}</span>
                         </div>
                         @if ($discount > 0)
                             <div class="flex justify-between text-green-600">
-                                <span>Discount</span><span>-৳{{ number_format($discount / 100) }}</span></div>
+                                <span>{{ __('Discount') }}</span><span>-{{ money((int) $discount) }}</span></div>
                         @endif
                         <div
                             class="flex justify-between text-xl font-bold pt-3 mt-1 border-t border-gray-200 dark:border-gray-800">
-                            <span>Total</span><span>৳{{ number_format(($subtotal - $discount) / 100) }}</span>
+                            <span>{{ __('Total') }}</span><span>{{ money((int) ($subtotal - $discount)) }}</span>
                         </div>
                         <p class="text-xs text-gray-400">Shipping calculated at checkout.</p>
                     </div>
