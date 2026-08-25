@@ -58,6 +58,44 @@ it('seeds general fallback for unknown industry', function (): void {
     expect($sections)->toContain('product_grid');
 });
 
+it('seeds grocery categories and attributes', function (): void {
+    $tenant = actingAsTenant(['industry' => TenantIndustry::Grocery->value]);
+
+    $categories = Category::query()->withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->pluck('name')->all();
+    expect($categories)->toContain('Fresh Produce')
+        ->toContain('Pantry Staples')
+        ->toContain('Dairy & Eggs');
+
+    $codes = AttributeDefinition::query()->withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->pluck('code')->all();
+    expect($codes)->toContain('weight')
+        ->toContain('unit')
+        ->toContain('pack_size');
+});
+
+it('seeds fashion/clothing categories and attributes', function (): void {
+    $tenant = actingAsTenant(['industry' => TenantIndustry::Fashion->value]);
+
+    $categories = Category::query()->withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->pluck('name')->all();
+    expect($categories)->toContain("Men's Fashion")
+        ->toContain("Women's Fashion");
+
+    $codes = AttributeDefinition::query()->withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->pluck('code')->all();
+    expect($codes)->toContain('size')
+        ->toContain('fabric_color');
+});
+
+it('seeds sports categories and attributes', function (): void {
+    $tenant = actingAsTenant(['industry' => TenantIndustry::Sports->value]);
+
+    $categories = Category::query()->withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->pluck('name')->all();
+    expect($categories)->toContain('Sports Equipment')
+        ->toContain('Apparel');
+
+    $codes = AttributeDefinition::query()->withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->pluck('code')->all();
+    expect($codes)->toContain('size')
+        ->toContain('sports_color');
+});
+
 it('isolates seeded data between tenants', function (): void {
     $electronics = actingAsTenant(['industry' => TenantIndustry::Electronics->value, 'subdomain' => 'elec-'.uniqid()]);
     $furniture = actingAsTenant(['industry' => TenantIndustry::Furniture->value, 'subdomain' => 'furn-'.uniqid()]);

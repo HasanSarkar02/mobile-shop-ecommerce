@@ -25,10 +25,10 @@ final class IndustrySeederService
         $seeder = match ($code) {
             TenantIndustry::Electronics->value => new ElectronicsIndustrySeeder,
             TenantIndustry::Mobile->value => new ElectronicsIndustrySeeder,
+            TenantIndustry::Fashion->value => new FashionIndustrySeeder,
+            TenantIndustry::Grocery->value => new GroceryIndustrySeeder,
+            TenantIndustry::Sports->value => new SportsIndustrySeeder,
             TenantIndustry::Furniture->value => new FurnitureIndustrySeeder,
-            TenantIndustry::Fashion->value => new FurnitureIndustrySeeder,
-            TenantIndustry::Grocery->value => new GeneralIndustrySeeder,
-            TenantIndustry::Sports->value => new GeneralIndustrySeeder,
             default => new GeneralIndustrySeeder,
         };
 
