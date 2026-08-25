@@ -134,6 +134,16 @@ class TenantResource extends Resource
                         TextEntry::make('contact_email')->label('Contact email')->placeholder('—'),
                         TextEntry::make('contact_phone')->label('Contact phone')->placeholder('—'),
                         TextEntry::make('created_at')->label('Created')->dateTime(),
+                        TextEntry::make('locales')
+                            ->label('Enabled languages')
+                            ->badge()
+                            ->state(fn (Tenant $record): string => implode(', ', $record->enabledLocales()))
+                            ->placeholder('—'),
+                        TextEntry::make('preferred_locale')
+                            ->label('Default language')
+                            ->badge()
+                            ->state(fn (Tenant $record): string => $record->preferredLocale())
+                            ->placeholder('—'),
                     ]),
                 ]),
             Section::make('Subscription')
