@@ -8,9 +8,11 @@ use App\Models\Announcement;
 use App\Models\Category;
 use App\Models\Menu;
 use App\Models\Outlet;
+use App\Models\Product;
 use App\Models\StaticPage;
 use App\Services\WishlistService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Supplies the data every storefront page needs for its chrome (header nav,
@@ -34,6 +36,7 @@ class StorefrontLayoutComposer
                 ->get()
                 ->groupBy('footer_group'),
             'hasOutlets' => Outlet::query()->where('is_active', true)->exists(),
+            'hasPreorders' => $this->hasPreorders(),
             'theme' => tenant()->themeSettings,
             'wishlistCount' => $this->wishlists->wishlistCount(),
             'headerCategories' => Category::query()
@@ -43,5 +46,27 @@ class StorefrontLayoutComposer
                 ->orderBy('name')
                 ->get(),
         ]);
+    }
+
+    private function hasPreorders(): bool
+    {
+        $tenant = tenant();
+
+        if ($tenant === null) {
+            return false;
+        }
+
+        return Cache::remember(
+            "tenant:{$tenant->id}:has_preorders",
+            3600,
+            fn (): bool => Product::published()
+                ->whereHas('variants', fn ($q) => $q->where('is_active', true)->where('fulfillment_strategy', 'preorder'))
+                ->exists(),
+        );
+    }
+
+    public static function forgetHasPreordersCache(int $tenantId): void
+    {
+        Cache::forget("tenant:{$tenantId}:has_preorders");
     }
 }

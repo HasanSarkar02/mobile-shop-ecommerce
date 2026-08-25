@@ -55,20 +55,26 @@
 
             {{-- Customer service / account column --}}
             <div>
-                <p class="font-semibold text-sm mb-3 text-white">Customer Service</p>
+                <p class="font-semibold text-sm mb-3 text-white">{{ __('Customer Service') }}</p>
                 <ul class="space-y-2">
                     <li>
                         <a href="{{ route('storefront.track-order.form') }}"
-                            class="text-sm text-white/85 hover:text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Track Order</a>
+                            class="text-sm text-white/85 hover:text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">{{ __('Track Order') }}</a>
                     </li>
                     <li>
                         <a href="{{ route('storefront.faq') }}"
-                            class="text-sm text-white/85 hover:text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">FAQ</a>
+                            class="text-sm text-white/85 hover:text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">{{ __('FAQ') }}</a>
                     </li>
+                    @if ($hasPreorders ?? false)
+                        <li>
+                            <a href="{{ route('storefront.preorders') }}"
+                                class="text-sm text-white/85 hover:text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">{{ __('Pre-Orders') }}</a>
+                        </li>
+                    @endif
                     @if ($hasOutlets)
                         <li>
                             <a href="{{ route('storefront.outlets') }}"
-                                class="text-sm text-white/85 hover:text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">Our Outlets</a>
+                                class="text-sm text-white/85 hover:text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded">{{ __('Our Outlets') }}</a>
                         </li>
                     @endif
                 </ul>

@@ -8,6 +8,8 @@ use App\Models\CartItem;
 use App\Models\Location;
 use App\Models\ProductVariant;
 use App\Models\StockItem;
+use App\View\Composers\StorefrontLayoutComposer;
+use Illuminate\Support\Facades\Cache;
 
 class ProductVariantObserver
 {
@@ -29,12 +31,16 @@ class ProductVariantObserver
     public function saved(ProductVariant $variant): void
     {
         $this->syncBasePrice($variant);
+        StorefrontLayoutComposer::forgetHasPreordersCache((int) $variant->tenant_id);
+        Cache::forget("tenant:{$variant->tenant_id}:catalog:category:{$variant->product->category_id}");
     }
 
     public function deleted(ProductVariant $variant): void
     {
         $this->removeOrphanedCartItems($variant);
         $this->syncBasePrice($variant);
+        StorefrontLayoutComposer::forgetHasPreordersCache((int) $variant->tenant_id);
+        Cache::forget("tenant:{$variant->tenant_id}:catalog:category:{$variant->product->category_id}");
     }
 
     /**

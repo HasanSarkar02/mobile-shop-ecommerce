@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AssignStorefrontTokens;
+use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnsureCentralDomain;
 use App\Http\Middleware\EnsureTenant;
 use App\Http\Middleware\IdentifyTenant;
@@ -55,6 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant' => EnsureTenant::class,
             'central' => EnsureCentralDomain::class,
+            'auth' => Authenticate::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

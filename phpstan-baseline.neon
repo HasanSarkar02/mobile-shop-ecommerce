@@ -37,20 +37,14 @@ parameters:
 			path: app/Filament/Store/Resources/NotificationLogResource.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Filament/Store/Resources/OrderResource.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$order_number\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Filament/Store/Resources/OrderResource.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
+			message: '#^Anonymous function should return App\\Enums\\OrderFulfillmentStatus but returns string\.$#'
+			identifier: return.type
 			count: 1
 			path: app/Filament/Store/Resources/OrderResource.php
 
@@ -61,21 +55,15 @@ parameters:
 			path: app/Filament/Store/Resources/OrderResource.php
 
 		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:effectiveBaseUrl\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Filament/Store/Resources/OrderResource.php
-
-		-
 			message: '#^Call to an undefined static method App\\Filament\\Store\\Resources\\OrderResource\:\:getTitle\(\)\.$#'
 			identifier: staticMethod.notFound
 			count: 1
 			path: app/Filament/Store/Resources/OrderResource.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:mapWithKeys\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\<int, non\-falsy\-string\>, Closure\(App\\Models\\OrderPayment\)\: non\-empty\-array\<int, non\-falsy\-string\> given\.$#'
+			message: '#^Parameter \#1 \$orders of method App\\Services\\Shipping\\CourierService\:\:sendFulfillmentsBulk\(\) expects array\<int, App\\Models\\Order\>\|Illuminate\\Support\\Collection\<int, App\\Models\\Order\>, Illuminate\\Database\\Eloquent\\Collection given\.$#'
 			identifier: argument.type
-			count: 2
+			count: 1
 			path: app/Filament/Store/Resources/OrderResource.php
 
 		-
@@ -91,19 +79,7 @@ parameters:
 			path: app/Filament/Store/Resources/OrderResource.php
 
 		-
-			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Database\\Eloquent\\Relations\\HasMany\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Filament/Store/Resources/OrderResource.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>order_number" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Filament/Store/Resources/OrderResource.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Filament/Store/Resources/OrderResource.php
@@ -115,15 +91,33 @@ parameters:
 			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
 
 		-
+			message: '#^Cannot access property \$grand_total on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Cannot access property \$paymentMethod on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
 			message: '#^Cannot access property \$status on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
 			identifier: property.nonObject
-			count: 3
+			count: 4
 			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
 
 		-
 			message: '#^Cannot call method fulfillments\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.$#'
 			identifier: method.nonObject
-			count: 11
+			count: 15
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Cannot call method label\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
 			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
 
 		-
@@ -135,7 +129,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:amountPaid\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
 			identifier: argument.type
-			count: 2
+			count: 3
 			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
 
 		-
@@ -160,6 +154,12 @@ parameters:
 			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:updateStatus\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
 			identifier: argument.type
 			count: 1
+			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
+
+		-
+			message: '#^Parameter \#1 \$order of method App\\Services\\Shipping\\CodAmountResolver\:\:minorUnitsFor\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 2
 			path: app/Filament/Store/Resources/OrderResource/Pages/ViewOrder.php
 
 		-
@@ -967,9 +967,9 @@ parameters:
 			path: app/Services/OrderService.php
 
 		-
-			message: '#^Anonymous function should return App\\Models\\OrderPayment but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			message: '#^Anonymous function should return App\\Enums\\OrderFulfillmentStatus but returns string\.$#'
 			identifier: return.type
-			count: 2
+			count: 1
 			path: app/Services/OrderService.php
 
 		-
@@ -988,18 +988,6 @@ parameters:
 			message: '#^Offset ''tenant_id'' on array\{customer_id\?\: int\|null, guest_name\?\: string\|null, guest_email\?\: string\|null, guest_phone\?\: string\|null, shipping_address\?\: array, billing_address\?\: array, shipping_address_id\?\: int\|null, billing_address_id\?\: int\|null, \.\.\.\} on left side of \?\? does not exist\.$#'
 			identifier: nullCoalesce.offset
 			count: 1
-			path: app/Services/OrderService.php
-
-		-
-			message: '#^Parameter \#1 \$order of method App\\Services\\OrderService\:\:logEvent\(\) expects App\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/OrderService.php
-
-		-
-			message: '#^Parameter \#1 \$payment of event class App\\Events\\OrderPaymentRecorded constructor expects App\\Models\\OrderPayment in App\\Events\\OrderPaymentRecorded\:\:dispatch\(\), Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 2
 			path: app/Services/OrderService.php
 
 		-
@@ -1023,7 +1011,7 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:restockFromCancellation\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
 			identifier: argument.type
-			count: 1
+			count: 2
 			path: app/Services/OrderService.php
 
 		-
@@ -1039,8 +1027,20 @@ parameters:
 			path: app/Services/OrderService.php
 
 		-
+			message: '#^Parameter \#2 \$method of method App\\Services\\OrderService\:\:recordPayment\(\) expects App\\Models\\PaymentMethod\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
 			message: '#^Parameter \#3 \$customer of method App\\Services\\CouponService\:\:recordRedemption\(\) expects App\\Models\\Customer\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
 			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\OrderFulfillmentStatus\:\:Failed will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
 			count: 1
 			path: app/Services/OrderService.php
 
@@ -1141,21 +1141,33 @@ parameters:
 			path: app/Services/ProductAttributeValueService.php
 
 		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isCod\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Shipping/CodAmountResolver.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 5
 			path: app/Services/Shipping/CourierService.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:displayName\(\)\.$#'
 			identifier: method.notFound
-			count: 2
+			count: 4
 			path: app/Services/Shipping/CourierService.php
 
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:effectiveBaseUrl\(\)\.$#'
 			identifier: method.notFound
-			count: 2
+			count: 3
+			path: app/Services/Shipping/CourierService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Support\\Collection\<\(int\|string\), mixed\>\:\:load\(\)\.$#'
+			identifier: method.notFound
+			count: 1
 			path: app/Services/Shipping/CourierService.php
 
 		-

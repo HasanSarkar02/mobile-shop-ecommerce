@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\ProductStatus;
 use App\Events\ProductPublished;
 use App\Models\Product;
+use App\View\Composers\StorefrontLayoutComposer;
 use Illuminate\Support\Facades\Cache;
 
 class ProductObserver
@@ -28,6 +29,7 @@ class ProductObserver
     public function saved(Product $product): void
     {
         Cache::forget("tenant:{$product->tenant_id}:catalog:category:{$product->category_id}");
+        StorefrontLayoutComposer::forgetHasPreordersCache((int) $product->tenant_id);
 
         if ($product->wasChanged('status') && $product->status === ProductStatus::Published) {
             ProductPublished::dispatch($product);
@@ -37,6 +39,7 @@ class ProductObserver
     public function deleted(Product $product): void
     {
         Cache::forget("tenant:{$product->tenant_id}:catalog:category:{$product->category_id}");
+        StorefrontLayoutComposer::forgetHasPreordersCache((int) $product->tenant_id);
     }
 
     /**
