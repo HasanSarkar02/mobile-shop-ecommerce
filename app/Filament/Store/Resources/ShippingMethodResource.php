@@ -51,7 +51,7 @@ class ShippingMethodResource extends Resource
             ->columns([
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('type')->badge(),
-                TextColumn::make('cost')->formatStateUsing(fn (int $state): string => number_format($state / 100, 2)),
+                TextColumn::make('cost')->formatStateUsing(fn (int $state): string => money((int) $state)),
                 IconColumn::make('is_active')->boolean(),
             ])
             ->reorderable('sort_order')

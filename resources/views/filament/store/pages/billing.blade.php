@@ -28,7 +28,7 @@
         @foreach ($this->getPlans() as $plan)
             <div class="rounded-xl border border-gray-200 dark:border-gray-800 p-6">
                 <p class="font-semibold">{{ $plan->name }}</p>
-                <p class="text-2xl font-bold my-2">৳{{ number_format($plan->price / 100) }}<span
+                <p class="text-2xl font-bold my-2">{{ money_without_trailing_zeros((int) $plan->price) }}<span
                         class="text-sm font-normal">/{{ $plan->billing_period }}</span></p>
                 <p class="text-sm text-gray-500">{{ $plan->max_products ?? 'Unlimited' }} products</p>
                 <p class="text-sm text-gray-500">{{ $plan->max_staff ?? 'Unlimited' }} staff</p>

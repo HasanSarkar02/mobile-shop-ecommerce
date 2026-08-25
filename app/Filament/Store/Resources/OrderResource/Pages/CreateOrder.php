@@ -49,7 +49,7 @@ class CreateOrder extends CreateRecord
                 ->schema([
                     Select::make('product_variant_id')
                         ->label('Variant')
-                        ->options(fn (): array => ProductVariant::query()->with('product')->where('is_active', true)->get()->mapWithKeys(fn (ProductVariant $v): array => [$v->id => $v->sku.' — '.($v->product->name ?? '').' ('.number_format($v->price / 100, 2).')'])->all())
+                        ->options(fn (): array => ProductVariant::query()->with('product')->where('is_active', true)->get()->mapWithKeys(fn (ProductVariant $v): array => [$v->id => $v->sku.' — '.($v->product->name ?? '').' ('.money((int) $v->price).')'])->all())
                         ->searchable()
                         ->required(),
                     TextInput::make('quantity')->numeric()->default(1)->minValue(1)->required(),

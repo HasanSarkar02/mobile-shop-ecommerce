@@ -10,13 +10,14 @@ use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Filament\Store\Resources\OrderResource\Pages;
 use App\Models\CourierConnection;
-use App\Models\CourierProvider;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\OrderPayment;
 use App\Models\PaymentMethod;
 use App\Models\ProductVariant;
 use App\Models\ShippingMethod;
 use App\Services\OrderService;
+use App\Services\Shipping\CourierService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -56,7 +57,7 @@ class OrderResource extends Resource
                 TextColumn::make('customerDisplayName')->label('Customer')->state(fn (Order $record): string => $record->customerDisplayName()),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('order_source')->badge(),
-                TextColumn::make('grand_total')->formatStateUsing(fn (int $state): string => number_format($state / 100, 2)),
+                TextColumn::make('grand_total')->formatStateUsing(fn (int $state): string => money((int) $state)),
                 TextColumn::make('placed_at')->dateTime(),
             ])
             ->defaultSort('placed_at', 'desc')
@@ -71,18 +72,30 @@ class OrderResource extends Resource
                             ->options(fn (): array => CourierConnection::query()->where('is_active', true)->with('provider')->get()->mapWithKeys(fn ($c) => [$c->id => ($c->provider?->displayName() ?? 'Courier').' — '.($c->sandbox ? 'Sandbox' : 'Live')])->all())
                             ->required(),
                     ])
+                    /**
+                     * @param  EloquentCollection<int, Order>  $records  this resource's model is Order,
+                     *                                                   so the selection is always Orders
+                     * @param  array<string, mixed>  $data
+                     */
                     ->action(function (EloquentCollection $records, array $data): void {
                         $connection = CourierConnection::query()->whereKey($data['courier_connection_id'])->firstOrFail();
-                        $provider = $connection->provider()->first() ?? CourierProvider::query()->findOrFail($connection->courier_provider_id);
-                        $baseUrl = $provider->effectiveBaseUrl((bool) $connection->sandbox) ?: $connection->effectiveBaseUrl();
-                        $driverClass = $provider->driver_class ?? config('couriers.drivers.'.$provider->code);
-                        $driver = app($driverClass);
 
-                        $orders = $records->load('fulfillments');
-                        $result = $driver->createBulk($orders->all(), $connection->credentials ?? [], $baseUrl);
+                        // Routed through CourierService so the tracking number and
+                        // connection FK are actually persisted — a bulk consignment
+                        // with no tracking number is invisible to the poller.
+                        $outcome = app(CourierService::class)->sendFulfillmentsBulk($records, $connection);
 
-                        foreach ($result->items as $item) {
-                            Notification::make()->title('Bulk result: '.($item['invoice'] ?? '').' — '.$item['status'])->send();
+                        Notification::make()
+                            ->title($outcome['persisted'].' consignment(s) created and tracked.')
+                            ->success()
+                            ->send();
+
+                        if ($outcome['unmatched'] !== []) {
+                            Notification::make()
+                                ->title('No tracking returned for: '.implode(', ', $outcome['unmatched']))
+                                ->body('These consignments cannot be polled until a tracking number is recorded.')
+                                ->warning()
+                                ->send();
                         }
                     }),
             ]);
@@ -161,7 +174,7 @@ class OrderResource extends Resource
                         ->icon('heroicon-o-exclamation-triangle')
                         ->color('danger')
                         ->weight('semibold')
-                        ->state(fn (Order $record): string => 'Refund required — this cancelled order already has ৳'.number_format(self::amountPaid($record) / 100, 2).' paid. Issue the refund in the payment reconciliation phase.')
+                        ->state(fn (Order $record): string => 'Refund required — this cancelled order already has '.money((int) self::amountPaid($record)).' paid. Issue the refund in the payment reconciliation phase.')
                         ->hidden(fn (Order $record): bool => $record->status !== OrderStatus::Cancelled || self::amountPaid($record) <= 0)
                         ->columnSpanFull(),
                 ]),
@@ -354,7 +367,7 @@ class OrderResource extends Resource
                     ->options(collect(OrderPaymentStatus::cases())
                         ->reject(fn (OrderPaymentStatus $case): bool => $case === OrderPaymentStatus::Refunded)
                         ->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
-                    ->helperText('Refunds are not yet supported and cannot be recorded from this screen.')
+                    ->helperText('Use the Refund action for refunds — it can also return the goods to stock.')
                     ->required(),
                 TextInput::make('transaction_reference'),
             ])
@@ -379,7 +392,7 @@ class OrderResource extends Resource
             ->form([
                 Select::make('order_payment_id')
                     ->label('Pending Payment')
-                    ->options(fn (Order $record) => $record->payments()->where('status', OrderPaymentStatus::Pending)->with('paymentMethod')->get()->mapWithKeys(fn (OrderPayment $p) => [$p->id => ($p->paymentMethod?->displayName() ?? 'Payment').' — ৳'.number_format($p->amount / 100, 2).' — '.$p->transaction_reference]))
+                    ->options(fn (Order $record) => $record->payments()->where('status', OrderPaymentStatus::Pending)->with('paymentMethod')->get()->mapWithKeys(fn (OrderPayment $p) => [$p->id => ($p->paymentMethod?->displayName() ?? 'Payment').' — '.money((int) $p->amount).' — '.$p->transaction_reference]))
                     ->required(),
             ])
             ->action(function (Order $record, array $data): void {
@@ -429,7 +442,7 @@ class OrderResource extends Resource
             ->form([
                 Select::make('order_payment_id')
                     ->label('Pending Payment')
-                    ->options(fn (Order $record) => $record->payments()->where('status', OrderPaymentStatus::Pending)->with('paymentMethod')->get()->mapWithKeys(fn (OrderPayment $p) => [$p->id => ($p->paymentMethod?->displayName() ?? 'Payment').' — ৳'.number_format($p->amount / 100, 2).' — '.$p->transaction_reference]))
+                    ->options(fn (Order $record) => $record->payments()->where('status', OrderPaymentStatus::Pending)->with('paymentMethod')->get()->mapWithKeys(fn (OrderPayment $p) => [$p->id => ($p->paymentMethod?->displayName() ?? 'Payment').' — '.money((int) $p->amount).' — '.$p->transaction_reference]))
                     ->required(),
                 Textarea::make('reason')->label('Reason')->required(),
             ])
@@ -756,7 +769,7 @@ class OrderResource extends Resource
     private static function itemOptions(Order $record): array
     {
         return $record->items
-            ->mapWithKeys(fn ($item): array => [$item->id => $item->variant_sku_snapshot.' — ৳'.number_format($item->unit_price / 100, 2).' × '.$item->quantity])
+            ->mapWithKeys(fn ($item): array => [$item->id => $item->variant_sku_snapshot.' — '.money((int) $item->unit_price).' × '.$item->quantity])
             ->all();
     }
 
@@ -803,10 +816,10 @@ class OrderResource extends Resource
         $due = max(0, $record->grand_total - $paid);
 
         if ($paid >= $record->grand_total && $record->grand_total > 0) {
-            return 'Fully paid — ৳'.number_format($paid / 100, 2).' collected.';
+            return 'Fully paid — '.money((int) $paid).' collected.';
         }
 
-        return '৳'.number_format($paid / 100, 2).' paid · ৳'.number_format($due / 100, 2).' due.';
+        return money((int) $paid).' paid · '.money((int) $due).' due.';
     }
 
     private static function amountPaid(Order $record): int
@@ -823,9 +836,38 @@ class OrderResource extends Resource
         return $record->payments()->exists() ? 'partial' : 'none';
     }
 
+    /**
+     * The order's fulfillment state as an aggregate over every consignment.
+     *
+     * Previously this read the most recently *created* fulfillment, so a split
+     * order could show "Delivered" while another consignment was still in transit.
+     * The badge now reports the least advanced state, and surfaces a failure ahead
+     * of everything else, so it can never over-report progress.
+     */
     private static function fulfillmentStatusFor(Order $record): string
     {
-        return $record->fulfillments()->latest()?->first()?->status?->value ?? 'none';
+        // Mapped explicitly rather than plucked: the status column is cast to an
+        // enum, so what pluck() hands back depends on cast handling. This is
+        // unambiguous.
+        $statuses = $record->fulfillments()
+            ->get(['id', 'status'])
+            ->map(fn (OrderFulfillment $fulfillment): OrderFulfillmentStatus => $fulfillment->status);
+
+        if ($statuses->isEmpty()) {
+            return 'none';
+        }
+
+        if ($statuses->contains(OrderFulfillmentStatus::Failed)) {
+            return OrderFulfillmentStatus::Failed->value;
+        }
+
+        foreach ([OrderFulfillmentStatus::Pending, OrderFulfillmentStatus::Packed, OrderFulfillmentStatus::Shipped] as $status) {
+            if ($statuses->contains($status)) {
+                return $status->value;
+            }
+        }
+
+        return OrderFulfillmentStatus::Delivered->value;
     }
 
     private static function orderStatusColor(OrderStatus $status): string

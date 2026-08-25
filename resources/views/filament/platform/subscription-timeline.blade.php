@@ -71,7 +71,7 @@
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
                             {{ $entry['intent'] }}
                             <span class="mx-1">·</span>
-                            ৳{{ number_format($entry['amount'] / 100, 2) }}
+                            {{ money((int) $entry['amount']) }}
                             <span class="mx-1">·</span>
                             {{ $entry['reference'] }}
                         </p>

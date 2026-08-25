@@ -107,7 +107,7 @@ class VariantsRelationManager extends RelationManager
                 TextColumn::make('color')->placeholder('—'),
                 TextColumn::make('storage_gb')->suffix(' GB')->placeholder('—'),
                 TextColumn::make('ram_gb')->suffix(' GB')->placeholder('—'),
-                TextColumn::make('price')->formatStateUsing(fn (int $state): string => number_format($state / 100, 2)),
+                TextColumn::make('price')->formatStateUsing(fn (int $state): string => money((int) $state)),
                 TextColumn::make('fulfillment_strategy')->badge(),
                 TextColumn::make('inventory_type')->badge(),
                 TextColumn::make('availability')->badge(),

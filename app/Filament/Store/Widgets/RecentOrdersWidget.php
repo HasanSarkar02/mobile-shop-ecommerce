@@ -21,7 +21,7 @@ class RecentOrdersWidget extends BaseWidget
                 TextColumn::make('order_number'),
                 TextColumn::make('customer')->label('Customer')->state(fn (Order $record) => $record->customerDisplayName()),
                 TextColumn::make('status')->badge(),
-                TextColumn::make('grand_total')->formatStateUsing(fn (int $state): string => number_format($state / 100, 2)),
+                TextColumn::make('grand_total')->formatStateUsing(fn (int $state): string => money((int) $state)),
                 TextColumn::make('placed_at')->dateTime(),
             ])
             ->paginated(false);

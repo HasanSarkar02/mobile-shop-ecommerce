@@ -94,7 +94,7 @@ class ProductResource extends Resource
                 TextColumn::make('name')->label('Name')->limit(40),
                 TextColumn::make('brand.name'),
                 TextColumn::make('category.name'),
-                TextColumn::make('base_price')->formatStateUsing(fn (int $state): string => number_format($state / 100, 2)),
+                TextColumn::make('base_price')->formatStateUsing(fn (int $state): string => money((int) $state)),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('variants_count')->counts('variants')->label('Variants'),
             ])

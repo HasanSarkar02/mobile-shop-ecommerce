@@ -8,14 +8,18 @@ use App\Enums\OrderFulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Filament\Store\Resources\OrderResource;
 use App\Models\CourierConnection;
+use App\Models\OrderFulfillment;
 use App\Services\OrderService;
+use App\Services\Shipping\CodAmountResolver;
 use App\Services\Shipping\CourierService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Schemas\Components\Utilities\Set;
 
 class ViewOrder extends ViewRecord
 {
@@ -48,19 +52,93 @@ class ViewOrder extends ViewRecord
 
             OrderResource::recordPaymentAction(),
 
+            Action::make('recordCodCollection')
+                ->label('Record COD Collection')
+                ->icon('heroicon-o-banknotes')
+                ->color('success')
+                // Deliberately manual. A courier reporting "delivered" is not the
+                // same as the courier remitting the cash, and partial collection is
+                // common, so the money is only booked once staff confirm the amount.
+                ->visible(fn (): bool => $this->record->paymentMethod?->isCod() === true
+                    && (int) $this->record->grand_total > app(OrderService::class)->amountPaid($this->record)
+                    && $this->record->fulfillments()->exists())
+                ->schema([
+                    Select::make('fulfillment_id')
+                        ->label('Consignment')
+                        ->options(fn (): array => $this->codConsignmentOptions())
+                        ->default(fn (): ?int => array_key_first($this->codConsignmentOptions()))
+                        ->required()
+                        ->live()
+                        ->afterStateUpdated(function (Set $set, ?string $state): void {
+                            $set('amount', $this->codDueInTaka($state === null ? null : (int) $state));
+                        }),
+                    TextInput::make('amount')
+                        ->label('Cash Collected (BDT)')
+                        ->numeric()
+                        ->required()
+                        ->step(0.01)
+                        ->default(fn (): ?string => $this->codDueInTaka(array_key_first($this->codConsignmentOptions())))
+                        ->helperText('Prefilled with the amount due for this consignment. Lower it if the courier collected less than the full amount.'),
+                ])
+                ->requiresConfirmation()
+                ->modalDescription('Records cash the courier collected for this consignment. Only book it once the money is actually in hand.')
+                ->action(function (array $data): void {
+                    $fulfillment = $this->record->fulfillments()->whereKey($data['fulfillment_id'])->first();
+
+                    if (! $fulfillment) {
+                        Notification::make()->title('Consignment not found')->danger()->send();
+
+                        return;
+                    }
+
+                    try {
+                        $payment = app(OrderService::class)->recordCodCollection($fulfillment, (int) round((float) $data['amount'] * 100));
+
+                        if ($payment === null) {
+                            Notification::make()
+                                ->title('Already recorded')
+                                ->body('Cash for this consignment has already been booked.')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        Notification::make()->title('COD collection recorded')->success()->send();
+                    } catch (\Throwable $e) {
+                        Notification::make()->title('Could not record collection')->body($e->getMessage())->danger()->send();
+                    }
+                }),
+
             Action::make('refundOrder')
                 ->label('Refund')
                 ->icon('heroicon-o-arrow-uturn-left')
                 ->color('warning')
                 ->visible(fn (): bool => app(OrderService::class)->amountPaid($this->record) > app(OrderService::class)->amountRefunded($this->record))
                 ->schema([
-                    TextInput::make('amount')->label('Refund Amount (BDT)')->numeric()->required()->helperText(fn (): string => 'Refundable: ৳'.number_format((app(OrderService::class)->amountPaid($this->record) - app(OrderService::class)->amountRefunded($this->record)) / 100, 2)),
+                    TextInput::make('amount')->label('Refund Amount (BDT)')->numeric()->required()->helperText(fn (): string => 'Refundable: '.money((int) (app(OrderService::class)->amountPaid($this->record) - app(OrderService::class)->amountRefunded($this->record)))),
                     Textarea::make('reason')->label('Reason')->required()->rows(2),
                     TextInput::make('reference')->label('Reference (optional)'),
+                    Toggle::make('restock')
+                        ->label('Return goods to stock')
+                        // Only offered where it is actually sound: the goods left and
+                        // physically came back. A cancelled order was already
+                        // restocked by the cancellation, and a partial amount cannot
+                        // say which items returned.
+                        ->visible(fn (): bool => $this->record->status === OrderStatus::Delivered)
+                        ->helperText('Only for a full refund of a delivered order, once the items are physically back.')
+                        ->default(false),
                 ])
                 ->action(function (array $data): void {
                     try {
-                        app(OrderService::class)->refund($this->record, (int) round((float) $data['amount'] * 100), $data['reason'], null, $data['reference'] ?? null);
+                        app(OrderService::class)->refund(
+                            $this->record,
+                            (int) round((float) $data['amount'] * 100),
+                            $data['reason'],
+                            null,
+                            $data['reference'] ?? null,
+                            (bool) ($data['restock'] ?? false),
+                        );
                         Notification::make()->title('Refund recorded')->success()->send();
                     } catch (\Throwable $e) {
                         Notification::make()->title('Refund failed')->body($e->getMessage())->danger()->send();
@@ -181,5 +259,48 @@ class ViewOrder extends ViewRecord
                     app(OrderService::class)->cancelOrder($this->record, $data['reason']);
                 }),
         ];
+    }
+
+    /**
+     * Consignments that still have cash to collect, labelled with the amount due.
+     *
+     * Delivered and failed consignments are excluded because CodAmountResolver
+     * allocates them nothing — offering them here would only ever prefill zero.
+     *
+     * @return array<int, string>
+     */
+    private function codConsignmentOptions(): array
+    {
+        $resolver = app(CodAmountResolver::class);
+
+        return $this->record->fulfillments()
+            ->whereNotIn('status', [OrderFulfillmentStatus::Delivered->value, OrderFulfillmentStatus::Failed->value])
+            ->orderBy('id')
+            ->get()
+            ->mapWithKeys(fn (OrderFulfillment $fulfillment): array => [
+                $fulfillment->id => ucfirst($fulfillment->fulfillment_group ?? 'stock')
+                    .' — '.$fulfillment->status->label()
+                    .' ('.money((int) $resolver->minorUnitsFor($this->record, $fulfillment)).' due)',
+            ])
+            ->all();
+    }
+
+    /**
+     * The consignment's due as a decimal string for the amount field. Kept as a
+     * string so the prefill is not re-rounded by float formatting.
+     */
+    private function codDueInTaka(?int $fulfillmentId): ?string
+    {
+        if ($fulfillmentId === null) {
+            return null;
+        }
+
+        $fulfillment = $this->record->fulfillments()->whereKey($fulfillmentId)->first();
+
+        if (! $fulfillment) {
+            return null;
+        }
+
+        return number_format(app(CodAmountResolver::class)->minorUnitsFor($this->record, $fulfillment) / 100, 2, '.', '');
     }
 }

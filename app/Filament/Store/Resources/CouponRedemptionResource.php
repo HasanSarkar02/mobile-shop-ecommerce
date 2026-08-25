@@ -31,7 +31,7 @@ class CouponRedemptionResource extends Resource
                 TextColumn::make('coupon.name'),
                 TextColumn::make('order.order_number'),
                 TextColumn::make('customer.name')->placeholder('Guest'),
-                TextColumn::make('discount_amount')->formatStateUsing(fn (int $state): string => number_format($state / 100, 2)),
+                TextColumn::make('discount_amount')->formatStateUsing(fn (int $state): string => money((int) $state)),
             ])
             ->defaultSort('redeemed_at', 'desc');
     }

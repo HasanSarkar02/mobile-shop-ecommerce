@@ -19,7 +19,7 @@ class StoreStatsOverview extends BaseWidget
         $lowStock = StockItem::query()->whereRaw('(quantity - reserved_quantity) <= COALESCE(low_stock_threshold, 5)')->count();
 
         return [
-            Stat::make('Total Revenue', '৳'.number_format($revenue / 100))->color('success'),
+            Stat::make('Total Revenue', money((int) $revenue))->color('success'),
             Stat::make('Orders Today', (string) $todayOrders),
             Stat::make('Pending Orders', (string) $pendingOrders)->color($pendingOrders > 0 ? 'warning' : 'success'),
             Stat::make('Low Stock Items', (string) $lowStock)->color($lowStock > 0 ? 'danger' : 'success'),

@@ -52,7 +52,7 @@ class PlanResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->searchable(),
-                TextColumn::make('price')->formatStateUsing(fn (int $state): string => number_format($state / 100, 2)),
+                TextColumn::make('price')->formatStateUsing(fn (int $state): string => money((int) $state)),
                 TextColumn::make('max_products')->placeholder('Unlimited'),
                 TextColumn::make('max_staff')->placeholder('Unlimited'),
                 IconColumn::make('custom_domain_allowed')->boolean(),
