@@ -40,16 +40,11 @@ class VariantsRelationManager extends RelationManager
         return $schema->components([
             TextInput::make('sku')->required()->scopedUnique(ignoreRecord: true),
             TextInput::make('barcode'),
-            TextInput::make('color'),
-            TextInput::make('storage_gb')->numeric()->suffix('GB'),
-            TextInput::make('ram_gb')->numeric()->suffix('GB'),
-            Select::make('sim_type')->options([
-                'Single SIM' => 'Single SIM',
-                'Dual SIM' => 'Dual SIM',
-                'eSIM' => 'eSIM',
-                'Dual SIM + eSIM' => 'Dual SIM + eSIM',
-            ]),
-            TextInput::make('region')->helperText('e.g. Global, USA, Japan, Australia — leave blank if not region-specific.'),
+            // Deprecated native phone columns (color/storage_gb/ram_gb/sim_type/
+            // region) are intentionally absent from this form — PLAN #48 keeps
+            // the DB columns for legacy data but the UI is EAV-only. Variant
+            // dimensions (Size, Color, …) come from variant-defining attributes
+            // via AttributeValuesRelationManager or the Generate Variants action.
             TextInput::make('price')
                 ->label('Price (BDT)')
                 ->numeric()
@@ -113,9 +108,8 @@ class VariantsRelationManager extends RelationManager
             ->recordTitleAttribute('sku')
             ->columns([
                 TextColumn::make('sku'),
-                TextColumn::make('color')->placeholder('—'),
-                TextColumn::make('storage_gb')->suffix(' GB')->placeholder('—'),
-                TextColumn::make('ram_gb')->suffix(' GB')->placeholder('—'),
+                // Native phone columns deprecated in UI (PLAN #48) — dimensions
+                // render from variant-defining EAV attributes on the storefront.
                 TextColumn::make('price')->formatStateUsing(fn (int $state): string => money((int) $state)),
                 TextColumn::make('fulfillment_strategy')->badge(),
                 TextColumn::make('inventory_type')->badge(),
