@@ -4,23 +4,32 @@ declare(strict_types=1);
 
 namespace App\Filament\Store\Resources\ProductResource\RelationManagers;
 
+use App\Enums\AttributeDataType;
 use App\Enums\BackorderPolicy;
 use App\Enums\FulfillmentStrategy;
 use App\Enums\InventoryType;
 use App\Enums\VariantAvailability;
+use App\Models\AttributeDefinition;
+use App\Models\Product;
+use App\Services\BulkVariantGeneratorService;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
+use LogicException;
 
 class VariantsRelationManager extends RelationManager
 {
@@ -113,7 +122,106 @@ class VariantsRelationManager extends RelationManager
                 TextColumn::make('availability')->badge(),
                 TextColumn::make('is_active')->badge(),
             ])
-            ->headerActions([CreateAction::make()])
+            ->headerActions([$this->generateVariantsAction(), CreateAction::make()])
             ->recordActions([EditAction::make(), DeleteAction::make()]);
+    }
+
+    /**
+     * Bulk cartesian generator (PLAN #49): one modal builds every combination
+     * of the selected variant-defining attribute options. The engine lives in
+     * BulkVariantGeneratorService — this is a thin adapter.
+     */
+    private function generateVariantsAction(): Action
+    {
+        return Action::make('generateVariants')
+            ->label('Generate Variants')
+            ->icon('heroicon-o-squares-plus')
+            ->color('gray')
+            ->modalHeading('Generate Variants')
+            ->modalDescription('Pick options for each variant-defining attribute — every combination becomes its own SKU.')
+            ->modalWidth('2xl')
+            ->visible(fn (): bool => $this->variantDefiningAttributes()->isNotEmpty())
+            ->form(fn (): array => $this->bulkFormComponents())
+            ->action(function (array $data): void {
+                /** @var array<int|string, mixed> $selections */
+                $selections = is_array($data['attributes'] ?? null) ? $data['attributes'] : [];
+
+                $result = app(BulkVariantGeneratorService::class)->generate(
+                    $this->ownerProduct(),
+                    $selections,
+                    (int) $data['base_price'],
+                    filled($data['base_sku'] ?? null) ? (string) $data['base_sku'] : null,
+                );
+
+                Notification::make()
+                    ->title($result['created'].' variant(s) generated'
+                        .($result['skipped'] > 0 ? ", {$result['skipped']} skipped (already existed)" : ''))
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /**
+     * The relation manager is only ever attached to a Product resource; this
+     * guard narrows the generic Model contract for the type analyser.
+     */
+    private function ownerProduct(): Product
+    {
+        $record = $this->getOwnerRecord();
+
+        if (! $record instanceof Product) {
+            throw new LogicException('VariantsRelationManager must be attached to a Product.');
+        }
+
+        return $record;
+    }
+
+    /**
+     * @return Collection<int, AttributeDefinition>
+     */
+    private function variantDefiningAttributes(): Collection
+    {
+        return AttributeDefinition::query()
+            ->where('is_variant_defining', true)
+            ->whereIn('data_type', [AttributeDataType::Select->value, AttributeDataType::MultiSelect->value])
+            ->orderBy('sort_order')
+            ->with('options')
+            ->get();
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    private function bulkFormComponents(): array
+    {
+        $product = $this->ownerProduct();
+
+        $components = [
+            TextInput::make('base_sku')
+                ->label('SKU prefix')
+                ->default(fn (): string => is_string($product->model_number) && trim($product->model_number) !== ''
+                    ? trim($product->model_number)
+                    : 'P-'.$product->id)
+                ->helperText('Generated SKUs append the option labels — e.g. TEE-WHITE-M.'),
+            TextInput::make('base_price')
+                ->label('Base price (BDT)')
+                ->numeric()
+                ->required()
+                ->minValue(1)
+                ->default(fn (): float => (float) $product->base_price / 100)
+                ->dehydrateStateUsing(fn (mixed $state): int => (int) round(((float) ($state ?? 0)) * 100))
+                ->helperText('Applied to every generated variant; adjust individual SKUs afterwards.'),
+        ];
+
+        foreach ($this->variantDefiningAttributes() as $definition) {
+            $components[] = CheckboxList::make("attributes.{$definition->id}")
+                ->label($definition->label)
+                ->options($definition->options->pluck('label', 'id')->all())
+                ->columns(3)
+                ->bulkToggleable()
+                ->required();
+        }
+
+        return $components;
     }
 }
