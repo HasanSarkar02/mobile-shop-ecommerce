@@ -10,7 +10,9 @@ use App\Models\AttributeDefinition;
 use App\Models\AttributeOption;
 use App\Models\Category;
 use App\Models\HomepageSection;
+use App\Models\StoreThemeSetting;
 use App\Models\Tenant;
+use App\Support\ThemePresets;
 
 final class FurnitureIndustrySeeder
 {
@@ -19,6 +21,41 @@ final class FurnitureIndustrySeeder
         $this->seedCategories($tenant);
         $this->seedAttributes($tenant);
         $this->seedHomepage($tenant);
+        $this->seedTheme($tenant);
+    }
+
+    private function seedTheme(Tenant $tenant): void
+    {
+        // Preset: furniture → primary #78350f, secondary #451a03 (B-3)
+        $preset = ThemePresets::forIndustry('furniture');
+
+        $existing = StoreThemeSetting::query()->where('tenant_id', $tenant->id)->first();
+
+        if ($existing === null) {
+            StoreThemeSetting::query()->create([
+                'tenant_id' => $tenant->id,
+                'primary_color' => $preset['primary'],
+                'secondary_color' => $preset['secondary'],
+            ]);
+
+            return;
+        }
+
+        $updates = [];
+
+        $primaryRaw = $existing->getAttribute('primary_color');
+        if ($primaryRaw === null || $primaryRaw === '') {
+            $updates['primary_color'] = $preset['primary'];
+        }
+
+        $secondaryRaw = $existing->getAttribute('secondary_color');
+        if ($secondaryRaw === null || $secondaryRaw === '') {
+            $updates['secondary_color'] = $preset['secondary'];
+        }
+
+        if ($updates !== []) {
+            $existing->update($updates);
+        }
     }
 
     private function seedCategories(Tenant $tenant): void

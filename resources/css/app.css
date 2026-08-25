@@ -11,6 +11,13 @@
     --font-sans: 'Instrument Sans', 'Hind Siliguri', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
+    /* Design tokens (B-3) — brand colors are injected at layout-level via
+       inline CSS variables --brand / --brand-secondary with a fallback chain
+       (secondary → primary → general preset). Aliased here so Tailwind can
+       generate bg-brand / text-brand utilities if needed. */
+    --color-brand: var(--brand);
+    --color-brand-secondary: var(--brand-secondary);
+
     /* Softer, larger-blur shadows read more premium than Tailwind's default
        shadow scale — used for header, dropdowns, cards, and drawers. */
     --shadow-soft: 0 2px 10px -2px rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);

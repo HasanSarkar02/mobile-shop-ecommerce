@@ -12,6 +12,7 @@ use App\Models\Tenant;
 use App\Services\IndustrySeeders\IndustrySeederService;
 use App\Support\ReminderTemplateDefaults;
 use App\Support\Tenancy\Tenancy;
+use App\Support\ThemePresets;
 
 class TenantObserver
 {
@@ -29,9 +30,11 @@ class TenantObserver
                 'is_active' => true,
             ]);
 
+            $preset = ThemePresets::forIndustry($tenant->industryCode());
             StoreThemeSetting::query()->create([
                 'tenant_id' => $tenant->id,
-                'primary_color' => '#16a34a',
+                'primary_color' => $preset['primary'],
+                'secondary_color' => $preset['secondary'],
             ]);
 
             StoreSetting::query()->create([

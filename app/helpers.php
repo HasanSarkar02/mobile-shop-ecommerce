@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Tenant;
 use App\Support\Tenancy\Tenancy;
+use App\Support\ThemePresets;
 use Illuminate\Support\Number;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -69,6 +70,17 @@ if (! function_exists('money_without_trailing_zeros')) {
     function money_without_trailing_zeros(int $minor, ?string $currency = null, ?string $locale = null): string
     {
         return money($minor, $currency, $locale, false);
+    }
+}
+
+if (! function_exists('theme_font_stack')) {
+    /**
+     * Resolve a font_family key (inter|poppins|roboto) to a CSS font-stack.
+     * Backward-compatible: null/unknown falls back to Instrument Sans + Hind Siliguri.
+     */
+    function theme_font_stack(?string $fontFamily): string
+    {
+        return ThemePresets::fontStack($fontFamily);
     }
 }
 

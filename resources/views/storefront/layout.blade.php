@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="--brand: {{ $theme?->primary_color ?? '#16a34a' }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" style="--brand: {{ $theme?->brandColor() ?? '#16a34a' }}; --brand-secondary: {{ $theme?->brandSecondaryColor() ?? '#15803d' }}; --font-sans: {{ theme_font_stack($theme?->font_family) }}">
 
 <head>
     {{-- Runs before CSS paints to avoid a flash of the wrong theme; must stay
