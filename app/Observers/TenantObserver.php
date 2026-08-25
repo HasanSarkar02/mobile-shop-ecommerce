@@ -9,28 +9,40 @@ use App\Models\NotificationTemplate;
 use App\Models\StoreSetting;
 use App\Models\StoreThemeSetting;
 use App\Models\Tenant;
+use App\Services\IndustrySeeders\IndustrySeederService;
 use App\Support\ReminderTemplateDefaults;
+use App\Support\Tenancy\Tenancy;
 
 class TenantObserver
 {
     public function created(Tenant $tenant): void
     {
-        Location::query()->create([
-            'tenant_id' => $tenant->id,
-            'name' => 'Main Store',
-            'type' => 'store',
-            'is_default' => true,
-            'is_active' => true,
-        ]);
+        $previous = tenant();
+        app(Tenancy::class)->set($tenant);
 
-        StoreThemeSetting::query()->create([
-            'tenant_id' => $tenant->id,
-            'primary_color' => '#16a34a',
-        ]);
+        try {
+            Location::query()->create([
+                'tenant_id' => $tenant->id,
+                'name' => 'Main Store',
+                'type' => 'store',
+                'is_default' => true,
+                'is_active' => true,
+            ]);
 
-        StoreSetting::query()->create([
-            'tenant_id' => $tenant->id,
-        ]);
+            StoreThemeSetting::query()->create([
+                'tenant_id' => $tenant->id,
+                'primary_color' => '#16a34a',
+            ]);
+
+            StoreSetting::query()->create([
+                'tenant_id' => $tenant->id,
+            ]);
+
+            // Industry-specific starter data (categories, attributes, homepage)
+            app(IndustrySeederService::class)->seed($tenant);
+        } finally {
+            app(Tenancy::class)->set($previous);
+        }
 
         $defaults = [
             ['event_key' => 'order.placed', 'channel' => 'email', 'subject' => 'Order Confirmed - {{ order.number }}', 'body' => "Hi {{ customer.name }},\n\nThank you for your order {{ order.number }}, totaling {{ order.total }}.\n\nWe'll notify you as it progresses.\n\n{{ store.name }}"],
