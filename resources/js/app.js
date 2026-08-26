@@ -1,17 +1,3 @@
-// resources/js/app.js
-//
-// Livewire v4 bundles its own Alpine instance internally. Importing Alpine
-// separately from the 'alpinejs' package (as this file used to) creates a
-// SECOND, independent Alpine instance alongside Livewire's — plugins/state
-// registered on one are invisible to the other, and Livewire's own
-// x-data-driven internals stop working correctly.
-//
-// The correct pattern (per Livewire's own docs, "manually bundling Alpine"):
-// import Alpine from Livewire's ESM build, register plugins on that same
-// instance, then let Livewire.start() start Alpine too. Never call
-// Alpine.start() yourself here — see layout.blade.php, which uses
-// @livewireScriptConfig (not @livewireScripts) to suppress Livewire's own
-// auto-injected script tag in favor of this bundle.
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 import collapse from '@alpinejs/collapse';
 
@@ -132,6 +118,19 @@ document.addEventListener('alpine:init', () => {
     // single authoritative validation layer.
     Alpine.store('cart', {
         pending: {},
+        count: null,
+
+        seedCount(count) {
+            if (this.count === null) {
+                this.count = Number(count) || 0;
+            }
+        },
+
+        syncCount(delta) {
+            if (this.count !== null) {
+                this.count = Math.max(0, this.count + delta);
+            }
+        },
 
         endpoint() {
             const url = document.body.dataset.cartStore;
@@ -161,6 +160,11 @@ document.addEventListener('alpine:init', () => {
             }
 
             this.pending[variantId] = true;
+            const qty = Number(quantity) || 1;
+            // Optimistic increment for instant badge feedback
+            this.syncCount(qty);
+            window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.count } }));
+            if (window.Livewire) window.Livewire.dispatch('cart-updated');
 
             return fetch(this.endpoint(), {
                     method: 'POST',
@@ -180,8 +184,13 @@ document.addEventListener('alpine:init', () => {
                     }
                     this.toast('Added to cart');
                     if (window.Livewire) window.Livewire.dispatch('cart-updated');
+                    window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.count } }));
                 })
                 .catch(() => {
+                    // Roll back optimistic count on failure
+                    this.syncCount(-qty);
+                    window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.count } }));
+                    if (window.Livewire) window.Livewire.dispatch('cart-updated');
                     this.toast('Could not add to cart — please try again', 'error');
                 })
                 .finally(() => {

@@ -1,13 +1,6 @@
 @props(['id', 'wishlisted'])
 
-{{-- Shared wishlist-button primitive (F.4): circular overlay toggle backed by
-     the Alpine wishlist store. Sibling of the card link so it stays its own
-     focusable/clickable control. Extracted verbatim from
-     storefront/partials/product-card.blade.php (the `seed(ID, true|false)`
-     init string is asserted by ProductCardWishlistTest — do not reformat). --}}
-<button type="button"
-    x-init="$store.wishlist.seed({{ $id }}, {{ $wishlisted ? 'true' : 'false' }})"
-    @click.prevent="$store.wishlist.toggle({{ $id }})"
+<button type="button" x-init="$store.wishlist.seed({{ $id }}, {{ $wishlisted ? 'true' : 'false' }})" @click.prevent="$store.wishlist.toggle({{ $id }})"
     :disabled="$store.wishlist.pending[{{ $id }}]"
     :aria-busy="$store.wishlist.pending[{{ $id }}] ? 'true' : 'false'"
     :aria-pressed="$store.wishlist.isWishlisted({{ $id }}) ? 'true' : 'false'"
