@@ -913,20 +913,8 @@ parameters:
 			path: app/Services/CouponService.php
 
 		-
-			message: '#^Method App\\Services\\InventoryService\:\:resolvePurchaseStates\(\) should return Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: mixed, low_stock_threshold\: mixed\}\>\.$#'
+			message: '#^Method App\\Services\\InventoryService\:\:resolvePurchaseStates\(\) should return Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\>\.$#'
 			identifier: return.type
-			count: 1
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>low_stock_threshold" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Using nullsafe property access on non\-nullable type mixed\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/InventoryService.php
 

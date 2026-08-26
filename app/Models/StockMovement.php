@@ -33,8 +33,10 @@ class StockMovement extends Model
         return [
             'type' => StockMovementType::class,
             'reason' => StockAdjustmentReason::class,
-            'quantity_change' => 'integer',
-            'quantity_after' => 'integer',
+            // Fixed-point strings at scale 3 (Phase C-1 measured goods) —
+            // never floats.
+            'quantity_change' => 'decimal:3',
+            'quantity_after' => 'decimal:3',
         ];
     }
 

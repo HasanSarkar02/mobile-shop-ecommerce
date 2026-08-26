@@ -24,7 +24,7 @@ it('increases available stock after restock', function () {
     app(InventoryService::class)->restock($variant, 20, null, 'Initial stock');
 
     expect(app(InventoryService::class)->availableQuantity($variant))->toBe(20);
-    expect($variant->stockItems()->first()->quantity)->toBe(20);
+    expect($variant->stockItems()->first()->quantity)->toBe('20.000');
 });
 
 it('reserves stock without touching real quantity', function () {
@@ -35,8 +35,8 @@ it('reserves stock without touching real quantity', function () {
     $service->reserve($variant, 4);
 
     $stockItem = $variant->stockItems()->first()->fresh();
-    expect($stockItem->quantity)->toBe(10);
-    expect($stockItem->reserved_quantity)->toBe(4);
+    expect($stockItem->quantity)->toBe('10.000');
+    expect($stockItem->reserved_quantity)->toBe('4.000');
     expect($service->availableQuantity($variant))->toBe(6);
 });
 
@@ -55,7 +55,7 @@ it('allows reservation past zero when backorder is allowed', function () {
 
     $service->reserve($variant, 5);
 
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(5);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('5.000');
 });
 
 it('commits a reservation by decrementing real and reserved quantity together', function () {
@@ -67,8 +67,8 @@ it('commits a reservation by decrementing real and reserved quantity together', 
     $service->commit($variant, 3);
 
     $stockItem = $variant->stockItems()->first()->fresh();
-    expect($stockItem->quantity)->toBe(7);
-    expect($stockItem->reserved_quantity)->toBe(0);
+    expect($stockItem->quantity)->toBe('7.000');
+    expect($stockItem->reserved_quantity)->toBe('0.000');
 });
 
 it('releases a reservation back to available stock', function () {
@@ -89,7 +89,7 @@ it('logs an adjustment movement with its reason and comment', function () {
 
     $service->adjust($variant, -2, StockAdjustmentReason::Damaged, null, 'Dropped during unboxing');
 
-    expect($variant->stockItems()->first()->fresh()->quantity)->toBe(8);
+    expect($variant->stockItems()->first()->fresh()->quantity)->toBe('8.000');
 
     $movement = StockMovement::query()->where('product_variant_id', $variant->id)->latest('id')->first();
     expect($movement->reason->value)->toBe('damaged');

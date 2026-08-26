@@ -90,6 +90,38 @@ class InventoryService
         return $this->stockItemFor($variant, $location)->availableQuantity();
     }
 
+    /**
+     * Decimal-canonical availability for measured goods (Phase C-1): a
+     * fixed-point STRING at scale 3 ("3.750") computed by bcmath inside
+     * StockItem — never a float. Discrete goods return whole-number strings.
+     */
+    public function availableDecimal(ProductVariant $variant, ?Location $location = null): string
+    {
+        return $this->stockItemFor($variant, $location)->availableQuantityDecimal();
+    }
+
+    /**
+     * Normalize any caller-supplied quantity (int | float | numeric-string)
+     * into a fixed-point string at scale 3. The ONLY place floats touch this
+     * service is this input-formatting step; every subsequent comparison or
+     * mutation goes through bccomp/bcadd/bcsub on these strings. The output
+     * always matches ^-?\d+\.\d{3}$ so it is also safe to interpolate into
+     * raw SQL expressions.
+     */
+    private function normalizeQty(int|float|string $quantity): string
+    {
+        if (! is_numeric($quantity)) {
+            throw new \InvalidArgumentException('Stock quantities must be numeric.');
+        }
+
+        return number_format((float) $quantity, 3, '.', '');
+    }
+
+    private function gtZero(string $value): bool
+    {
+        return bccomp($value, '0', StockItem::SCALE) === 1;
+    }
+
     public function stockStatus(ProductVariant $variant, ?Location $location = null): StockStatus
     {
         if ($variant->availability->value === 'discontinued') {
@@ -105,17 +137,17 @@ class InventoryService
         }
 
         $stockItem = $this->stockItemFor($variant, $location);
-        $available = $stockItem->availableQuantity();
+        $available = $stockItem->availableQuantityDecimal();
 
-        if ($available <= 0) {
+        if (! $this->gtZero($available)) {
             return StockStatus::OutOfStock;
         }
 
-        $threshold = $stockItem->low_stock_threshold
+        $threshold = (string) ($stockItem->low_stock_threshold
             ?? $variant->low_stock_threshold
-            ?? (int) config('inventory.default_low_stock_threshold', 5);
+            ?? (int) config('inventory.default_low_stock_threshold', 5));
 
-        return $available <= $threshold ? StockStatus::LowStock : StockStatus::InStock;
+        return bccomp($available, $threshold, StockItem::SCALE) !== 1 ? StockStatus::LowStock : StockStatus::InStock;
     }
 
     /**
@@ -160,22 +192,29 @@ class InventoryService
             }
 
             $stockItem = $stockItems->get($variant->id);
-            $available = $stockItem?->availableQuantity() ?? 0;
+            $availableDecimal = $stockItem?->availableQuantityDecimal() ?? '0.000';
+            // Storefront surfaces still consume whole units (Phase C-1 UI
+            // lands decimal display later); status is decided by bccomp so a
+            // measured 0.750 kg correctly reads InStock.
+            $available = (int) $availableDecimal;
+            $itemThreshold = $stockItem !== null && $stockItem->low_stock_threshold !== null
+                ? (int) $stockItem->low_stock_threshold
+                : null;
 
-            if ($available <= 0) {
+            if (! $this->gtZero($availableDecimal)) {
                 return [$variant->id => [
                     'stock_status' => StockStatus::OutOfStock,
                     'available_quantity' => $available,
-                    'low_stock_threshold' => $stockItem?->low_stock_threshold,
+                    'low_stock_threshold' => $itemThreshold,
                 ]];
             }
 
-            $threshold = $stockItem?->low_stock_threshold ?? $variant->low_stock_threshold ?? $defaultThreshold;
+            $threshold = (string) ($itemThreshold ?? $variant->low_stock_threshold ?? $defaultThreshold);
 
             return [$variant->id => [
-                'stock_status' => $available <= $threshold ? StockStatus::LowStock : StockStatus::InStock,
+                'stock_status' => bccomp($availableDecimal, $threshold, StockItem::SCALE) !== 1 ? StockStatus::LowStock : StockStatus::InStock,
                 'available_quantity' => $available,
-                'low_stock_threshold' => $stockItem?->low_stock_threshold,
+                'low_stock_threshold' => $itemThreshold,
             ]];
         });
     }
@@ -251,7 +290,7 @@ class InventoryService
         return new PurchasabilityPolicy;
     }
 
-    public function reserve(ProductVariant $variant, int $quantity, ?Location $location = null, mixed $reference = null): void
+    public function reserve(ProductVariant $variant, int|float|string $quantity, ?Location $location = null, mixed $reference = null): void
     {
         if ($variant->fulfillment_strategy !== FulfillmentStrategy::Stock) {
             return;
@@ -260,25 +299,30 @@ class InventoryService
         $location ??= $this->defaultLocation();
         $stockItem = $this->stockItemFor($variant, $location);
         $bypassCheck = $variant->backorder_policy !== null && $variant->backorder_policy !== BackorderPolicy::Deny;
+        $qty = $this->normalizeQty($quantity);
 
-        DB::transaction(function () use ($variant, $quantity, $location, $stockItem, $reference, $bypassCheck): void {
+        DB::transaction(function () use ($variant, $qty, $location, $stockItem, $reference, $bypassCheck): void {
             $query = DB::table('stock_items')->where('id', $stockItem->id);
 
             if (! $bypassCheck) {
-                $query->whereRaw('(quantity - reserved_quantity) >= ?', [$quantity]);
+                // bcmath-safe guard: the sanitized fixed-point string is bound
+                // as a parameter so MySQL compares DECIMAL exactly.
+                $query->whereRaw('(quantity - reserved_quantity) >= ?', [$qty]);
             }
 
-            $affected = $query->increment('reserved_quantity', $quantity);
+            $affected = $query->update([
+                'reserved_quantity' => DB::raw('reserved_quantity + '.$qty),
+            ]);
 
             if ($affected === 0) {
                 throw new InsufficientStockException("Insufficient stock for variant {$variant->sku}.");
             }
 
-            $this->logMovement($variant, $location, StockMovementType::Reservation, -$quantity, $reference);
+            $this->logMovement($variant, $location, StockMovementType::Reservation, '-'.$qty, $reference);
         });
     }
 
-    public function release(ProductVariant $variant, int $quantity, ?Location $location = null, mixed $reference = null): void
+    public function release(ProductVariant $variant, int|float|string $quantity, ?Location $location = null, mixed $reference = null): void
     {
         if ($variant->fulfillment_strategy !== FulfillmentStrategy::Stock) {
             return;
@@ -286,16 +330,17 @@ class InventoryService
 
         $location ??= $this->defaultLocation();
         $stockItem = $this->stockItemFor($variant, $location);
+        $qty = $this->normalizeQty($quantity);
 
-        DB::transaction(function () use ($variant, $quantity, $location, $stockItem, $reference): void {
+        DB::transaction(function () use ($variant, $qty, $location, $stockItem, $reference): void {
             DB::table('stock_items')->where('id', $stockItem->id)
-                ->update(['reserved_quantity' => DB::raw('GREATEST(0, reserved_quantity - '.(int) $quantity.')')]);
+                ->update(['reserved_quantity' => DB::raw('GREATEST(0, reserved_quantity - '.$qty.')')]);
 
-            $this->logMovement($variant, $location, StockMovementType::Release, $quantity, $reference);
+            $this->logMovement($variant, $location, StockMovementType::Release, $qty, $reference);
         });
     }
 
-    public function commit(ProductVariant $variant, int $quantity, ?Location $location = null, mixed $reference = null, ?OrderItem $orderItem = null): void
+    public function commit(ProductVariant $variant, int|float|string $quantity, ?Location $location = null, mixed $reference = null, ?OrderItem $orderItem = null): void
     {
         if ($variant->fulfillment_strategy !== FulfillmentStrategy::Stock) {
             return;
@@ -314,14 +359,15 @@ class InventoryService
         }
 
         $stockItem = $this->stockItemFor($variant, $location);
+        $qty = $this->normalizeQty($quantity);
 
-        DB::transaction(function () use ($variant, $quantity, $location, $stockItem, $reference): void {
+        DB::transaction(function () use ($variant, $qty, $location, $stockItem, $reference): void {
             DB::table('stock_items')->where('id', $stockItem->id)->update([
-                'quantity' => DB::raw('GREATEST(0, quantity - '.(int) $quantity.')'),
-                'reserved_quantity' => DB::raw('GREATEST(0, reserved_quantity - '.(int) $quantity.')'),
+                'quantity' => DB::raw('GREATEST(0, quantity - '.$qty.')'),
+                'reserved_quantity' => DB::raw('GREATEST(0, reserved_quantity - '.$qty.')'),
             ]);
 
-            $this->logMovement($variant, $location, StockMovementType::Sale, -$quantity, $reference);
+            $this->logMovement($variant, $location, StockMovementType::Sale, '-'.$qty, $reference);
         });
     }
 
@@ -369,17 +415,19 @@ class InventoryService
         });
     }
 
-    public function restock(ProductVariant $variant, int $quantity, ?Location $location = null, ?string $comment = null): void
+    public function restock(ProductVariant $variant, int|float|string $quantity, ?Location $location = null, ?string $comment = null): void
     {
         $this->guardNotSerialized($variant);
 
         $location ??= $this->defaultLocation();
         $stockItem = $this->stockItemFor($variant, $location);
+        $qty = $this->normalizeQty($quantity);
 
-        DB::transaction(function () use ($variant, $quantity, $location, $stockItem, $comment): void {
-            DB::table('stock_items')->where('id', $stockItem->id)->increment('quantity', $quantity);
+        DB::transaction(function () use ($variant, $qty, $location, $stockItem, $comment): void {
+            DB::table('stock_items')->where('id', $stockItem->id)
+                ->update(['quantity' => DB::raw('quantity + '.$qty)]);
 
-            $this->logMovement($variant, $location, StockMovementType::Restock, $quantity, null, null, $comment);
+            $this->logMovement($variant, $location, StockMovementType::Restock, $qty, null, null, $comment);
         }, 3);
     }
 
@@ -393,7 +441,7 @@ class InventoryService
      * @param  mixed  $reference  the cancelled order (used for audit linkage)
      * @return Collection<int, SerialNumber> the returned serials (empty for non-serialized)
      */
-    public function restockFromCancellation(ProductVariant $variant, int $quantity, ?Location $location = null, mixed $reference = null, ?OrderItem $orderItem = null): Collection
+    public function restockFromCancellation(ProductVariant $variant, int|float|string $quantity, ?Location $location = null, mixed $reference = null, ?OrderItem $orderItem = null): Collection
     {
         if ($variant->fulfillment_strategy !== FulfillmentStrategy::Stock) {
             return collect();
@@ -410,11 +458,13 @@ class InventoryService
         }
 
         $stockItem = $this->stockItemFor($variant, $location);
+        $qty = $this->normalizeQty($quantity);
 
-        DB::transaction(function () use ($variant, $quantity, $location, $stockItem, $reference): void {
-            DB::table('stock_items')->where('id', $stockItem->id)->increment('quantity', $quantity);
+        DB::transaction(function () use ($variant, $qty, $location, $stockItem, $reference): void {
+            DB::table('stock_items')->where('id', $stockItem->id)
+                ->update(['quantity' => DB::raw('quantity + '.$qty)]);
 
-            $this->logMovement($variant, $location, StockMovementType::Return, $quantity, $reference, null, 'Restocked from cancelled order');
+            $this->logMovement($variant, $location, StockMovementType::Return, $qty, $reference, null, 'Restocked from cancelled order');
         });
 
         return collect();
@@ -434,19 +484,20 @@ class InventoryService
     public function returnSoldSerials(ProductVariant $variant, int $quantity, OrderItem $orderItem, ?Location $location = null, mixed $reference = null): Collection
     {
         $location ??= $this->defaultLocation();
+        $qty = $this->normalizeQty($quantity);
 
-        return DB::transaction(function () use ($variant, $quantity, $location, $reference, $orderItem): Collection {
+        return DB::transaction(function () use ($variant, $qty, $location, $reference, $orderItem): Collection {
             $serials = $variant->serialNumbers()
                 ->where('status', SerialNumberStatus::Sold->value)
                 ->where('order_item_id', $orderItem->id)
                 ->orderBy('id')
                 ->lockForUpdate()
-                ->limit($quantity)
+                ->limit((int) $qty)
                 ->get();
 
-            if ($serials->count() < $quantity) {
+            if ($serials->count() < (int) $qty) {
                 throw new InsufficientStockException(
-                    "Cannot return serialized stock for variant {$variant->sku}: found {$serials->count()} of the {$quantity} serials sold to order item {$orderItem->id}."
+                    "Cannot return serialized stock for variant {$variant->sku}: found {$serials->count()} of the {$qty} serials sold to order item {$orderItem->id}."
                 );
             }
 
@@ -459,32 +510,34 @@ class InventoryService
                 ]);
             }
 
-            $this->logMovement($variant, $location, StockMovementType::Return, $quantity, $reference);
+            $this->logMovement($variant, $location, StockMovementType::Return, $qty, $reference);
 
             return $serials;
         });
     }
 
-    public function adjust(ProductVariant $variant, int $quantityChange, StockAdjustmentReason $reason, ?Location $location = null, ?string $comment = null): void
+    public function adjust(ProductVariant $variant, int|float|string $quantityChange, StockAdjustmentReason $reason, ?Location $location = null, ?string $comment = null): void
     {
         $this->guardNotSerialized($variant);
 
         $location ??= $this->defaultLocation();
         $stockItem = $this->stockItemFor($variant, $location);
+        $qtyChange = $this->normalizeQty($quantityChange);
 
-        DB::transaction(function () use ($variant, $quantityChange, $location, $stockItem, $reason, $comment): void {
+        DB::transaction(function () use ($variant, $qtyChange, $location, $stockItem, $reason, $comment): void {
             DB::table('stock_items')->where('id', $stockItem->id)
-                ->update(['quantity' => DB::raw('GREATEST(0, quantity + ('.(int) $quantityChange.'))')]);
+                ->update(['quantity' => DB::raw('GREATEST(0, quantity + ('.$qtyChange.'))')]);
 
-            $this->logMovement($variant, $location, StockMovementType::Adjustment, $quantityChange, null, $reason, $comment);
+            $this->logMovement($variant, $location, StockMovementType::Adjustment, $qtyChange, null, $reason, $comment);
         }, 3);
     }
 
-    public function transitionToStock(ProductVariant $variant, int $initialQuantity, ?Location $location = null): void
+    public function transitionToStock(ProductVariant $variant, int|float|string $initialQuantity, ?Location $location = null): void
     {
         $location ??= $this->defaultLocation();
+        $qty = $this->normalizeQty($initialQuantity);
 
-        DB::transaction(function () use ($variant, $initialQuantity, $location): void {
+        DB::transaction(function () use ($variant, $qty, $location): void {
             $variant->update([
                 'fulfillment_strategy' => FulfillmentStrategy::Stock,
                 'inventory_type' => $variant->inventory_type === InventoryType::NotTracked ? InventoryType::Tracked : $variant->inventory_type,
@@ -493,9 +546,9 @@ class InventoryService
             DB::table('stock_items')
                 ->where('product_variant_id', $variant->id)
                 ->where('location_id', $location->id)
-                ->update(['quantity' => $initialQuantity]);
+                ->update(['quantity' => $qty]);
 
-            $this->logMovement($variant, $location, StockMovementType::Initial, $initialQuantity);
+            $this->logMovement($variant, $location, StockMovementType::Initial, $qty);
         }, 3);
     }
 
@@ -510,23 +563,23 @@ class InventoryService
         ProductVariant $variant,
         Location $location,
         StockMovementType $type,
-        int $quantityChange,
+        int|float|string $quantityChange,
         mixed $reference = null,
         ?StockAdjustmentReason $reason = null,
         ?string $comment = null,
     ): void {
-        $quantityAfter = (int) (StockItem::query()
+        $quantityAfter = (string) (StockItem::query()
             ->where('product_variant_id', $variant->id)
             ->where('location_id', $location->id)
-            ->value('quantity') ?? 0);
+            ->value('quantity') ?? '0.000');
 
         StockMovement::query()->create([
             'tenant_id' => $variant->tenant_id,
             'product_variant_id' => $variant->id,
             'location_id' => $location->id,
             'type' => $type,
-            'quantity_change' => $quantityChange,
-            'quantity_after' => $quantityAfter,
+            'quantity_change' => $this->normalizeQty($quantityChange),
+            'quantity_after' => $this->normalizeQty($quantityAfter),
             'reason' => $reason,
             'comment' => $comment,
             'reference_type' => $reference ? $reference::class : null,

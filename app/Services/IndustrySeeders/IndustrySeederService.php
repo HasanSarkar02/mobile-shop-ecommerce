@@ -7,10 +7,33 @@ namespace App\Services\IndustrySeeders;
 use App\Enums\TenantIndustry;
 use App\Models\StoreThemeSetting;
 use App\Models\Tenant;
+use App\Models\UnitOfMeasure;
 use App\Support\ThemePresets;
 
 final class IndustrySeederService
 {
+    /**
+     * Starter UOM catalogue per vertical (Phase C-1 #46). Grocery sells by
+     * weight/volume; every tenant gets the discrete set. Values are data —
+     * tenants can add their own later.
+     */
+    private const UOMS = [
+        'grocery' => [
+            ['code' => 'kg', 'name' => 'Kilogram', 'type' => 'weight'],
+            ['code' => 'g', 'name' => 'Gram', 'type' => 'weight'],
+            ['code' => 'l', 'name' => 'Litre', 'type' => 'volume'],
+            ['code' => 'ml', 'name' => 'Millilitre', 'type' => 'volume'],
+            ['code' => 'pcs', 'name' => 'Pieces', 'type' => 'discrete'],
+            ['code' => 'pack', 'name' => 'Pack', 'type' => 'discrete'],
+            ['code' => 'dozen', 'name' => 'Dozen', 'type' => 'discrete'],
+        ],
+        'general' => [
+            ['code' => 'pcs', 'name' => 'Pieces', 'type' => 'discrete'],
+            ['code' => 'pack', 'name' => 'Pack', 'type' => 'discrete'],
+            ['code' => 'dozen', 'name' => 'Dozen', 'type' => 'discrete'],
+        ],
+    ];
+
     public function seed(Tenant $tenant): void
     {
         /** @var mixed $industry */
@@ -37,6 +60,22 @@ final class IndustrySeederService
         $seeder->seed($tenant);
 
         $this->ensureThemeSettings($tenant, $code);
+        $this->seedUoms($tenant, $code);
+    }
+
+    /**
+     * Starter UOM catalogue for the tenant (Phase C-1 #46) — idempotent
+     * firstOrCreate keyed on (tenant_id, code); owner additions are never
+     * touched.
+     */
+    private function seedUoms(Tenant $tenant, string $code): void
+    {
+        foreach (self::UOMS[$code] ?? self::UOMS['general'] as $uom) {
+            UnitOfMeasure::query()->firstOrCreate(
+                ['tenant_id' => $tenant->id, 'code' => $uom['code']],
+                ['name' => $uom['name'], 'type' => $uom['type']],
+            );
+        }
     }
 
     private function ensureThemeSettings(Tenant $tenant, string $code): void

@@ -34,7 +34,7 @@ class Product extends Model implements HasMedia
     use SoftDeletes;
 
     protected $fillable = [
-        'brand_id', 'category_id', 'model_number', 'type', 'base_price',
+        'brand_id', 'category_id', 'model_number', 'type', 'base_price', 'uom_id',
         'status', 'is_featured', 'is_serialized', 'published_at', 'created_by', 'updated_by', 'is_official_import', 'max_discount_percentage', 'view_count',
     ];
 
@@ -70,6 +70,15 @@ class Product extends Model implements HasMedia
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    /**
+     * Sell unit for measured goods (Phase C-1, e.g. kg for rice). Null means
+     * discrete whole-unit selling — the historical default.
+     */
+    public function uom(): BelongsTo
+    {
+        return $this->belongsTo(UnitOfMeasure::class, 'uom_id');
     }
 
     public function category(): BelongsTo
