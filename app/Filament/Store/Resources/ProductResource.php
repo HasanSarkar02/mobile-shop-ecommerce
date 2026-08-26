@@ -78,6 +78,18 @@ class ProductResource extends Resource
                 ->default(ProductType::Simple->value)
                 ->required(),
             Select::make('status')->options(['draft' => 'Draft', 'published' => 'Published', 'archived' => 'Archived'])->required()->default('draft'),
+            Select::make('uom_id')
+                ->relationship('uom', 'name')
+                ->searchable()
+                ->preload()
+                ->placeholder('Whole units (no UOM)')
+                ->helperText('Sell unit for measured goods (e.g. kg for rice, l for oil). Leave empty for whole-unit products.'),
+            TextInput::make('sell_by_unit')
+                ->label('Sales increment')
+                ->numeric()
+                ->step('0.001')
+                ->minValue(0)
+                ->helperText('Standard sales step in the selected unit — e.g. 0.500 on a kg product sells by the half kilo. Requires a unit above.'),
             Toggle::make('is_featured'),
             Toggle::make('is_serialized')->helperText('Enable for products requiring IMEI/serial tracking.'),
             Select::make('tags')->relationship('tags', 'name')->multiple()->preload(),

@@ -49,17 +49,19 @@ class StockItemResource extends Resource
                 Action::make('restock')
                     ->icon('heroicon-o-plus')
                     ->schema([
-                        TextInput::make('quantity')->numeric()->required()->minValue(1),
+                        // Decimal step (Phase C-1): measured goods restock in
+                        // fractions — the service normalizes via bcmath.
+                        TextInput::make('quantity')->numeric()->step('0.001')->required()->minValue('0.001'),
                         Textarea::make('comment')->rows(2),
                     ])
                     ->action(function (StockItem $record, array $data): void {
-                        app(InventoryService::class)->restock($record->variant, (int) $data['quantity'], $record->location, $data['comment'] ?? null);
+                        app(InventoryService::class)->restock($record->variant, (string) $data['quantity'], $record->location, $data['comment'] ?? null);
                     })
                     ->visible(fn (StockItem $record): bool => $record->variant->inventory_type !== InventoryType::Serialized),
                 Action::make('adjust')
                     ->icon('heroicon-o-adjustments-horizontal')
                     ->schema([
-                        TextInput::make('quantity_change')->numeric()->required()->helperText('Use a negative number to decrease stock.'),
+                        TextInput::make('quantity_change')->numeric()->step('0.001')->required()->helperText('Use a negative number to decrease stock.'),
                         Select::make('reason')
                             ->options(collect(StockAdjustmentReason::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                             ->required(),
@@ -68,7 +70,7 @@ class StockItemResource extends Resource
                     ->action(function (StockItem $record, array $data): void {
                         app(InventoryService::class)->adjust(
                             $record->variant,
-                            (int) $data['quantity_change'],
+                            (string) $data['quantity_change'],
                             StockAdjustmentReason::from($data['reason']),
                             $record->location,
                             $data['comment'] ?? null,
