@@ -161,6 +161,7 @@ class ProductCardData
             'cta' => $this->ctaView($product, $states, $facts),
             'modal_variants' => $modalVariants,
             'modal_dimensions' => $modalDimensions,
+            'product' => $product,
         ];
     }
 
