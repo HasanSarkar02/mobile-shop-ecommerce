@@ -1,4 +1,4 @@
-@extends('storefront.layout')
+﻿@extends('storefront.layout')
 
 @section('title', (($product->translation() ?? $product->translation('en'))?->name ?? 'Product') . ' - ' . tenant()->name)
 
@@ -33,7 +33,7 @@
             ->canonicalRoute(tenant(), 'storefront.product', [($product->translation() ?? $product->translation('en'))?->slug]);
 
         // Server-rendered EMI figures (progressive enhancement baseline). Uses
-        // the first variant's price — the same variant Alpine starts on — and
+        // the first variant's price â€” the same variant Alpine starts on â€” and
         // mirrors the client formula exactly: round(price * (1 + rate/100) / tenure).
         $emiBasePrice = $product->variants->first()?->price ?? 0;
         $emiFromMonthly = $product->emiPlans->isNotEmpty()
@@ -79,7 +79,7 @@
         </style>
     @endpush
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8" x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), @js($initialVariantId), @js($isWishlisted), @js($isComparing), @js($emiData), @js($requiresSelection), @js($product->sell_by_unit ?? '1.000'))" x-init="init()">
+    <div class="{{ \App\Support\IndustryConfig::currentGet('ui.container_class', 'max-w-7xl mx-auto') }} px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8" x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), @js($initialVariantId), @js($isWishlisted), @js($isComparing), @js($emiData), @js($requiresSelection), @js($product->sell_by_unit ?? '1.000'))" x-init="init()">
         <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
             <a href="{{ app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.home') }}" class="hover:text-[var(--brand)]">Home</a>
             @if ($product->category)
@@ -273,7 +273,7 @@
                     <div class="flex items-center border border-gray-300 dark:border-gray-700 rounded-xl">
                         <button @click="quantity = Math.max(sellByUnit, parseFloat((quantity - sellByUnit).toFixed(3)))"
                             class="w-10 h-11 flex items-center justify-center text-lg"
-                            aria-label="Decrease quantity">−</button>
+                            aria-label="Decrease quantity">âˆ’</button>
                         <input type="number" x-model.number="quantity" :step="sellByUnit" :min="sellByUnit" step="{{ $product->sell_by_unit ?? 1 }}"
                             class="w-16 text-center bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
 <button @click="quantity = Math.min(parseFloat((quantity + sellByUnit).toFixed(3)), (current()?.available_quantity ?? 0) > 0 && current().purchase_state !== 'preorder' && current().purchase_state !== 'dropship' ? current().available_quantity : 99)" class="w-10 h-11 flex items-center justify-center text-lg"
@@ -287,8 +287,8 @@
             </div>
         </div>
 
-        {{-- Sticky mobile purchase bar — sits above the persistent mobile bottom nav
-             (bottom-16 ≈ its height) so it never overlaps it; the bottom nav keeps
+        {{-- Sticky mobile purchase bar â€” sits above the persistent mobile bottom nav
+             (bottom-16 â‰ˆ its height) so it never overlaps it; the bottom nav keeps
              the --safe-bottom padding as the bottommost fixed element. It appears
              only after the main buy box leaves the viewport (IntersectionObserver,
              see setupStickyCta in productDetail) and retracts near the end of the
@@ -503,7 +503,7 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ $review->body }}</p>
                     </div>
                 @empty
-                    <p class="text-sm text-gray-400">No reviews yet — be the first to review this product.</p>
+                    <p class="text-sm text-gray-400">No reviews yet â€” be the first to review this product.</p>
                 @endforelse
             </div>
 
@@ -538,7 +538,7 @@
                             <button @click="expanded = !expanded"
                                 class="w-full text-left font-medium flex justify-between items-center">
                                 {{ $faq->question }}
-                                <span x-text="expanded ? '−' : '+'" class="text-gray-400"></span>
+                                <span x-text="expanded ? 'âˆ’' : '+'" class="text-gray-400"></span>
                             </button>
                             <div x-show="expanded" x-collapse class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                                 {{ $faq->answer }}</div>
@@ -553,9 +553,9 @@
             <section id="related" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
                 aria-labelledby="related-heading">
                 <h2 id="related-heading" class="text-xl lg:text-2xl font-bold tracking-tight">You May Also Like</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
+                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
                     @foreach ($relatedCards as $card)
-                        @include('storefront.partials.product-card', ['card' => $card])
+                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                     @endforeach
                 </div>
             </section>
@@ -567,9 +567,9 @@
             <section id="cross-sells" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
                 aria-labelledby="cross-sells-heading">
                 <h2 id="cross-sells-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Complete Your Setup</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
+                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
                     @foreach ($crossSellCards as $card)
-                        @include('storefront.partials.product-card', ['card' => $card])
+                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                     @endforeach
                 </div>
             </section>
@@ -579,9 +579,9 @@
             <section id="upsells" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
                 aria-labelledby="upsells-heading">
                 <h2 id="upsells-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Upgrade Your Choice</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
+                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
                     @foreach ($upsellCards as $card)
-                        @include('storefront.partials.product-card', ['card' => $card])
+                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                     @endforeach
                 </div>
             </section>
@@ -592,9 +592,9 @@
                 aria-labelledby="frequently-bought-heading">
                 <h2 id="frequently-bought-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Frequently Bought
                     Together</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
+                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
                     @foreach ($frequentlyBoughtCards as $card)
-                        @include('storefront.partials.product-card', ['card' => $card])
+                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                     @endforeach
                 </div>
             </section>
@@ -605,9 +605,9 @@
                 aria-labelledby="compatible-accessories-heading">
                 <h2 id="compatible-accessories-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Compatible
                     Accessories</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
+                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
                     @foreach ($compatibleAccessoryCards as $card)
-                        @include('storefront.partials.product-card', ['card' => $card])
+                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                     @endforeach
                 </div>
             </section>
@@ -623,7 +623,7 @@
                     <div class="flex gap-4 overflow-x-auto px-4 sm:px-0 pb-2 snap-x">
                         @foreach ($recentlyViewedCards as $card)
                             <div class="w-44 flex-shrink-0 snap-start">
-                                @include('storefront.partials.product-card', ['card' => $card])
+                                <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                             </div>
                         @endforeach
                     </div>
@@ -773,10 +773,10 @@
                 selectionComplete() {
                     return this.missingDimensions().length === 0;
                 },
-                // 'incomplete': shopper hasn't finished picking every dimension yet — a
+                // 'incomplete': shopper hasn't finished picking every dimension yet â€” a
                 //   normal, expected mid-flow state (neutral tone).
                 // 'invalid': every dimension is picked but no active variant matches
-                //   that exact combination — a real dead end (warning tone).
+                //   that exact combination â€” a real dead end (warning tone).
                 // null: either a concrete variant resolved, or this product doesn't
                 //   require selection at all.
                 selectionIssueType() {
@@ -820,7 +820,7 @@
                         this.unavailable = false;
                         this.currentVariantId = match.id;
                     } else if (this.requiresSelection && !this.selectionComplete()) {
-                        // Still picking options — currentImages() falls back to
+                        // Still picking options â€” currentImages() falls back to
                         // the product/preview gallery until a concrete variant
                         // resolves (see currentImages()).
                         this.unavailable = false;
@@ -927,7 +927,7 @@
                 },
                 ctaLabel() {
                     const v = this.current();
-                    if (this.cartLoading) return 'Adding…';
+                    if (this.cartLoading) return 'Addingâ€¦';
                     if (!v) return 'Unavailable';
                     if (!v.purchasable) {
                         return v.purchase_state === 'discontinued' ? 'Discontinued' : 'Out of Stock';
@@ -1004,7 +1004,7 @@
                             this.toast('Added to cart');
                             if (window.Livewire) window.Livewire.dispatch('cart-updated');
                         })
-                        .catch(() => this.toast('Could not add to cart — please try again', 'error'))
+                        .catch(() => this.toast('Could not add to cart â€” please try again', 'error'))
                         .finally(() => this.cartLoading = false);
                 },
                 toggleCompare() {
@@ -1090,3 +1090,5 @@
         }
     </script>
 @endpush
+
+

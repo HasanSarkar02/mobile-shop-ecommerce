@@ -1,4 +1,4 @@
-<style>
+﻿<style>
     .carousel-track-scroll {
         scrollbar-width: none;
         -ms-overflow-style: none;
@@ -79,7 +79,7 @@
             class="carousel-track-scroll flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]">
             @foreach ($cards as $card)
                 <div class="shrink-0 snap-start w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.834rem)] md:w-[calc(25%-0.938rem)]">
-                    @include('storefront.partials.product-card', ['card' => $card])
+                    <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                 </div>
             @endforeach
         </div>

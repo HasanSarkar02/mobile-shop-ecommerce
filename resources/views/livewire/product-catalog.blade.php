@@ -100,16 +100,16 @@
                     </div>
                 @endif
             @else
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-6" wire:loading.remove
+                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6" wire:loading.remove
                     wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,attr,clearFilters">
                     @foreach ($cards as $card)
-                        @include('storefront.partials.product-card', ['card' => $card])
+                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                     @endforeach
                 </div>
 
                 <div wire:loading
                     wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,attr,clearFilters"
-                    class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-6">
+                    class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6">
                     @for ($i = 0; $i < 6; $i++)
                         <div>
                             <x-ui.skeleton class="aspect-square w-full rounded-2xl" />

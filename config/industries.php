@@ -31,6 +31,13 @@
  *                             unit facets land with Phase C's UOM entity).
  * - theme.preset              Design-token preset name (Phase B consumes;
  *                             no CSS changes exist until then).
+ * - ui.container_class        Full Tailwind container classes for the main
+ *                             storefront wrapper (e.g. 'max-w-[1600px] mx-auto').
+ *                             Must be a literal string for Tailwind JIT purge.
+ * - ui.grid_class             Full Tailwind grid classes for product grids
+ *                             (e.g. 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5').
+ * - ui.image_aspect           Tailwind aspect ratio for card images.
+ * - ui.card_component         Blade component path for the product card.
  */
 return [
 
@@ -54,6 +61,12 @@ return [
             'theme' => [
                 'preset' => 'brand',
             ],
+            'ui' => [
+                'container_class' => 'max-w-7xl mx-auto',
+                'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+                'image_aspect' => 'aspect-square',
+                'card_component' => 'storefront.product-cards.default',
+            ],
         ],
 
         'mobile' => [
@@ -67,6 +80,12 @@ return [
             'theme' => [
                 'preset' => 'electronics',
             ],
+            'ui' => [
+                'container_class' => 'max-w-[1440px] mx-auto',
+                'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+                'image_aspect' => 'aspect-square',
+                'card_component' => 'storefront.product-cards.electronics',
+            ],
         ],
 
         'electronics' => [
@@ -79,6 +98,12 @@ return [
             ],
             'theme' => [
                 'preset' => 'electronics',
+            ],
+            'ui' => [
+                'container_class' => 'max-w-[1440px] mx-auto',
+                'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+                'image_aspect' => 'aspect-square',
+                'card_component' => 'storefront.product-cards.electronics',
             ],
         ],
 
@@ -94,6 +119,12 @@ return [
             'theme' => [
                 'preset' => 'fashion',
             ],
+            'ui' => [
+                'container_class' => 'max-w-[1440px] mx-auto',
+                'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+                'image_aspect' => 'aspect-[3/4]',
+                'card_component' => 'storefront.product-cards.fashion',
+            ],
         ],
 
         'grocery' => [
@@ -108,6 +139,12 @@ return [
             'theme' => [
                 'preset' => 'grocery',
             ],
+            'ui' => [
+                'container_class' => 'max-w-[1600px] mx-auto',
+                'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5',
+                'image_aspect' => 'aspect-square',
+                'card_component' => 'storefront.product-cards.grocery',
+            ],
         ],
 
         'sports' => [
@@ -117,6 +154,12 @@ return [
             ],
             'theme' => [
                 'preset' => 'sports',
+            ],
+            'ui' => [
+                'container_class' => 'max-w-7xl mx-auto',
+                'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+                'image_aspect' => 'aspect-square',
+                'card_component' => 'storefront.product-cards.default',
             ],
         ],
 
@@ -130,6 +173,12 @@ return [
             ],
             'theme' => [
                 'preset' => 'furniture',
+            ],
+            'ui' => [
+                'container_class' => 'max-w-7xl mx-auto',
+                'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+                'image_aspect' => 'aspect-square',
+                'card_component' => 'storefront.product-cards.default',
             ],
         ],
     ],
