@@ -50,4 +50,5 @@ use App\Console\Commands\RefreshCourierStatus;
 
 Schedule::command(RefreshCourierStatus::class)
     ->hourly()
-    ->withoutOverlapping();
+    ->withoutOverlapping()
+    ->onOneServer();

@@ -71,12 +71,40 @@ class RefreshCourierStatus extends Command
     }
 
     /**
-     * Resolves the tenant's active connection for a consignment via the
-     * courier name recorded at shipment time. Never guesses: zero matches is
-     * logged and skipped; ambiguous matches are skipped loudly.
+     * Resolves the connection whose credentials created a consignment.
+     *
+     * The FK recorded at shipment time is authoritative, so it is tried first: it
+     * survives a provider being renamed and cannot be confused by two providers
+     * sharing a display name. Name matching remains only as the fallback for rows
+     * shipped before the FK existed, or whose free-text courier_name the backfill
+     * could not resolve unambiguously.
+     *
+     * Never guesses: zero matches is logged and skipped; ambiguous matches are
+     * skipped loudly; a deactivated connection is skipped, because polling with
+     * credentials the merchant has switched off is not something to do quietly.
      */
     private function connectionFor(OrderFulfillment $fulfillment): ?CourierConnection
     {
+        if ($fulfillment->courier_connection_id) {
+            $connection = CourierConnection::query()
+                ->whereKey($fulfillment->courier_connection_id)
+                ->first();
+
+            if ($connection === null) {
+                Log::info('Courier connection '.$fulfillment->courier_connection_id.' no longer exists for fulfillment '.$fulfillment->id.'; skipping.');
+
+                return null;
+            }
+
+            if (! $connection->is_active) {
+                Log::info('Courier connection '.$connection->id.' is inactive for fulfillment '.$fulfillment->id.'; skipping.');
+
+                return null;
+            }
+
+            return $connection;
+        }
+
         $name = (string) $fulfillment->courier_name;
 
         if ($name === '') {

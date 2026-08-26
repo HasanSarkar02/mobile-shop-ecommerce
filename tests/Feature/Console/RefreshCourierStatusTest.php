@@ -216,3 +216,175 @@ it('does not abort batch on command failure', function () {
     $this->artisan(RefreshCourierStatus::class)
         ->assertSuccessful();
 });
+
+describe('resolving credentials by foreign key', function (): void {
+    it('uses the connection recorded at shipment time, not the name', function () {
+        // The FK is what actually created the consignment, so it must win. A
+        // provider renamed after shipping would break name matching; this cannot.
+        $recorded = CourierConnection::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'courier_provider_id' => $this->provider->id,
+            'is_active' => true,
+            'credentials' => [],
+        ]);
+
+        $decoy = CourierConnection::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'courier_provider_id' => CourierProvider::query()->create([
+                'code' => 'decoy_courier',
+                'name' => 'Renamed Courier',
+                'is_active' => true,
+            ])->id,
+            'is_active' => true,
+            'credentials' => [],
+        ]);
+
+        $fulfillment = OrderFulfillment::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'order_id' => courierTestOrder($this->tenant, 'ORD-TEST-'.Str::random(6)),
+            'status' => OrderFulfillmentStatus::Shipped->value,
+            'tracking_number' => 'TRACK123',
+            'courier_name' => 'Renamed Courier',
+            'courier_connection_id' => $recorded->id,
+        ]);
+
+        $mock = Mockery::mock(CourierService::class);
+        $mock->shouldReceive('syncStatus')->once()->with(
+            Mockery::on(fn ($f) => $f->id === $fulfillment->id),
+            Mockery::on(fn ($c) => $c->id === $recorded->id && $c->id !== $decoy->id)
+        );
+        app()->instance(CourierService::class, $mock);
+
+        $this->artisan(RefreshCourierStatus::class)->assertSuccessful();
+    });
+
+    it('resolves by FK even when the name is ambiguous', function () {
+        // Two providers sharing a label is exactly the case name matching cannot
+        // handle. With the FK present there is nothing to guess.
+        $connection = CourierConnection::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'courier_provider_id' => $this->provider->id,
+            'is_active' => true,
+            'credentials' => [],
+        ]);
+
+        CourierConnection::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'courier_provider_id' => CourierProvider::query()->create([
+                'code' => 'test_courier_twin',
+                'name' => 'Test Courier',
+                'is_active' => true,
+            ])->id,
+            'is_active' => true,
+            'credentials' => [],
+        ]);
+
+        $fulfillment = OrderFulfillment::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'order_id' => courierTestOrder($this->tenant, 'ORD-TEST-'.Str::random(6)),
+            'status' => OrderFulfillmentStatus::Shipped->value,
+            'tracking_number' => 'TRACK123',
+            'courier_name' => 'Test Courier',
+            'courier_connection_id' => $connection->id,
+        ]);
+
+        $mock = Mockery::mock(CourierService::class);
+        $mock->shouldReceive('syncStatus')->once()->with(
+            Mockery::on(fn ($f) => $f->id === $fulfillment->id),
+            Mockery::on(fn ($c) => $c->id === $connection->id)
+        );
+        app()->instance(CourierService::class, $mock);
+
+        $this->artisan(RefreshCourierStatus::class)->assertSuccessful();
+    });
+
+    it('skips a consignment whose connection the merchant switched off', function () {
+        // Polling with credentials the merchant deactivated is not something to do
+        // quietly, and the name fallback must not be used to work around it.
+        $connection = CourierConnection::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'courier_provider_id' => $this->provider->id,
+            'is_active' => false,
+            'credentials' => [],
+        ]);
+
+        OrderFulfillment::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'order_id' => courierTestOrder($this->tenant, 'ORD-TEST-'.Str::random(6)),
+            'status' => OrderFulfillmentStatus::Shipped->value,
+            'tracking_number' => 'TRACK123',
+            'courier_name' => 'Test Courier',
+            'courier_connection_id' => $connection->id,
+        ]);
+
+        $mock = Mockery::mock(CourierService::class);
+        $mock->shouldReceive('syncStatus')->never();
+        app()->instance(CourierService::class, $mock);
+
+        Log::shouldReceive('info')->withArgs(fn ($msg) => str_contains($msg, 'is inactive for fulfillment'));
+
+        $this->artisan(RefreshCourierStatus::class)->assertSuccessful();
+    });
+
+    it('hands a consignment back to the name fallback when its connection is deleted', function () {
+        // nullOnDelete blanks the FK rather than deleting order history, so the row
+        // degrades to exactly the pre-FK behaviour: name matching, skipped loudly
+        // when nothing active matches.
+        $connection = CourierConnection::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'courier_provider_id' => $this->provider->id,
+            'is_active' => true,
+            'credentials' => [],
+        ]);
+
+        $fulfillment = OrderFulfillment::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'order_id' => courierTestOrder($this->tenant, 'ORD-TEST-'.Str::random(6)),
+            'status' => OrderFulfillmentStatus::Shipped->value,
+            'tracking_number' => 'TRACK123',
+            'courier_name' => 'Test Courier',
+            'courier_connection_id' => $connection->id,
+        ]);
+
+        $connection->delete();
+
+        expect(OrderFulfillment::query()->whereKey($fulfillment->id)->value('courier_connection_id'))->toBeNull();
+
+        $mock = Mockery::mock(CourierService::class);
+        $mock->shouldReceive('syncStatus')->never();
+        app()->instance(CourierService::class, $mock);
+
+        Log::shouldReceive('info')->withArgs(fn ($msg) => str_contains($msg, 'No active courier connection found'));
+
+        $this->artisan(RefreshCourierStatus::class)->assertSuccessful();
+    });
+
+    it('still falls back to the name for rows shipped before the FK existed', function () {
+        // Backfill deliberately leaves unresolvable rows NULL, so this path has to
+        // keep working exactly as it did.
+        $connection = CourierConnection::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'courier_provider_id' => $this->provider->id,
+            'is_active' => true,
+            'credentials' => [],
+        ]);
+
+        $fulfillment = OrderFulfillment::query()->create([
+            'tenant_id' => $this->tenant->id,
+            'order_id' => courierTestOrder($this->tenant, 'ORD-TEST-'.Str::random(6)),
+            'status' => OrderFulfillmentStatus::Shipped->value,
+            'tracking_number' => 'TRACK123',
+            'courier_name' => 'Test Courier',
+            'courier_connection_id' => null,
+        ]);
+
+        $mock = Mockery::mock(CourierService::class);
+        $mock->shouldReceive('syncStatus')->once()->with(
+            Mockery::on(fn ($f) => $f->id === $fulfillment->id),
+            Mockery::on(fn ($c) => $c->id === $connection->id)
+        );
+        app()->instance(CourierService::class, $mock);
+
+        $this->artisan(RefreshCourierStatus::class)->assertSuccessful();
+    });
+});

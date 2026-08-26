@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Shipping;
 
-use App\Enums\OrderPaymentStatus;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
 use Illuminate\Support\Facades\Http;
@@ -12,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 
 class SteadfastDriver implements CourierDriver
 {
+    public function __construct(private CodAmountResolver $cod) {}
+
     public function createShipment(Order $order, OrderFulfillment $fulfillment, array $credentials, string $baseUrl): ShipmentResult
     {
         $apiKey = $credentials['api_key'] ?? $credentials['Api-Key'] ?? null;
@@ -23,7 +24,8 @@ class SteadfastDriver implements CourierDriver
 
         $base = rtrim($baseUrl ?: 'https://portal.packzy.com/api/v1', '/');
         $shipping = $order->shipping_address_snapshot ?? [];
-        $amount = $this->codAmount($order, $fulfillment);
+        // Steadfast accepts a decimal cod_amount, so the minor units convert cleanly.
+        $amount = $this->cod->minorUnitsFor($order, $fulfillment) / 100;
 
         $payload = [
             'invoice' => $order->order_number.'-'.$fulfillment->id,
@@ -77,7 +79,7 @@ class SteadfastDriver implements CourierDriver
                 'recipient_name' => $shipping['recipient_name'] ?? $order->customerDisplayName(),
                 'recipient_phone' => $shipping['phone'] ?? $order->guest_phone ?? '01700000000',
                 'recipient_address' => $this->formatAddress($shipping),
-                'cod_amount' => $this->codAmount($order, $fulfillment),
+                'cod_amount' => $this->cod->minorUnitsFor($order, $fulfillment) / 100,
                 'note' => $order->customer_note ?? '',
             ];
         }
@@ -140,14 +142,6 @@ class SteadfastDriver implements CourierDriver
         }
 
         return (float) ($response->json('current_balance') ?? 0);
-    }
-
-    private function codAmount(Order $order, ?OrderFulfillment $fulfillment): int|float
-    {
-        $paid = $order->payments()->where('status', OrderPaymentStatus::Paid)->sum('amount');
-        $due = max(0, (int) $order->grand_total - (int) $paid);
-
-        return $due / 100;
     }
 
     private function formatAddress(array $shipping): string

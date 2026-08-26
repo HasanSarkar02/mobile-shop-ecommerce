@@ -79,16 +79,19 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    /** @return HasMany<OrderPayment, $this> */
     public function payments(): HasMany
     {
         return $this->hasMany(OrderPayment::class);
     }
 
+    /** @return HasMany<OrderFulfillment, $this> */
     public function fulfillments(): HasMany
     {
         return $this->hasMany(OrderFulfillment::class);
     }
 
+    /** @return HasMany<OrderEvent, $this> */
     public function events(): HasMany
     {
         return $this->hasMany(OrderEvent::class)->latest('created_at');

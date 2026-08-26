@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace App\Services\Shipping;
 
-use App\Enums\OrderPaymentStatus;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\OrderItem;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class PathaoDriver implements CourierDriver
 {
+    public function __construct(private CodAmountResolver $cod) {}
+
     public function createShipment(Order $order, OrderFulfillment $fulfillment, array $credentials, string $baseUrl): ShipmentResult
     {
         $base = rtrim($baseUrl ?: 'https://courier-api.pathao.com', '/');
@@ -24,7 +27,7 @@ class PathaoDriver implements CourierDriver
         }
 
         $shipping = $order->shipping_address_snapshot ?? [];
-        $amount = $this->amountToCollect($order);
+        $items = $this->itemsFor($order, $fulfillment);
 
         $payload = [
             'store_id' => (int) $storeId,
@@ -34,10 +37,10 @@ class PathaoDriver implements CourierDriver
             'recipient_address' => $this->formatAddress($shipping),
             'delivery_type' => 48,
             'item_type' => 2,
-            'item_quantity' => $order->items()->sum('quantity'),
+            'item_quantity' => (int) $items->sum('quantity'),
             'item_weight' => '0.5',
-            'amount_to_collect' => (int) $amount,
-            'item_description' => $order->items->pluck('product_name_snapshot')->implode(', '),
+            'amount_to_collect' => $this->amountToCollect($order, $fulfillment),
+            'item_description' => $items->pluck('product_name_snapshot')->implode(', '),
         ];
 
         $response = Http::withToken($token)->post($base.'/aladdin/api/v1/orders', $payload);
@@ -70,6 +73,7 @@ class PathaoDriver implements CourierDriver
         foreach ($orders as $order) {
             $fulfillment = $order->fulfillments->first();
             $shipping = $order->shipping_address_snapshot ?? [];
+            $items = $this->itemsFor($order, $fulfillment);
             $payloadOrders[] = [
                 'store_id' => (int) $storeId,
                 'merchant_order_id' => $order->order_number.($fulfillment ? '-'.$fulfillment->id : ''),
@@ -78,10 +82,10 @@ class PathaoDriver implements CourierDriver
                 'recipient_address' => $this->formatAddress($shipping),
                 'delivery_type' => 48,
                 'item_type' => 2,
-                'item_quantity' => $order->items()->sum('quantity'),
+                'item_quantity' => (int) $items->sum('quantity'),
                 'item_weight' => '0.5',
-                'amount_to_collect' => (int) $this->amountToCollect($order),
-                'item_description' => $order->items->pluck('product_name_snapshot')->implode(', '),
+                'amount_to_collect' => $this->amountToCollect($order, $fulfillment),
+                'item_description' => $items->pluck('product_name_snapshot')->implode(', '),
             ];
         }
 
@@ -178,12 +182,28 @@ class PathaoDriver implements CourierDriver
         return $data[0]['store_id'] ?? null;
     }
 
-    private function amountToCollect(Order $order): int|float
+    /**
+     * Pathao's `amount_to_collect` is a whole-taka integer, so a due carrying
+     * paisa cannot be expressed. Round rather than truncate: truncating
+     * under-collects by up to 0.99 BDT on every consignment, and the residual
+     * silently becomes an unpaid balance the shop never chases.
+     */
+    private function amountToCollect(Order $order, ?OrderFulfillment $fulfillment): int
     {
-        $paid = $order->payments()->where('status', OrderPaymentStatus::Paid)->sum('amount');
-        $due = max(0, (int) $order->grand_total - (int) $paid);
+        return (int) round($this->cod->minorUnitsFor($order, $fulfillment) / 100);
+    }
 
-        return $due / 100;
+    /**
+     * The consignment's own items when they are linked to a fulfillment, falling
+     * back to the whole order for legacy rows that were never split.
+     *
+     * @return Collection<int, OrderItem>
+     */
+    private function itemsFor(Order $order, ?OrderFulfillment $fulfillment): Collection
+    {
+        $items = $fulfillment ? $fulfillment->items()->get() : collect();
+
+        return $items->isNotEmpty() ? $items : $order->items()->get();
     }
 
     private function formatAddress(array $shipping): string
