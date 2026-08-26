@@ -18,6 +18,7 @@ use App\Models\ProductVariant;
 use App\Models\SerialNumber;
 use App\Models\StockItem;
 use App\Models\StockMovement;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -219,17 +220,37 @@ class InventoryService
         });
     }
 
-    public function isPurchasable(ProductVariant $variant, int $quantity = 1): bool
+    public function isPurchasable(ProductVariant $variant, int|float|string $quantity = 1): bool
     {
         $facts = $this->purchasabilityFacts(collect([$variant]))[$variant->id];
-        $state = $this->resolvePurchaseStates(collect([$variant]))[$variant->id];
+
+        if ($facts['discontinued'] || $facts['non_stock']) {
+            return $this->purchasability()->evaluate(
+                discontinued: $facts['discontinued'],
+                nonStock: $facts['non_stock'],
+                serialized: $facts['serialized'],
+                backorderAllowed: $facts['backorder_allowed'],
+                availableQuantity: '0.000',
+                serialsAvailable: $facts['serials_available'],
+                quantity: $quantity,
+            );
+        }
+
+        // Decimal-safe availability: measured goods report "3.750" while discrete
+        // "5.000" still compares correctly via bccomp at scale 3. Missing
+        // stock row (tracked variant never stocked) is treated as 0.
+        try {
+            $available = $this->availableDecimal($variant);
+        } catch (ModelNotFoundException) {
+            $available = '0.000';
+        }
 
         return $this->purchasability()->evaluate(
             discontinued: $facts['discontinued'],
             nonStock: $facts['non_stock'],
             serialized: $facts['serialized'],
             backorderAllowed: $facts['backorder_allowed'],
-            availableQuantity: (int) $state['available_quantity'],
+            availableQuantity: $available,
             serialsAvailable: $facts['serials_available'],
             quantity: $quantity,
         );
@@ -371,9 +392,11 @@ class InventoryService
         });
     }
 
-    private function commitSerialized(ProductVariant $variant, int $quantity, Location $location, mixed $reference, OrderItem $orderItem): void
+    private function commitSerialized(ProductVariant $variant, int|float|string $quantity, Location $location, mixed $reference, OrderItem $orderItem): void
     {
-        DB::transaction(function () use ($variant, $quantity, $location, $reference, $orderItem): void {
+        $qtyInt = (int) $this->normalizeQty($quantity);
+
+        DB::transaction(function () use ($variant, $qtyInt, $location, $reference, $orderItem): void {
             // Global lock hierarchy: stock_items are locked before serial_numbers
             // (serial numbers are child rows of the variant's stock pool). The
             // stock row is locked first, then the exact serials in ascending id
@@ -390,10 +413,10 @@ class InventoryService
                 ->where('status', SerialNumberStatus::Available->value)
                 ->orderBy('id')
                 ->lockForUpdate()
-                ->limit($quantity)
+                ->limit($qtyInt)
                 ->get();
 
-            if ($serials->count() < $quantity) {
+            if ($serials->count() < $qtyInt) {
                 throw new InsufficientStockException("Insufficient serialized stock for variant {$variant->sku}.");
             }
 
@@ -408,10 +431,10 @@ class InventoryService
 
             DB::table('stock_items')->where('id', $stockItem->id)
                 ->update([
-                    'reserved_quantity' => DB::raw('GREATEST(0, CAST(reserved_quantity AS SIGNED) - '.(int) $quantity.')'),
+                    'reserved_quantity' => DB::raw('GREATEST(0, CAST(reserved_quantity AS SIGNED) - '.(int) $qtyInt.')'),
                 ]);
 
-            $this->logMovement($variant, $location, StockMovementType::Sale, -$quantity, $reference);
+            $this->logMovement($variant, $location, StockMovementType::Sale, -$qtyInt, $reference);
         });
     }
 
@@ -481,7 +504,7 @@ class InventoryService
      * @param  mixed  $reference  the cancelled order (used for audit linkage)
      * @return Collection<int, SerialNumber> the returned serials
      */
-    public function returnSoldSerials(ProductVariant $variant, int $quantity, OrderItem $orderItem, ?Location $location = null, mixed $reference = null): Collection
+    public function returnSoldSerials(ProductVariant $variant, int|float|string $quantity, OrderItem $orderItem, ?Location $location = null, mixed $reference = null): Collection
     {
         $location ??= $this->defaultLocation();
         $qty = $this->normalizeQty($quantity);

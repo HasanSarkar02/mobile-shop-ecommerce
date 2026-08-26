@@ -131,7 +131,7 @@ it('cancels a pending order and releases stock when payment fails', function () 
 
     expect(OrderPayment::query()->where('transaction_reference', $tranId)->first()->status)->toBe(OrderPaymentStatus::Failed);
     expect($order->fresh()->status)->toBe(OrderStatus::Cancelled);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 });
 
 it('cancels a pending order and releases stock when the customer cancels payment', function () {
@@ -143,7 +143,7 @@ it('cancels a pending order and releases stock when the customer cancels payment
 
     expect($response->getStatusCode())->toBe(302);
     expect($order->fresh()->status)->toBe(OrderStatus::Cancelled);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 });
 
 it('is idempotent across repeated fail callbacks', function () {
@@ -158,7 +158,7 @@ it('is idempotent across repeated fail callbacks', function () {
     expect(OrderPayment::query()->where('transaction_reference', $tranId)->count())->toBe(1);
     expect($order->fresh()->status)->toBe(OrderStatus::Cancelled);
     expect(StockMovement::query()->where('reference_id', $order->id)->where('type', 'release')->count())->toBe(1);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 });
 
 it('does not affect another order when releasing a failed payment', function () {
@@ -169,10 +169,10 @@ it('does not affect another order when releasing a failed payment', function () 
     app(PaymentGatewayService::class)->markFailed($tranIdA, 'Order cancelled — payment failed.');
 
     expect($orderA->fresh()->status)->toBe(OrderStatus::Cancelled);
-    expect($variantA->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variantA->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 
     expect($orderB->fresh()->status)->toBe(OrderStatus::Pending);
-    expect($variantB->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
+    expect($variantB->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
 });
 
 it('does not touch a confirmed order when a fail callback arrives', function () {
@@ -183,5 +183,5 @@ it('does not touch a confirmed order when a fail callback arrives', function () 
     app(PaymentGatewayService::class)->markFailed($tranId, 'Order cancelled — payment failed.');
 
     expect($order->fresh()->status)->toBe(OrderStatus::Confirmed);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 });

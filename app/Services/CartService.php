@@ -9,6 +9,7 @@ use App\Models\CartItem;
 use App\Models\Customer;
 use App\Models\ProductVariant;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 class CartService
 {
@@ -34,16 +35,21 @@ class CartService
         ]);
     }
 
-    public function addItem(Cart $cart, ProductVariant $variant, int $quantity): CartItem
+    public function addItem(Cart $cart, ProductVariant $variant, int|float|string $quantity): CartItem
     {
-        if (! $this->inventory->isPurchasable($variant, $quantity)) {
+        $qty = $this->normalizeQty($quantity);
+        $this->validateSellByUnit($variant, $qty);
+
+        if (! $this->inventory->isPurchasable($variant, $qty)) {
             throw new \RuntimeException("'{$variant->sku}' is not available in the requested quantity.");
         }
 
         $item = $cart->items()->where('product_variant_id', $variant->id)->first();
 
         if ($item) {
-            $item->update(['quantity' => $item->quantity + $quantity, 'unit_price' => $variant->price]);
+            $newQty = bcadd((string) $item->quantity, $qty, 3);
+            $this->validateSellByUnit($variant, $newQty);
+            $item->update(['quantity' => $newQty, 'unit_price' => $variant->price]);
 
             return $item;
         }
@@ -51,20 +57,28 @@ class CartService
         return $cart->items()->create([
             'tenant_id' => $cart->tenant_id,
             'product_variant_id' => $variant->id,
-            'quantity' => $quantity,
+            'quantity' => $qty,
             'unit_price' => $variant->price,
         ]);
     }
 
-    public function updateQuantity(CartItem $item, int $quantity): void
+    public function updateQuantity(CartItem $item, int|float|string $quantity): void
     {
-        if ($quantity <= 0) {
+        $qty = $this->normalizeQty($quantity);
+
+        if (bccomp($qty, '0', 3) !== 1) {
             $item->delete();
 
             return;
         }
 
-        $item->update(['quantity' => $quantity]);
+        $item->loadMissing('variant.product');
+        $variant = $item->variant;
+        if ($variant instanceof ProductVariant) {
+            $this->validateSellByUnit($variant, $qty);
+        }
+
+        $item->update(['quantity' => $qty]);
     }
 
     public function removeItem(CartItem $item): void
@@ -133,14 +147,16 @@ class CartService
             $this->orders->releaseExpiredReservations($item->variant);
 
             if (! $this->inventory->isPurchasable($item->variant, $item->quantity)) {
-                $available = $this->inventory->availableQuantity($item->variant);
+                $available = $this->inventory->availableDecimal($item->variant);
 
-                if ($available <= 0) {
+                if (bccomp($available, '0', 3) !== 1) {
                     $item->delete();
                     $issues->push("'{$item->variant->sku}' is no longer in stock and was removed from your cart.");
                 } else {
-                    $item->update(['quantity' => $available]);
-                    $issues->push("Only {$available} of '{$item->variant->sku}' left — quantity adjusted.");
+                    // Clamp to available and also snap to valid sell_by_unit multiple if needed
+                    $clamped = $this->clampToSellByUnit($item->variant, $available);
+                    $item->update(['quantity' => $clamped]);
+                    $issues->push("Only {$clamped} of '{$item->variant->sku}' left — quantity adjusted.");
                 }
 
                 continue;
@@ -163,5 +179,71 @@ class CartService
         }
 
         return ['issues' => $issues, 'priceChanged' => $priceChanged];
+    }
+
+    private function normalizeQty(int|float|string $quantity): string
+    {
+        if (! is_numeric($quantity)) {
+            throw new \InvalidArgumentException('Quantity must be numeric.');
+        }
+
+        $qty = number_format((float) $quantity, 3, '.', '');
+
+        if (bccomp($qty, '0', 3) !== 1) {
+            // Zero or negative is handled by callers (delete), but keep
+            // normalization strict for positive quantities — must be >0.000
+            // and at most 99.999 for cart.
+            if (bccomp($qty, '0', 3) === 0) {
+                return '0.000';
+            }
+        }
+
+        return $qty;
+    }
+
+    private function validateSellByUnit(ProductVariant $variant, string $qty): void
+    {
+        $variant->load('product');
+
+        /** @var mixed $step */
+        $step = $variant->product?->sell_by_unit;
+
+        if (! filled($step) || bccomp((string) $step, '0', 3) !== 1) {
+            return;
+        }
+
+        $stepStr = number_format((float) $step, 3, '.', '');
+
+        // bcmod at scale 3: remainder must be 0.000
+        $remainder = bcmod($qty, $stepStr, 3);
+
+        if (bccomp($remainder, '0', 3) !== 0) {
+            throw ValidationException::withMessages([
+                'quantity' => ["Quantity must be a multiple of {$stepStr}."],
+            ]);
+        }
+    }
+
+    private function clampToSellByUnit(ProductVariant $variant, string $available): string
+    {
+        $variant->load('product');
+        /** @var mixed $step */
+        $step = $variant->product?->sell_by_unit;
+
+        if (! filled($step) || bccomp((string) $step, '0', 3) !== 1) {
+            return $available;
+        }
+
+        $stepStr = number_format((float) $step, 3, '.', '');
+        $remainder = bcmod($available, $stepStr, 3);
+
+        if (bccomp($remainder, '0', 3) === 0) {
+            return $available;
+        }
+
+        // Floor to nearest valid step: available - remainder
+        $clamped = bcsub($available, $remainder, 3);
+
+        return bccomp($clamped, '0', 3) === 1 ? $clamped : $stepStr;
     }
 }

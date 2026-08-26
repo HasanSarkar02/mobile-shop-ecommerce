@@ -133,7 +133,7 @@ describe('ORDER SERIAL LINKAGE — exact serial to order item attribution', func
         $services->cancelOrder($order, 'Return to stock');
 
         $item = StockItem::query()->where('product_variant_id', $variant->id)->first();
-        expect($item->quantity)->toBe(10);
+        expect($item->quantity)->toBe('10.000');
         expect(SerialNumber::query()->where('product_variant_id', $variant->id)->count())->toBe(0);
     });
 

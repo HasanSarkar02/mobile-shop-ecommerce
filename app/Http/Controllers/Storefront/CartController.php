@@ -10,6 +10,7 @@ use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
@@ -58,13 +59,29 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'product_variant_id' => ['required', 'integer', 'exists:product_variants,id'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:'.self::MAX_QUANTITY],
+            'quantity' => ['required', 'numeric', 'min:0.001', 'max:'.self::MAX_QUANTITY],
         ]);
 
-        $variant = ProductVariant::query()->findOrFail($data['product_variant_id']);
+        $variant = ProductVariant::query()->with('product')->findOrFail($data['product_variant_id']);
+        $variant->loadMissing('product');
+
+        $qty = number_format((float) $data['quantity'], 3, '.', '');
+
+        // sell_by_unit multiple validation (Phase C-3)
+        /** @var mixed $step */
+        $step = $variant->product?->sell_by_unit;
+        if (filled($step) && bccomp((string) $step, '0', 3) === 1) {
+            $stepStr = number_format((float) $step, 3, '.', '');
+            if (bccomp(bcmod($qty, $stepStr, 3), '0', 3) !== 0) {
+                throw ValidationException::withMessages([
+                    'quantity' => ["Quantity must be a multiple of {$stepStr}."],
+                ]);
+            }
+        }
+
         $cart = $carts->getOrCreateCart(auth('customer')->user(), $request->cookie('cart_token'));
 
-        $carts->addItem($cart, $variant, (int) $data['quantity']);
+        $carts->addItem($cart, $variant, $qty);
     }
 
     public function show()

@@ -41,7 +41,7 @@ it('creates an order, reserves stock, and dispatches OrderPlaced', function () {
     expect($order->items)->toHaveCount(1);
     expect($order->items->first()->unit_price)->toBe($variant->price);
     expect($order->status)->toBe(OrderStatus::Pending);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(2);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('2.000');
     expect($order->fulfillments)->toHaveCount(1);
     Event::assertDispatched(OrderPlaced::class);
 });
@@ -57,7 +57,7 @@ it('rejects a stale cart price without creating an order or reservation', functi
     ]))->toThrow(InvalidOrderStateException::class, 'has changed');
 
     expect(Order::query()->count())->toBe(0);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
     expect($cart->fresh()->converted_at)->toBeNull();
     expect($cart->items()->first()->fresh()->unit_price)->toBe($cartPrice);
 });
@@ -121,7 +121,7 @@ it('rejects a competing stock reservation without creating a second order', func
 
     expect(Order::query()->count())->toBe(1);
     expect($secondCart->fresh()->converted_at)->toBeNull();
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
 });
 
 it('refuses an invalid status transition', function () {
@@ -142,8 +142,8 @@ it('commits stock when an order is confirmed', function () {
     app(OrderService::class)->updateStatus($order, OrderStatus::Confirmed);
 
     $stockItem = $variant->stockItems()->first()->fresh();
-    expect($stockItem->quantity)->toBe(7);
-    expect($stockItem->reserved_quantity)->toBe(0);
+    expect($stockItem->quantity)->toBe('7.000');
+    expect($stockItem->reserved_quantity)->toBe('0.000');
 });
 
 it('releases reserved stock when a pending order is cancelled', function () {
@@ -155,7 +155,7 @@ it('releases reserved stock when a pending order is cancelled', function () {
 
     app(OrderService::class)->updateStatus($order, OrderStatus::Cancelled);
 
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
     Event::assertDispatched(OrderCancelled::class);
 });
 
@@ -170,7 +170,7 @@ it('auto-cancels orders whose reservation has expired', function () {
 
     expect($released)->toBe(1);
     expect($order->fresh()->status)->toBe(OrderStatus::Cancelled);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
     expect(StockMovement::query()->where('product_variant_id', $variant->id)->where('type', 'release')->count())->toBe(1);
 
     expect(app(OrderService::class)->releaseExpiredReservations())->toBe(0);
@@ -206,8 +206,8 @@ it('releases every reservation in a multi-item expired order exactly once', func
     $order->update(['reservation_expires_at' => now()->subHour()]);
 
     expect(app(OrderService::class)->releaseExpiredReservations())->toBe(1);
-    expect($firstVariant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
-    expect($secondVariant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($firstVariant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
+    expect($secondVariant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
     expect(StockMovement::query()->where('reference_id', $order->id)->where('type', 'release')->count())->toBe(2);
 });
 
@@ -227,7 +227,7 @@ it('does not expire another tenant order', function () {
     expect(app(OrderService::class)->releaseExpiredReservations())->toBe(0);
     expect($otherOrder->fresh()->status)->toBe(OrderStatus::Pending);
     app(Tenancy::class)->set($otherTenant);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
 });
 
 it('rolls back expiration status when inventory release fails', function () {
@@ -258,7 +258,7 @@ it('rolls back expiration status when inventory release fails', function () {
         ->toThrow(RuntimeException::class, 'forced release failure');
 
     expect($order->fresh()->status)->toBe(OrderStatus::Pending);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
 });
 
 it('corrects the shipping address snapshot and logs an auditable event', function () {

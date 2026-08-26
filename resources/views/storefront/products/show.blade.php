@@ -79,7 +79,7 @@
         </style>
     @endpush
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8" x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), @js($initialVariantId), @js($isWishlisted), @js($isComparing), @js($emiData), @js($requiresSelection))" x-init="init()">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8" x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), @js($initialVariantId), @js($isWishlisted), @js($isComparing), @js($emiData), @js($requiresSelection), @js($product->sell_by_unit ?? '1.000'))" x-init="init()">
         <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
             <a href="{{ app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.home') }}" class="hover:text-[var(--brand)]">Home</a>
             @if ($product->category)
@@ -271,11 +271,12 @@
 
                 <div class="flex items-center gap-3 mt-6">
                     <div class="flex items-center border border-gray-300 dark:border-gray-700 rounded-xl">
-                        <button @click="quantity = Math.max(1, quantity - 1)"
+                        <button @click="quantity = Math.max(sellByUnit, parseFloat((quantity - sellByUnit).toFixed(3)))"
                             class="w-10 h-11 flex items-center justify-center text-lg"
                             aria-label="Decrease quantity">−</button>
-                        <span class="w-10 text-center" x-text="quantity"></span>
-<button @click="quantity = Math.min(quantity + 1, (current()?.available_quantity ?? 0) > 0 && current().purchase_state !== 'preorder' && current().purchase_state !== 'dropship' ? current().available_quantity : 99)" class="w-10 h-11 flex items-center justify-center text-lg"
+                        <input type="number" x-model.number="quantity" :step="sellByUnit" :min="sellByUnit" step="{{ $product->sell_by_unit ?? 1 }}"
+                            class="w-16 text-center bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+<button @click="quantity = Math.min(parseFloat((quantity + sellByUnit).toFixed(3)), (current()?.available_quantity ?? 0) > 0 && current().purchase_state !== 'preorder' && current().purchase_state !== 'dropship' ? current().available_quantity : 99)" class="w-10 h-11 flex items-center justify-center text-lg"
                                 aria-label="Increase quantity">+</button>
                     </div>
                     <x-storefront.add-to-cart-button type="buy-now" />
@@ -674,7 +675,7 @@
         }
 
         function productDetail(variants, productImages, dimensions, initialId, initialWishlisted, initialComparing,
-            emiPlans, requiresSelection) {
+            emiPlans, requiresSelection, sellByUnit) {
             return {
                 variants,
                 productImages,
@@ -687,7 +688,8 @@
                 lightboxOpen: false,
                 currentVariantId: initialId,
                 unavailable: false,
-                quantity: 1,
+                quantity: parseFloat(sellByUnit) > 0 ? parseFloat(sellByUnit) : 1,
+                sellByUnit: parseFloat(sellByUnit) > 0 ? parseFloat(sellByUnit) : 1,
                 comparing: initialComparing,
                 cartLoading: false,
                 compareLoading: false,

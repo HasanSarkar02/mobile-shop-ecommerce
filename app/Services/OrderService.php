@@ -252,13 +252,13 @@ class OrderService
                     'product_name_snapshot' => $variant->product->name ?? $variant->sku,
                     'variant_sku_snapshot' => $variant->sku,
                     'unit_price' => (int) $variant->price,
-                    'quantity' => $item->quantity,
-                    'line_total' => (int) $variant->price * $item->quantity,
+                    'quantity' => (string) $item->quantity,
+                    'line_total' => $this->lineTotal((int) $variant->price, (string) $item->quantity),
                     'fulfillment_strategy' => $strategy,
                     'expected_available_at' => $variant->expected_available_at,
                 ]);
 
-                $this->inventory->reserve($variant, $item->quantity, null, $order);
+                $this->inventory->reserve($variant, (string) $item->quantity, null, $order);
             }
 
             // Authoritative totals single path — subtotal and grand_total are
@@ -319,10 +319,10 @@ class OrderService
 
             foreach ($lines as $line) {
                 $variant = $variants->get($line['product_variant_id']);
-                $qty = (int) $line['quantity'];
+                $qty = number_format((float) $line['quantity'], 3, '.', '');
 
-                if ($qty < 1) {
-                    throw new \InvalidArgumentException('Quantity must be at least 1.');
+                if (bccomp($qty, '0', 3) !== 1) {
+                    throw new \InvalidArgumentException('Quantity must be at least 0.001.');
                 }
 
                 if (! $this->inventory->isPurchasable($variant, $qty)) {
@@ -388,7 +388,7 @@ class OrderService
 
             foreach ($lines as $line) {
                 $variant = $variants->get($line['product_variant_id']);
-                $qty = (int) $line['quantity'];
+                $qty = number_format((float) $line['quantity'], 3, '.', '');
                 $strategy = $variant->fulfillment_strategy->value;
 
                 $order->items()->create([
@@ -399,7 +399,7 @@ class OrderService
                     'variant_sku_snapshot' => $variant->sku,
                     'unit_price' => (int) $variant->price,
                     'quantity' => $qty,
-                    'line_total' => (int) $variant->price * $qty,
+                    'line_total' => $this->lineTotal((int) $variant->price, $qty),
                     'fulfillment_strategy' => $strategy,
                     'expected_available_at' => $variant->expected_available_at,
                 ]);
@@ -496,7 +496,7 @@ class OrderService
             $this->logEvent(
                 $order,
                 OrderEventType::FinancialAdjustmentRequired,
-                'Refund required: this cancelled order already has '.number_format($this->amountPaid($order) / 100, 2).' paid. A refund must be issued — refund tooling arrives in a later phase.'
+                'Refund required: this cancelled order already has '.number_format($this->amountPaid($order) / 100, 2).' paid. Issue a refund from the order screen.'
             );
         }
 
@@ -518,19 +518,31 @@ class OrderService
 
     public function recordPayment(Order $order, ?PaymentMethod $method, int $amount, OrderPaymentStatus $status, ?string $reference = null): OrderPayment
     {
-        return DB::transaction(function () use ($order, $method, $amount, $status, $reference): OrderPayment {
+        return DatabaseLockRetry::run(function () use ($order, $method, $amount, $status, $reference): OrderPayment {
+            // The paid total is read and then written against, so the order row
+            // must be locked for the whole check-then-act: without it two
+            // concurrent recordings both read the same $paidAlready, both pass the
+            // remaining-due guard, and together over-collect. The unique
+            // (tenant_id, transaction_reference) index cannot cover this case —
+            // cash has no gateway reference, and MySQL treats every NULL in a
+            // unique index as distinct.
+            $locked = Order::query()
+                ->whereKey($order->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
             if ($amount <= 0) {
                 throw new InvalidOrderStateException('Payment amount must be greater than zero.');
             }
 
-            if ($order->status === OrderStatus::Cancelled) {
+            if ($locked->status === OrderStatus::Cancelled) {
                 throw new InvalidOrderStateException('Payments cannot be recorded on a cancelled order.');
             }
 
-            $paidAlready = $this->amountPaid($order);
+            $paidAlready = $this->amountPaid($locked);
 
             if ($status === OrderPaymentStatus::Paid) {
-                $remainingDue = (int) $order->grand_total - $paidAlready;
+                $remainingDue = (int) $locked->grand_total - $paidAlready;
 
                 if ($remainingDue <= 0) {
                     throw new InvalidOrderStateException('This order is already fully paid — no amount is due.');
@@ -543,8 +555,8 @@ class OrderService
                 }
             }
 
-            $payment = $order->payments()->create([
-                'tenant_id' => $order->tenant_id,
+            $payment = $locked->payments()->create([
+                'tenant_id' => $locked->tenant_id,
                 'payment_method_id' => $method?->id,
                 'amount' => $amount,
                 'status' => $status,
@@ -553,7 +565,7 @@ class OrderService
             ]);
 
             $this->logEvent(
-                $order,
+                $locked,
                 OrderEventType::PaymentRecorded,
                 'Payment of '.number_format($amount / 100, 2)." recorded as {$status->label()}.",
             );
@@ -561,15 +573,57 @@ class OrderService
             OrderPaymentRecorded::dispatch($payment);
 
             if ($status === OrderPaymentStatus::Paid
-                && $order->status === OrderStatus::Pending
+                && $locked->status === OrderStatus::Pending
                 && config('orders.auto_confirm_on_full_payment')
-                && ($paidAlready + $amount) >= (int) $order->grand_total
+                && ($paidAlready + $amount) >= (int) $locked->grand_total
             ) {
-                $this->updateStatus($order, OrderStatus::Confirmed, 'Confirmed — order fully paid.');
+                $this->updateStatus($locked, OrderStatus::Confirmed, 'Confirmed — order fully paid.');
             }
 
             return $payment;
-        }, 3);
+        });
+    }
+
+    /**
+     * Books the cash a courier collected on delivery for one consignment.
+     *
+     * COD orders deliberately carry no payment row until the money actually
+     * exists, so this is the event that creates it. The reference is derived from
+     * the consignment rather than supplied, which turns the existing unique
+     * (tenant_id, transaction_reference) index into the idempotency key: a second
+     * attempt — a duplicate click, two app servers, a re-run of the poller —
+     * cannot double-book the cash.
+     *
+     * Returns null when the collection was already recorded, rather than throwing.
+     * A repeat is expected rather than exceptional, so it must be a silent no-op,
+     * the same contract claimPendingOrder() uses for payment callbacks.
+     *
+     * One row per consignment is the deliberate limit of that idempotency: if a
+     * courier later remits a shortfall, record the balance through recordPayment()
+     * with its own reference. Reusing this method would look like a duplicate.
+     */
+    public function recordCodCollection(OrderFulfillment $fulfillment, int $amount, ?PaymentMethod $method = null): ?OrderPayment
+    {
+        $order = $fulfillment->order()->firstOrFail();
+        $reference = 'cod:'.$fulfillment->getKey();
+
+        if ($order->payments()->where('transaction_reference', $reference)->exists()) {
+            return null;
+        }
+
+        try {
+            return $this->recordPayment(
+                $order,
+                $method ?? $order->paymentMethod,
+                $amount,
+                OrderPaymentStatus::Paid,
+                $reference,
+            );
+        } catch (UniqueConstraintViolationException) {
+            // The check above lost a race. The unique index, not the check, is the
+            // actual guarantee — this is just how the loser reports it.
+            return null;
+        }
     }
 
     public function amountRefunded(Order $order): int
@@ -581,8 +635,12 @@ class OrderService
      * Record a refund for an order — enterprise-grade partial/full support.
      * Creates an OrderPayment with status Refunded, validates against paid/refunded totals,
      * and auto-transitions to Refunded status when fully refunded from Cancelled/Delivered.
+     *
+     * @param  bool  $restock  return the order's goods to the sellable pool. Opt-in
+     *                         because money coming back does not always mean goods
+     *                         came back — see assertRestockable() for the rules.
      */
-    public function refund(Order $order, int $amount, string $reason, ?PaymentMethod $method = null, ?string $reference = null): OrderPayment
+    public function refund(Order $order, int $amount, string $reason, ?PaymentMethod $method = null, ?string $reference = null, bool $restock = false): OrderPayment
     {
         $reason = trim($reason);
 
@@ -590,15 +648,25 @@ class OrderService
             throw new \InvalidArgumentException('A reason is required for a refund.');
         }
 
-        return DB::transaction(function () use ($order, $amount, $reason, $method, $reference): OrderPayment {
+        return DatabaseLockRetry::run(function () use ($order, $amount, $reason, $method, $reference, $restock): OrderPayment {
+            // Same check-then-act as recordPayment: the refundable amount is read
+            // and then written against, so without the row lock two concurrent
+            // refunds can both pass the guard and together exceed what was paid.
+            $locked = Order::query()
+                ->whereKey($order->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
             if ($amount <= 0) {
                 throw new InvalidOrderStateException('Refund amount must be greater than zero.');
             }
 
-            $paid = $this->amountPaid($order);
-            $refunded = $this->amountRefunded($order);
+            $paid = $this->amountPaid($locked);
+            $refunded = $this->amountRefunded($locked);
             $refundable = $paid - $refunded;
 
+            // This is the only state gate a refund needs: an order with nothing
+            // left to refund cannot be refunded, whatever status it is in.
             if ($refundable <= 0) {
                 throw new InvalidOrderStateException('No refundable amount remains for this order.');
             }
@@ -609,53 +677,242 @@ class OrderService
                 );
             }
 
-            // Refunds are only meaningful for orders that were paid and are in a terminal or post-delivery state.
-            // We allow Cancelled and Delivered; Shipped is also allowed for enterprise flexibility, but Pending is not refundable without payment.
-            if (! in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Delivered, OrderStatus::Shipped, OrderStatus::Processing, OrderStatus::Confirmed], true) && $paid === 0) {
-                throw new InvalidOrderStateException('Refunds require a paid amount.');
+            $isFullRefund = ($refunded + $amount) >= $paid;
+
+            if ($restock) {
+                $this->assertRestockable($locked, $isFullRefund);
             }
 
-            $payment = $order->payments()->create([
-                'tenant_id' => $order->tenant_id,
-                'payment_method_id' => $method?->id ?? $order->payment_method_id,
+            $payment = $locked->payments()->create([
+                'tenant_id' => $locked->tenant_id,
+                'payment_method_id' => $method?->id ?? $locked->payment_method_id,
                 'amount' => $amount,
                 'status' => OrderPaymentStatus::Refunded,
                 'transaction_reference' => $reference,
                 'paid_at' => null,
             ]);
 
+            $metadata = ['amount' => $amount, 'reason' => $reason, 'reference' => $reference];
+
+            if ($restock) {
+                // Proof in the audit trail that the goods were returned exactly
+                // once, and which serials came back.
+                $metadata['restocked'] = true;
+                $metadata['returned_serials'] = $this->restockRefundedItems($locked);
+            }
+
             $this->logEvent(
-                $order,
+                $locked,
                 OrderEventType::PaymentRecorded,
                 'Refund of '.number_format($amount / 100, 2).' recorded: '.$reason,
-                metadata: ['amount' => $amount, 'reason' => $reason, 'reference' => $reference],
+                metadata: $metadata,
             );
 
             OrderPaymentRecorded::dispatch($payment);
 
-            $newRefunded = $refunded + $amount;
-
-            if ($newRefunded >= $paid && in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Delivered], true)) {
-                $this->updateStatus($order->fresh(), OrderStatus::Refunded, 'Order fully refunded: '.$reason);
+            if ($isFullRefund && in_array($locked->status, [OrderStatus::Cancelled, OrderStatus::Delivered], true)) {
+                $this->updateStatus($locked, OrderStatus::Refunded, 'Order fully refunded: '.$reason);
             }
 
             return $payment;
-        }, 3);
+        });
     }
 
+    /**
+     * Returning goods to the sellable pool is only sound in one situation: the
+     * order was delivered, and the whole of it has now come back.
+     *
+     * Cancelled is refused because applyStatusTransition() already restocked the
+     * order when it was cancelled — restocking again would double-count stock.
+     *
+     * A partial refund is refused because a money amount cannot say *which* items
+     * came back; inferring quantities from a decimal would corrupt the ledger.
+     * Per-item returns need an RMA record, which this phase does not have.
+     */
+    private function assertRestockable(Order $order, bool $isFullRefund): void
+    {
+        if ($order->status === OrderStatus::Cancelled) {
+            throw new InvalidOrderStateException(
+                'This order was already restocked when it was cancelled. Record the refund without returning goods to stock.'
+            );
+        }
+
+        if ($order->status !== OrderStatus::Delivered) {
+            throw new InvalidOrderStateException(
+                'Goods can only be returned to stock on a delivered order — this order is '.$order->status->label().'.'
+            );
+        }
+
+        if (! $isFullRefund) {
+            throw new InvalidOrderStateException(
+                'A partial refund cannot determine which items were returned. Refund in full to return goods to stock.'
+            );
+        }
+    }
+
+    /**
+     * @return array<string, array<int, string>> variant SKU snapshot => returned serials
+     */
+    private function restockRefundedItems(Order $order): array
+    {
+        $returnedSerials = [];
+
+        // Ascending variant order, the same as every other inventory path, so a
+        // refund can never deadlock against a cancellation or a commit.
+        $this->inventory->lockStockItemsForVariants($order->items->pluck('variant')->filter());
+
+        foreach ($order->items as $item) {
+            if (! $item->variant) {
+                continue;
+            }
+
+            $returned = $this->inventory->restockFromCancellation($item->variant, $item->quantity, null, $order, $item);
+
+            if ($returned->isNotEmpty()) {
+                $returnedSerials[$item->variant_sku_snapshot] = $returned->pluck('imei_or_serial')->all();
+            }
+        }
+
+        return $returnedSerials;
+    }
+
+    /**
+     * Records a consignment's state and lets it drive the order.
+     *
+     * Propagation lives here, not in CourierService, so that all three callers —
+     * the admin action, CourierService::syncStatus() and the hourly poller — get
+     * the same behaviour from one place.
+     */
     public function updateFulfillment(OrderFulfillment $fulfillment, OrderFulfillmentStatus $status, ?string $trackingNumber = null, ?string $courierName = null): void
     {
-        DB::transaction(function () use ($fulfillment, $status, $trackingNumber, $courierName): void {
-            $fulfillment->update([
+        DatabaseLockRetry::run(function () use ($fulfillment, $status, $trackingNumber, $courierName): void {
+            // Parent before child, matching the stock_items -> serial_numbers
+            // convention: a single global lock order is what stops two
+            // consignments on one order from deadlocking against each other.
+            $order = Order::query()
+                ->whereKey($fulfillment->order_id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $locked = OrderFulfillment::query()
+                ->whereKey($fulfillment->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $locked->update([
                 'status' => $status,
-                'tracking_number' => $trackingNumber ?? $fulfillment->tracking_number,
-                'courier_name' => $courierName ?? $fulfillment->courier_name,
-                'shipped_at' => $status === OrderFulfillmentStatus::Shipped ? now() : $fulfillment->shipped_at,
-                'delivered_at' => $status === OrderFulfillmentStatus::Delivered ? now() : $fulfillment->delivered_at,
+                'tracking_number' => $trackingNumber ?? $locked->tracking_number,
+                'courier_name' => $courierName ?? $locked->courier_name,
+                'shipped_at' => $status === OrderFulfillmentStatus::Shipped ? now() : $locked->shipped_at,
+                'delivered_at' => $status === OrderFulfillmentStatus::Delivered ? now() : $locked->delivered_at,
             ]);
 
-            $this->logEvent($fulfillment->order, OrderEventType::FulfillmentUpdated, "Fulfillment marked as {$status->label()}.");
-        }, 3);
+            $this->logEvent($order, OrderEventType::FulfillmentUpdated, "Fulfillment marked as {$status->label()}.");
+
+            $this->propagateFulfillmentToOrder($order);
+
+            // Keep the caller's instance in step with what was actually written.
+            $fulfillment->setRawAttributes($locked->getAttributes(), true);
+        });
+    }
+
+    /**
+     * Lets the couriers' reports drive the order's own status.
+     *
+     * Deliberately an aggregate over every consignment rather than a reaction to
+     * one: an order split by FulfillmentStrategy (stock / preorder / dropship)
+     * legitimately has consignments that move at different times, so only the
+     * state of all of them can say what the order is.
+     *
+     * Never throws. The hourly poller observes the same courier status over and
+     * over, so anything already handled is a silent no-op — the same contract
+     * claimPendingOrder() uses for payment callbacks.
+     */
+    private function propagateFulfillmentToOrder(Order $order): void
+    {
+        // A late courier report does not resurrect a terminal order.
+        if (in_array($order->status, [OrderStatus::Delivered, OrderStatus::Refunded, OrderStatus::Cancelled], true)) {
+            return;
+        }
+
+        $fulfillments = $order->fulfillments()->get(['id', 'status']);
+
+        if ($fulfillments->isEmpty()) {
+            return;
+        }
+
+        $statuses = $fulfillments->map(fn (OrderFulfillment $fulfillment): OrderFulfillmentStatus => $fulfillment->status);
+
+        if ($statuses->every(fn (OrderFulfillmentStatus $status): bool => $status === OrderFulfillmentStatus::Delivered)) {
+            if ($order->status !== OrderStatus::Shipped) {
+                // Reaching Delivered from Confirmed/Processing would mean
+                // inventing a Shipped event that never happened, putting false
+                // history in the timeline. Leave the order where staff put it and
+                // tell them what is blocking it instead.
+                $this->logPropagationOnce(
+                    $order,
+                    OrderEventType::FulfillmentUpdated,
+                    'delivered_awaiting_shipped',
+                    'Every consignment is delivered, but this order is '.$order->status->label().'. Move it to Shipped to complete delivery.',
+                );
+
+                return;
+            }
+
+            $this->applyStatusTransition($order, OrderStatus::Delivered, 'Delivered — every consignment was delivered by the courier.');
+
+            return;
+        }
+
+        $failed = $fulfillments->filter(fn (OrderFulfillment $fulfillment): bool => $fulfillment->status === OrderFulfillmentStatus::Failed);
+
+        if ($failed->isEmpty()) {
+            return;
+        }
+
+        if ($failed->count() === $fulfillments->count()) {
+            // Log, never auto-cancel. Cancelling restocks, releases the coupon and
+            // cannot be undone — Cancelled has no path back to Delivered — so a
+            // courier that reports failed and later corrects itself would leave
+            // the order permanently wrong. A human decides.
+            $this->logPropagationOnce(
+                $order,
+                OrderEventType::FinancialAdjustmentRequired,
+                'all_consignments_failed',
+                'The courier returned every consignment. Cancel the order to restock and release the coupon, or reship — nothing was changed automatically.',
+            );
+
+            return;
+        }
+
+        $this->logPropagationOnce(
+            $order,
+            OrderEventType::FinancialAdjustmentRequired,
+            'partial_failure:'.$failed->pluck('id')->sort()->implode(','),
+            'The courier returned part of this order (consignment '.$failed->pluck('id')->sort()->implode(', ').'). The rest is still in transit — reship or refund the returned part.',
+        );
+    }
+
+    /**
+     * Writes a propagation notice at most once per distinct situation.
+     *
+     * The poller re-observes the same courier status every hour, so an
+     * unguarded log would bury the order timeline in identical rows. The key is
+     * matched against the event's own metadata, which makes the guard exact
+     * rather than a string comparison on the description.
+     */
+    private function logPropagationOnce(Order $order, OrderEventType $type, string $key, string $description): void
+    {
+        $alreadyLogged = $order->events()
+            ->where('type', $type)
+            ->where('metadata->propagation', $key)
+            ->exists();
+
+        if ($alreadyLogged) {
+            return;
+        }
+
+        $this->logEvent($order, $type, $description, metadata: ['propagation' => $key]);
     }
 
     public function addInternalNote(Order $order, string $note): void
@@ -728,8 +985,9 @@ class OrderService
     /**
      * Authoritative totals path. Subtotal is always derived from the line
      * items; grand_total = subtotal + shipping + tax - discount. Refuses to
-     * persist a state that is impossible or already overpaid — overpaid
-     * totals cannot be silently reduced because refunds are not yet supported.
+     * persist a state that is impossible or already overpaid — lowering a total
+     * below what was collected would create an unrecorded liability, so the
+     * refund has to be recorded first and the total lowered after.
      */
     public function recalculateTotals(Order $order): void
     {
@@ -751,12 +1009,24 @@ class OrderService
 
             if ($grandTotal < $paid) {
                 throw new InvalidOrderStateException(
-                    'Cannot lower the order total below the '.number_format($paid / 100, 2).' already paid. Refunds are not yet supported — keep the total at or above the paid amount.'
+                    'Cannot lower the order total below the '.number_format($paid / 100, 2).' already paid. Refund the difference first, then lower the total.'
                 );
             }
 
             $order->update(['subtotal' => $subtotal, 'grand_total' => $grandTotal]);
         }, 3);
+    }
+
+    /**
+     * Decimal-safe line total (cents, integer) from quantity × unit_price.
+     * Uses bcmath with half-up rounding so 0.333 × 333 = 111 not 110.
+     */
+    private function lineTotal(int $unitPrice, int|float|string $quantity): int
+    {
+        $qty = number_format((float) $quantity, 3, '.', '');
+        $raw = bcmul((string) $unitPrice, $qty, 3);
+
+        return (int) bcadd($raw, '0.5', 0);
     }
 
     private function assertPendingEditable(Order $order): void
@@ -773,16 +1043,18 @@ class OrderService
         }
     }
 
-    public function addItem(Order $order, ProductVariant $variant, int $quantity): OrderItem
+    public function addItem(Order $order, ProductVariant $variant, int|float|string $quantity): OrderItem
     {
         $this->assertPendingEditable($order);
 
-        if ($quantity < 1) {
-            throw new \InvalidArgumentException('Quantity must be at least 1.');
+        $qty = number_format((float) $quantity, 3, '.', '');
+
+        if (bccomp($qty, '0', 3) !== 1) {
+            throw new \InvalidArgumentException('Quantity must be at least 0.001.');
         }
 
-        return DB::transaction(function () use ($order, $variant, $quantity): OrderItem {
-            $this->inventory->reserve($variant, $quantity, null, $order);
+        return DB::transaction(function () use ($order, $variant, $qty): OrderItem {
+            $this->inventory->reserve($variant, $qty, null, $order);
 
             $item = $order->items()->create([
                 'tenant_id' => $order->tenant_id,
@@ -790,8 +1062,8 @@ class OrderService
                 'product_name_snapshot' => $variant->product?->name ?? $variant->sku,
                 'variant_sku_snapshot' => $variant->sku,
                 'unit_price' => (int) $variant->price,
-                'quantity' => $quantity,
-                'line_total' => (int) $variant->price * $quantity,
+                'quantity' => $qty,
+                'line_total' => $this->lineTotal((int) $variant->price, $qty),
             ]);
 
             $this->recalculateTotals($order);
@@ -799,26 +1071,28 @@ class OrderService
             $this->logEvent(
                 $order,
                 OrderEventType::ItemAdded,
-                'Added '.$quantity.' × '.$variant->sku.' at '.number_format((int) $variant->price / 100, 2).' each.',
-                metadata: ['product_variant_id' => $variant->id, 'sku' => $variant->sku, 'quantity' => $quantity, 'unit_price' => (int) $variant->price],
+                'Added '.$qty.' × '.$variant->sku.' at '.number_format((int) $variant->price / 100, 2).' each.',
+                metadata: ['product_variant_id' => $variant->id, 'sku' => $variant->sku, 'quantity' => $qty, 'unit_price' => (int) $variant->price],
             );
 
             return $item;
         }, 3);
     }
 
-    public function updateItemQuantity(Order $order, OrderItem $item, int $quantity): void
+    public function updateItemQuantity(Order $order, OrderItem $item, int|float|string $quantity): void
     {
         $this->assertPendingEditable($order);
         $this->assertItemBelongsToOrder($order, $item);
 
-        if ($quantity < 1) {
-            throw new \InvalidArgumentException('Quantity must be at least 1.');
+        $qty = number_format((float) $quantity, 3, '.', '');
+
+        if (bccomp($qty, '0', 3) !== 1) {
+            throw new \InvalidArgumentException('Quantity must be at least 0.001.');
         }
 
-        $beforeQuantity = $item->quantity;
+        $beforeQuantity = (string) $item->quantity;
 
-        if ($quantity === $beforeQuantity) {
+        if (bccomp($qty, $beforeQuantity, 3) === 0) {
             return;
         }
 
@@ -828,18 +1102,18 @@ class OrderService
             throw new InvalidOrderStateException('Item has no variant and cannot be edited.');
         }
 
-        $delta = $quantity - $beforeQuantity;
+        $delta = bcsub($qty, $beforeQuantity, 3);
 
-        DB::transaction(function () use ($order, $item, $variant, $quantity, $delta, $beforeQuantity): void {
-            if ($delta > 0) {
+        DB::transaction(function () use ($order, $item, $variant, $qty, $delta, $beforeQuantity): void {
+            if (bccomp($delta, '0', 3) === 1) {
                 $this->inventory->reserve($variant, $delta, null, $order);
             } else {
-                $this->inventory->release($variant, -$delta, null, $order);
+                $this->inventory->release($variant, bcsub('0', $delta, 3), null, $order);
             }
 
             $item->update([
-                'quantity' => $quantity,
-                'line_total' => $item->unit_price * $quantity,
+                'quantity' => $qty,
+                'line_total' => $this->lineTotal((int) $item->unit_price, $qty),
             ]);
 
             $this->recalculateTotals($order);
@@ -847,8 +1121,8 @@ class OrderService
             $this->logEvent(
                 $order,
                 OrderEventType::ItemUpdated,
-                "Quantity for {$variant->sku} updated from {$beforeQuantity} to {$quantity}.",
-                metadata: ['product_variant_id' => $variant->id, 'sku' => $variant->sku, 'before_quantity' => $beforeQuantity, 'after_quantity' => $quantity],
+                "Quantity for {$variant->sku} updated from {$beforeQuantity} to {$qty}.",
+                metadata: ['product_variant_id' => $variant->id, 'sku' => $variant->sku, 'before_quantity' => $beforeQuantity, 'after_quantity' => $qty],
             );
         }, 3);
     }
@@ -912,7 +1186,7 @@ class OrderService
                 'product_name_snapshot' => $newVariant->product?->name ?? $newVariant->sku,
                 'variant_sku_snapshot' => $newVariant->sku,
                 'unit_price' => (int) $newVariant->price,
-                'line_total' => (int) $newVariant->price * $quantity,
+                'line_total' => $this->lineTotal((int) $newVariant->price, (string) $quantity),
             ]);
 
             $this->recalculateTotals($order);
@@ -952,7 +1226,7 @@ class OrderService
         DB::transaction(function () use ($order, $item, $unitPrice, $reason, $before, $sku): void {
             $item->update([
                 'unit_price' => $unitPrice,
-                'line_total' => $unitPrice * $item->quantity,
+                'line_total' => $this->lineTotal($unitPrice, (string) $item->quantity),
             ]);
 
             $this->recalculateTotals($order);

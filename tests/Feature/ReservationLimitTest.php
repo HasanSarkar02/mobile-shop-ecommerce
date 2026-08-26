@@ -31,7 +31,7 @@ it('allows a guest to create one pending reservation', function () {
 
     expect($order->status)->toBe(OrderStatus::Pending);
     expect($order->active_reservation_key)->toBe('guest:first@example.com');
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
     expect(Order::query()->count())->toBe(1);
 });
 
@@ -45,7 +45,7 @@ it('rejects a second pending reservation for the same identity without reserving
 
     expect(Order::query()->count())->toBe(1);
     expect($secondCart->fresh()->converted_at)->toBeNull();
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
 });
 
 it('no longer counts an order toward the limit once it is cancelled', function () {
@@ -54,7 +54,7 @@ it('no longer counts an order toward the limit once it is cancelled', function (
 
     app(OrderService::class)->updateStatus($firstOrder, OrderStatus::Cancelled);
     expect($firstOrder->fresh()->active_reservation_key)->toBeNull();
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 
     [$secondCart] = createCartWithVariant();
     $secondOrder = app(OrderService::class)->createFromCart($secondCart, checkoutOrderData('retry@example.com'));
@@ -73,7 +73,7 @@ it('no longer counts an expired reservation and releases it during the next chec
     expect($secondOrder->status)->toBe(OrderStatus::Pending);
     expect($firstOrder->fresh()->status)->toBe(OrderStatus::Cancelled);
     expect($firstOrder->fresh()->active_reservation_key)->toBeNull();
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 });
 
 it('no longer counts a confirmed order toward the limit', function () {
@@ -82,7 +82,7 @@ it('no longer counts a confirmed order toward the limit', function () {
 
     app(OrderService::class)->updateStatus($firstOrder, OrderStatus::Confirmed);
     expect($firstOrder->fresh()->active_reservation_key)->toBeNull();
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 
     [$secondCart] = createCartWithVariant();
     $secondOrder = app(OrderService::class)->createFromCart($secondCart, checkoutOrderData('paid@example.com'));
@@ -108,7 +108,7 @@ it('blocks a concurrent same-identity checkout via the unique reservation key', 
         ->toThrow(ReservationLimitExceededException::class);
 
     expect(Order::query()->where('guest_email', 'unique@example.com')->count())->toBe(0);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
     expect($winner->fresh()->status)->toBe(OrderStatus::Pending);
 });
 
@@ -134,7 +134,7 @@ it('keeps a normal single-cart checkout working end to end', function () {
 
     expect($order->items)->toHaveCount(1);
     expect($order->status)->toBe(OrderStatus::Pending);
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(2);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('2.000');
     expect($order->fulfillments)->toHaveCount(1);
 });
 
@@ -168,5 +168,5 @@ it('keeps the P0-B expiration release behavior correct', function () {
 
     expect($order->fresh()->status)->toBe(OrderStatus::Cancelled);
     expect($order->fresh()->active_reservation_key)->toBeNull();
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 });

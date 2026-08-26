@@ -33,14 +33,22 @@
                                 wire:target="removeItem({{ $item->id }})"
                                 class="text-xs text-red-500 hover:underline mt-1">Remove</button>
                         </div>
+                        @php
+                            $step = $item->variant->product->sell_by_unit ?? '1.000';
+                            $stepStr = number_format((float) $step, 3, '.', '');
+                            $decQty = bcsub((string) $item->quantity, $stepStr, 3);
+                            $incQty = bcadd((string) $item->quantity, $stepStr, 3);
+                        @endphp
                         <div
                             class="flex items-center border border-gray-200 dark:border-gray-800 rounded-xl flex-shrink-0">
-                            <button wire:click="updateQuantity({{ $item->id }}, {{ $item->quantity - 1 }})"
-                                @disabled($item->quantity <= 1)
+                            <button wire:click="updateQuantity({{ $item->id }}, '{{ $decQty }}')"
+                                @disabled(bccomp((string) $item->quantity, $stepStr, 3) <= 0)
                                 class="w-8 h-9 flex items-center justify-center text-base disabled:opacity-30"
                                 aria-label="Decrease quantity">−</button>
-                            <span class="w-8 text-center text-sm">{{ $item->quantity }}</span>
-                            <button wire:click="updateQuantity({{ $item->id }}, {{ $item->quantity + 1 }})"
+                            <input type="number" value="{{ $item->quantity }}" step="{{ $stepStr }}" min="{{ $stepStr }}"
+                                wire:change="updateQuantity({{ $item->id }}, $event.target.value)"
+                                class="w-16 text-center text-sm bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                            <button wire:click="updateQuantity({{ $item->id }}, '{{ $incQty }}')"
                                 class="w-8 h-9 flex items-center justify-center text-base"
                                 aria-label="Increase quantity">+</button>
                         </div>

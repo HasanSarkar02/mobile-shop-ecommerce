@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderStatus;
 use App\Exceptions\InsufficientStockException;
 use App\Exceptions\InvalidOrderStateException;
@@ -12,6 +13,7 @@ use App\Services\InventoryService;
 use App\Services\OrderService;
 use App\Support\DatabaseLockRetry;
 use App\Support\Tenancy\Tenancy;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -59,8 +61,8 @@ it('completes two multi-item carts with opposite variant order without deadlock'
 
     expect($orderA->status)->toBe(OrderStatus::Pending);
     expect($orderB->status)->toBe(OrderStatus::Pending);
-    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe(2);
-    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe(2);
+    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe('2.000');
+    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe('2.000');
 });
 
 it('locks stock rows in ascending variant order regardless of input order', function () {
@@ -81,15 +83,15 @@ it('confirms and restocks a reverse-variant-order order deterministically', func
 
     app(OrderService::class)->updateStatus($order, OrderStatus::Confirmed);
 
-    expect($v1->stockItems()->first()->fresh()->quantity)->toBe(9);
-    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
-    expect($v2->stockItems()->first()->fresh()->quantity)->toBe(9);
-    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($v1->stockItems()->first()->fresh()->quantity)->toBe('9.000');
+    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
+    expect($v2->stockItems()->first()->fresh()->quantity)->toBe('9.000');
+    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 
     app(OrderService::class)->updateStatus($order, OrderStatus::Cancelled);
 
-    expect($v1->stockItems()->first()->fresh()->quantity)->toBe(10);
-    expect($v2->stockItems()->first()->fresh()->quantity)->toBe(10);
+    expect($v1->stockItems()->first()->fresh()->quantity)->toBe('10.000');
+    expect($v2->stockItems()->first()->fresh()->quantity)->toBe('10.000');
 });
 
 it('releases reservations of a reverse-variant-order pending order deterministically', function () {
@@ -100,10 +102,10 @@ it('releases reservations of a reverse-variant-order pending order deterministic
 
     app(OrderService::class)->updateStatus($order, OrderStatus::Cancelled);
 
-    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
-    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
-    expect($v1->stockItems()->first()->fresh()->quantity)->toBe(10);
-    expect($v2->stockItems()->first()->fresh()->quantity)->toBe(10);
+    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
+    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
+    expect($v1->stockItems()->first()->fresh()->quantity)->toBe('10.000');
+    expect($v2->stockItems()->first()->fresh()->quantity)->toBe('10.000');
 });
 
 it('changes variants in both directions deterministically', function () {
@@ -118,8 +120,8 @@ it('changes variants in both directions deterministically', function () {
 
     expect($order1->items->first()->fresh()->product_variant_id)->toBe($v1->id);
     expect($order2->items->first()->fresh()->product_variant_id)->toBe($v2->id);
-    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
-    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
+    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
+    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
 });
 
 it('keeps exact serial-to-order-item attribution on confirm and cancellation return', function () {
@@ -158,7 +160,7 @@ it('reserves the same variant across carts without overselling', function () {
     expect(fn () => app(OrderService::class)->createFromCart(p0dCartForVariants([$variant]), p0dOrderData('stock-c@example.com')))
         ->toThrow(InsufficientStockException::class);
 
-    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe(2);
+    expect($variant->stockItems()->first()->fresh()->reserved_quantity)->toBe('2.000');
 });
 
 it('retries a synthetic deadlock and succeeds on the next attempt', function () {
@@ -298,7 +300,7 @@ it('keeps tenant isolation while locking stock deterministically', function () {
     $order = app(OrderService::class)->createFromCart(p0dCartForVariants([$v1]), p0dOrderData('iso@example.com'));
 
     expect($order->status)->toBe(OrderStatus::Pending);
-    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
+    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
 
     $otherTenant = Tenant::factory()->create();
     app(Tenancy::class)->set($otherTenant);
@@ -307,7 +309,44 @@ it('keeps tenant isolation while locking stock deterministically', function () {
     $otherOrder = app(OrderService::class)->createFromCart(p0dCartForVariants([$v2]), p0dOrderData('iso@example.com'));
 
     expect($otherOrder->status)->toBe(OrderStatus::Pending);
-    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe(1);
+    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe('1.000');
+});
+
+it('locks stock rows in ascending variant order when a refund returns goods', function () {
+    $v1 = p0dStockedVariant();
+    $v2 = p0dStockedVariant();
+
+    // The cart is built in descending variant order on purpose. A refund-restock is
+    // a multi-row inventory write like a confirm or a cancellation, so it has to
+    // take stock_items locks in the same ascending order as every other path — the
+    // one thing that stops it deadlocking against them.
+    $orders = app(OrderService::class);
+    $order = $orders->createFromCart(p0dCartForVariants([$v2, $v1]), p0dOrderData('refund-lock@example.com'));
+
+    $orders->updateStatus($order, OrderStatus::Confirmed);
+    $orders->updateStatus($order->fresh(), OrderStatus::Processing);
+    $orders->updateStatus($order->fresh(), OrderStatus::Shipped);
+    $orders->updateStatus($order->fresh(), OrderStatus::Delivered);
+
+    $order = $order->fresh();
+    $orders->recordPayment($order, null, (int) $order->grand_total, OrderPaymentStatus::Paid, 'refund-lock-paid');
+
+    $lockBindings = [];
+    DB::listen(function (QueryExecuted $query) use (&$lockBindings) {
+        if (str_contains($query->sql, 'stock_items') && str_contains($query->sql, 'for update')) {
+            $lockBindings[] = $query->bindings;
+        }
+    });
+
+    $orders->refund($order->fresh(), (int) $order->grand_total, 'Customer returned both items.', restock: true);
+
+    expect($lockBindings)->not->toBeEmpty();
+    // whereIn('product_variant_id', ...) binds before the location, so the leading
+    // bindings are the variant ids in the order the lock was actually taken.
+    expect(array_map('intval', array_slice($lockBindings[0], 0, 2)))->toBe([$v1->id, $v2->id]);
+
+    expect($v1->stockItems()->first()->fresh()->quantity)->toBe('10.000');
+    expect($v2->stockItems()->first()->fresh()->quantity)->toBe('10.000');
 });
 
 it('keeps the P0-A stale-price rejection intact for multi-variant checkouts', function () {
@@ -323,6 +362,6 @@ it('keeps the P0-A stale-price rejection intact for multi-variant checkouts', fu
 
     expect(Order::query()->count())->toBe(0);
     expect($cart->fresh()->converted_at)->toBeNull();
-    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
-    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe(0);
+    expect($v1->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
+    expect($v2->stockItems()->first()->fresh()->reserved_quantity)->toBe('0.000');
 });

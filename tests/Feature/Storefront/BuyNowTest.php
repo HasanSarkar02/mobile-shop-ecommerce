@@ -39,7 +39,7 @@ it('adds the variant to the cart and redirects straight to checkout', function (
     $item = CartItem::query()->first();
     expect($item)->not->toBeNull();
     expect($item->product_variant_id)->toBe($variant->id);
-    expect($item->quantity)->toBe(2);
+    expect((string) $item->quantity)->toBe('2.000');
 });
 
 it('requires a concrete product_variant_id', function (): void {
@@ -146,7 +146,7 @@ it('respects the requested quantity', function (): void {
         ])
         ->assertRedirect($base.'/checkout');
 
-    expect(CartItem::query()->first()->quantity)->toBe(3);
+    expect((string) CartItem::query()->first()->quantity)->toBe('3.000');
 });
 
 it('rejects a zero quantity exactly like add to cart', function (): void {

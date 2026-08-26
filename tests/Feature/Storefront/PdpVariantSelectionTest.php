@@ -33,7 +33,7 @@ it('requires explicit option selection on a multi-active-variant product', funct
 
     // No auto-resolution: the initial variant id is null for multi-option
     // products and the component is told selection is required.
-    expect($html)->toContain('null, false, false, [], true)');
+    expect($html)->toContain('null, false, false, [], true,');
     expect($html)->toContain('requiresSelection');
     // The old "first variant as default" fallback is gone.
     expect($html)->not->toContain('?? this.variants[0] ?? null');
@@ -86,7 +86,7 @@ it('auto-resolves a single active variant and keeps purchase enabled', function 
     $html = $this->get($base.'/product/'.$slug)->assertOk()->getContent();
 
     // Single active variant -> initial id passed, selection not required.
-    expect($html)->toContain($variant->id.', false, false, [], false)');
+    expect($html)->toContain($variant->id.', false, false, [], false,');
     expect($html)->toContain('activeVariants().find(v => v.id === this.currentVariantId) ?? null');
 });
 
@@ -97,7 +97,7 @@ it('auto-resolves the single active variant even when other variants are inactiv
 
     $html = $this->get($base.'/product/'.$slug)->assertOk()->getContent();
 
-    expect($html)->toContain($variant->id.', false, false, [], false)');
+    expect($html)->toContain($variant->id.', false, false, [], false,');
     expect($html)->toContain('dimensionOptions');
 });
 
@@ -151,6 +151,6 @@ it('keeps a preorder single variant auto-resolved and purchasable', function ():
 
     $html = $this->get($base.'/product/'.$slug)->assertOk()->getContent();
 
-    expect($html)->toContain($variant->id.', false, false, [], false)');
+    expect($html)->toContain($variant->id.', false, false, [], false,');
     expect($html)->toContain('Pre-Order Now');
 });

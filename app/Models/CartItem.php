@@ -17,7 +17,7 @@ class CartItem extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
+            'quantity' => 'decimal:3',
             'unit_price' => 'integer',
         ];
     }
@@ -34,6 +34,9 @@ class CartItem extends Model
 
     public function lineTotal(): int
     {
-        return $this->unit_price * $this->quantity;
+        // Decimal quantity * integer cents → cents, rounded half-up via bcmath.
+        $raw = bcmul((string) $this->quantity, (string) $this->unit_price, 3);
+
+        return (int) bcadd($raw, '0.5', 0);
     }
 }

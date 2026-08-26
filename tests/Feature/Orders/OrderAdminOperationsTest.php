@@ -87,7 +87,7 @@ describe('ORDER 1A — line item editing and totals', function (): void {
 
         $fresh = $order->fresh()->load('items');
         expect($fresh->items)->toHaveCount(2);
-        expect(StockItem::query()->where('product_variant_id', $variantB->id)->value('reserved_quantity'))->toBe(3);
+        expect(StockItem::query()->where('product_variant_id', $variantB->id)->value('reserved_quantity'))->toBe('3.000');
 
         $expectedSubtotal = ($variantA->price * 2) + ($variantB->price * 3);
         expect($fresh->subtotal)->toBe($expectedSubtotal);
@@ -104,7 +104,7 @@ describe('ORDER 1A — line item editing and totals', function (): void {
 
         $fresh = $order->fresh();
         expect($fresh->items)->toHaveCount(0);
-        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('reserved_quantity'))->toBe(0);
+        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('reserved_quantity'))->toBe('0.000');
         expect($fresh->subtotal)->toBe(0);
         expect($fresh->grand_total)->toBe(0);
 
@@ -116,11 +116,11 @@ describe('ORDER 1A — line item editing and totals', function (): void {
         $orders = app(OrderService::class);
 
         $orders->updateItemQuantity($order, $order->items()->first(), 5);
-        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('reserved_quantity'))->toBe(5);
+        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('reserved_quantity'))->toBe('5.000');
         expect($order->fresh()->subtotal)->toBe($variant->price * 5);
 
         $orders->updateItemQuantity($order, $order->items()->first(), 1);
-        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('reserved_quantity'))->toBe(1);
+        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('reserved_quantity'))->toBe('1.000');
         expect($order->fresh()->subtotal)->toBe($variant->price * 1);
     });
 
@@ -132,7 +132,7 @@ describe('ORDER 1A — line item editing and totals', function (): void {
             ->toThrow(InsufficientStockException::class);
 
         $fresh = $order->fresh();
-        expect($fresh->items()->first()->quantity)->toBe(1);
+        expect($fresh->items()->first()->quantity)->toBe('1.000');
         expect($fresh->subtotal)->toBe($fresh->items()->first()->line_total);
     });
 
@@ -150,8 +150,8 @@ describe('ORDER 1A — line item editing and totals', function (): void {
         expect($item->unit_price)->toBe($variantB->price);
         expect($item->line_total)->toBe($variantB->price * 2);
 
-        expect(StockItem::query()->where('product_variant_id', $variantA->id)->value('reserved_quantity'))->toBe(0);
-        expect(StockItem::query()->where('product_variant_id', $variantB->id)->value('reserved_quantity'))->toBe(2);
+        expect(StockItem::query()->where('product_variant_id', $variantA->id)->value('reserved_quantity'))->toBe('0.000');
+        expect(StockItem::query()->where('product_variant_id', $variantB->id)->value('reserved_quantity'))->toBe('2.000');
     });
 
     it('rolls back a variant swap when the new variant lacks stock', function (): void {
@@ -163,7 +163,7 @@ describe('ORDER 1A — line item editing and totals', function (): void {
 
         $fresh = $order->fresh();
         expect($fresh->items()->first()->product_variant_id)->toBe($variantA->id);
-        expect(StockItem::query()->where('product_variant_id', $variantA->id)->value('reserved_quantity'))->toBe(1);
+        expect(StockItem::query()->where('product_variant_id', $variantA->id)->value('reserved_quantity'))->toBe('1.000');
     });
 
     it('applies a unit price override only with a reason and logs before/after', function (): void {
@@ -382,7 +382,7 @@ describe('ORDER 1C — cancellation, restock, and serial safety', function (): v
         app(OrderService::class)->cancelOrder($order, 'Customer request');
 
         expect($order->fresh()->status)->toBe(OrderStatus::Cancelled);
-        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('reserved_quantity'))->toBe(0);
+        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('reserved_quantity'))->toBe('0.000');
     });
 
     it('restocks committed stock when a confirmed order is cancelled', function (): void {
@@ -391,14 +391,14 @@ describe('ORDER 1C — cancellation, restock, and serial safety', function (): v
         $orders->updateStatus($order, OrderStatus::Confirmed);
 
         $committed = StockItem::query()->where('product_variant_id', $variant->id)->first();
-        expect($committed->quantity)->toBe(8);
-        expect($committed->reserved_quantity)->toBe(0);
+        expect($committed->quantity)->toBe('8.000');
+        expect($committed->reserved_quantity)->toBe('0.000');
 
         $orders->cancelOrder($order, 'Stock issue');
 
         $after = StockItem::query()->where('product_variant_id', $variant->id)->first();
-        expect($after->quantity)->toBe(10);
-        expect($after->reserved_quantity)->toBe(0);
+        expect($after->quantity)->toBe('10.000');
+        expect($after->reserved_quantity)->toBe('0.000');
         expect(StockMovement::query()->where('product_variant_id', $variant->id)->where('type', 'return')->count())->toBe(1);
     });
 
@@ -438,7 +438,7 @@ describe('ORDER 1C — cancellation, restock, and serial safety', function (): v
 
         $fresh = $order->fresh();
         expect($fresh->status)->toBe(OrderStatus::Cancelled);
-        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('quantity'))->toBe(10);
+        expect(StockItem::query()->where('product_variant_id', $variant->id)->value('quantity'))->toBe('10.000');
         expect(StockMovement::query()->where('product_variant_id', $variant->id)->where('type', 'return')->count())->toBe(1);
     });
 

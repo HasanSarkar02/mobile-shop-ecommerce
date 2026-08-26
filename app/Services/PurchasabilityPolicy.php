@@ -21,16 +21,16 @@ final class PurchasabilityPolicy
      * @param  bool  $nonStock  fulfillment strategy is anything other than Stock (pre-order/dropship)
      * @param  bool  $serialized  inventory type is Serialized
      * @param  bool  $backorderAllowed  stock strategy with backorders permitted
-     * @param  int  $availableQuantity  tracked-stock quantity (0 when unknown/missing)
+     * @param  int|string  $availableQuantity  tracked-stock quantity (0 when unknown/missing) — decimal string for measured goods
      */
     public function evaluate(
         bool $discontinued,
         bool $nonStock,
         bool $serialized,
         bool $backorderAllowed,
-        int $availableQuantity,
+        int|string $availableQuantity,
         int $serialsAvailable,
-        int $quantity = 1,
+        int|string $quantity = 1,
     ): bool {
         if ($discontinued) {
             return false;
@@ -41,13 +41,15 @@ final class PurchasabilityPolicy
         }
 
         if ($serialized) {
-            return $serialsAvailable >= $quantity;
+            return $serialsAvailable >= (int) $quantity;
         }
 
         if ($backorderAllowed) {
             return true;
         }
 
-        return $availableQuantity >= $quantity;
+        // Decimal-safe comparison at scale 3 (Phase C-3): bccomp handles both
+        // whole-unit strings ("5.000") and integer callers ("5").
+        return bccomp((string) $availableQuantity, (string) $quantity, 3) !== -1;
     }
 }

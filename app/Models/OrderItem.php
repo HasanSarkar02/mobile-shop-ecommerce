@@ -23,7 +23,7 @@ class OrderItem extends Model
     {
         return [
             'unit_price' => 'integer',
-            'quantity' => 'integer',
+            'quantity' => 'decimal:3',
             'line_total' => 'integer',
             'expected_available_at' => 'datetime',
         ];

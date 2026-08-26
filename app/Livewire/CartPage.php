@@ -14,7 +14,7 @@ use Livewire\Component;
 #[Layout('storefront.layout')]
 class CartPage extends Component
 {
-    public function updateQuantity(int $itemId, int $quantity, CartService $carts): void
+    public function updateQuantity(int $itemId, int|float|string $quantity, CartService $carts): void
     {
         $item = $this->authorizedItem($itemId);
         $carts->updateQuantity($item, $quantity);
