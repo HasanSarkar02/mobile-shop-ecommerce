@@ -53,6 +53,13 @@ class ProductCardData
             return collect();
         }
 
+        // Ensure UOM is available for grocery cards without N+1 (Phase C).
+        if (! $products->first()->relationLoaded('uom')) {
+            foreach ($products as $product) {
+                $product->loadMissing('uom');
+            }
+        }
+
         $states = $this->resolveStates($products);
         $facts = $this->inventory->purchasabilityFacts($products->flatMap->variants->values());
         $wishlistedIds = $wishlistedProductIds ?? collect();

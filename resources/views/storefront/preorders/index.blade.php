@@ -4,7 +4,7 @@
 @section('content')
     @include('storefront.partials.seo-meta', ['robots' => 'index,follow'])
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="{{ \App\Support\IndustryConfig::currentGet('ui.container_class', 'max-w-7xl mx-auto') }} px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex items-center gap-3 mb-6">
             <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-bold">{{ __('PRE-ORDER') }}</span>
             <h1 class="text-2xl font-bold">{{ __('Pre-Orders') }}</h1>
@@ -26,9 +26,9 @@
                 </div>
             </div>
         @else
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-4">
                 @foreach ($cards as $card)
-                    @include('storefront.partials.product-card', ['card' => $card])
+                    <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                 @endforeach
             </div>
             <div class="mt-8">{{ $products->links() }}</div>

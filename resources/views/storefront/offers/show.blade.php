@@ -8,7 +8,7 @@
         'robots' => 'index,follow',
     ])
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 sm:space-y-10">
+    <div class="{{ \App\Support\IndustryConfig::currentGet('ui.container_class', 'max-w-7xl mx-auto') }} px-4 sm:px-6 lg:px-8 py-8 space-y-8 sm:space-y-10">
         <a href="{{ route('storefront.offers.index') }}"
             class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition hover:text-[var(--brand)] dark:text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
@@ -79,9 +79,9 @@
                     </p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-3 sm:gap-4">
                     @foreach ($cards as $card)
-                        @include('storefront.partials.product-card', ['card' => $card])
+                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                     @endforeach
                 </div>
             </section>
