@@ -7,7 +7,7 @@
      init string is asserted by ProductCardWishlistTest — do not reformat). --}}
 <button type="button"
     x-init="$store.wishlist.seed({{ $id }}, {{ $wishlisted ? 'true' : 'false' }})"
-    @click="$store.wishlist.toggle({{ $id }})"
+    @click.prevent="$store.wishlist.toggle({{ $id }})"
     :disabled="$store.wishlist.pending[{{ $id }}]"
     :aria-busy="$store.wishlist.pending[{{ $id }}] ? 'true' : 'false'"
     :aria-pressed="$store.wishlist.isWishlisted({{ $id }}) ? 'true' : 'false'"
