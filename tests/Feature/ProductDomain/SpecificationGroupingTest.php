@@ -50,11 +50,15 @@ it('orders groups by group_sort_order, attributes by sort_order and renders unit
 
     $html = specGet($translation->slug, $tenant)->assertOk()->getContent();
 
-    expect(strpos($html, 'Display'))->toBeLessThan(strpos($html, 'Physical'));
-    expect(strpos($html, 'Physical'))->toBeLessThan(strpos($html, 'General'));
+    // Group headings are rendered as <h3>Display</h3> etc.; extract them in
+    // document order to avoid matching the same words in the header nav.
+    preg_match_all('/<h3[^>]*>\s*(Display|Physical|General)\s*<\/h3>/', $html, $matches);
+    expect($matches[1])->toBe(['Display', 'Physical', 'General']);
 
     // Ordering inside the Display group: Resolution (sort_order 0) before Screen Size (1).
-    expect(strpos($html, 'Resolution'))->toBeLessThan(strpos($html, 'Screen Size'));
+    preg_match_all('/<dt[^>]*>\s*(Resolution|Screen Size)\s*<\/dt>/', $html, $attrMatches);
+    expect($attrMatches[1][0])->toBe('Resolution');
+    expect($attrMatches[1][1])->toBe('Screen Size');
 
     // Units rendered next to the value.
     expect($html)->toMatch('/6\.7\s*<span[^>]*>inch<\/span>/');
