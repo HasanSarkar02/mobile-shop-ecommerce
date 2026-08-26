@@ -117,7 +117,24 @@ class ProductController extends Controller
             $dims = [];
             $meta = [];
 
-            // Native phone/electronics columns: source of truth when populated.
+            // ARCHITECTURE (PLAN #48): native phone columns vs EAV precedence.
+            //
+            // The three surviving native columns below (color/storage_gb/
+            // region) are loaded FIRST and unconditionally; when the EAV loop
+            // runs afterwards it uses `$dims[$code] ??=`, so an EAV attribute
+            // whose code collides with a populated native column can NEVER
+            // overwrite the native value — native always wins.
+            //
+            // Why: legacy phone-style variants carry their dimensions in these
+            // columns only, while newer tenants express the same concepts
+            // through variant-defining attributes. If both exist on one
+            // variant, the native value is the historical record of what the
+            // storefront has always shown; silently letting an EAV row win
+            // would change live SKUs' displayed dimensions.
+            //
+            // ram_gb and sim_type are DEAD legacy columns (locked decision):
+            // never loaded into $dims and never wired anywhere on the
+            // storefront. Do not add them here.
             if ($variant->color !== null) {
                 $dims['color'] = (string) $variant->color;
                 $meta['color'] ??= ['code' => 'color', 'label' => 'Color', 'suffix' => ''];
@@ -132,6 +149,9 @@ class ProductController extends Controller
             }
 
             // Generic variant-defining attributes (Size, Weight, Shade, ...).
+            // `??=` enforces native-over-EAV precedence — see the block above:
+            // a colliding attribute code yields to the already-populated
+            // native dimension instead of replacing it.
             foreach ($variant->attributeValues as $value) {
                 if ($value->product_variant_id === null
                     || $value->attributeDefinition === null
