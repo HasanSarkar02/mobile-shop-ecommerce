@@ -37,9 +37,9 @@
     <x-storefront.wishlist-button :id="$card['id']" :wishlisted="$card['wishlisted']" />
 
     <a href="{{ $card['url'] }}" class="flex flex-col">
-        <div class="relative flex h-32 sm:h-40 w-full items-center justify-center overflow-hidden bg-gray-50 pt-2 dark:bg-gray-800/50 {{ $outOfStock ? 'opacity-60' : '' }}">
+        <div class="relative isolate flex h-32 sm:h-40 w-full items-center justify-center overflow-hidden bg-white pt-2 dark:bg-white {{ $outOfStock ? 'opacity-60 grayscale' : '' }}">
             @if ($card['has_image'])
-                <img src="{{ $card['image'] }}" alt="{{ $card['image_alt'] }}" loading="lazy" class="h-32 sm:h-40 w-full object-contain mix-blend-multiply transition group-hover:scale-[1.02]">
+                <img src="{{ $card['image'] }}" alt="{{ $card['image_alt'] }}" loading="lazy" class="h-32 sm:h-40 w-full object-contain mix-blend-multiply dark:mix-blend-normal transition group-hover:scale-[1.02]">
             @else
                 <span class="text-xs text-gray-400">{{ __('No image') }}</span>
             @endif
