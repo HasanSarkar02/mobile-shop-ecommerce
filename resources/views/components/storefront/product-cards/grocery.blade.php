@@ -83,7 +83,7 @@
         $sellByUnitFloat = is_numeric($product?->sell_by_unit ?? null) ? (float) $product->sell_by_unit : 1.0;
         $sellByUnitFloat = $sellByUnitFloat > 0 ? $sellByUnitFloat : 1.0;
     @endphp
-    <div class="mt-auto p-2 pt-0" x-data="{ variantId: {{ $variantId !== null ? $variantId : 'null' }}, quantity: {{ $sellByUnitFloat }} }">
+    <div class="mt-auto p-2 pt-0" x-data="{ variantId: {{ $variantId !== null ? $variantId : 'null' }}, quantity: {{ $sellByUnitFloat }} }" x-init="if(variantId && $store.cart) $store.cart.pending[variantId] = false">
         @if ($cta && $cta['type'] === 'add_to_cart')
             <button type="button" @click.prevent="console.log('Adding variant:', variantId, 'Qty:', quantity); if(!variantId){ console.error('Cart add failed: variantId is null', $el); $store.cart.toast('Variant not available', 'error'); return; } $store.cart.add(variantId, quantity, '{{ route('storefront.cart.store') }}')" :disabled="variantId && $store.cart.pending[variantId]"
                 class="flex h-8 w-full cursor-pointer items-center justify-center gap-1 rounded-full bg-green-600 px-1 py-1.5 text-[11px] sm:text-xs font-semibold text-white whitespace-nowrap transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600 disabled:cursor-wait">
