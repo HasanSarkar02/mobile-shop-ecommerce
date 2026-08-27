@@ -37,16 +37,16 @@
     <x-storefront.wishlist-button :id="$card['id']" :wishlisted="$card['wishlisted']" />
 
     <a href="{{ $card['url'] }}" class="flex flex-col">
-        <div class="relative flex h-32 sm:h-36 items-center justify-center overflow-hidden bg-gray-50 p-2 dark:bg-gray-800/50 {{ $outOfStock ? 'opacity-60' : '' }}">
+        <div class="relative flex h-32 sm:h-40 w-full items-center justify-center overflow-hidden bg-gray-50 pt-2 dark:bg-gray-800/50 {{ $outOfStock ? 'opacity-60' : '' }}">
             @if ($card['has_image'])
-                <img src="{{ $card['image'] }}" alt="{{ $card['image_alt'] }}" loading="lazy" class="h-full w-full object-contain p-1 transition group-hover:scale-[1.02]">
+                <img src="{{ $card['image'] }}" alt="{{ $card['image_alt'] }}" loading="lazy" class="h-32 sm:h-40 w-full object-contain mix-blend-multiply transition group-hover:scale-[1.02]">
             @else
                 <span class="text-xs text-gray-400">{{ __('No image') }}</span>
             @endif
         </div>
 
-        <div class="flex flex-col p-2.5 pt-2">
-            <h3 class="line-clamp-2 min-h-[2.2rem] text-[13px] font-medium leading-snug text-gray-900 dark:text-gray-100">
+        <div class="flex flex-col p-2">
+            <h3 class="line-clamp-2 min-h-[2.2rem] text-[13px] font-medium leading-tight text-gray-900 dark:text-gray-100">
                 {{ $card['name'] }}
             </h3>
 
@@ -56,7 +56,7 @@
                 @if ($variant)
                     <span class="text-[15px] font-bold leading-none text-red-600">{{ money_without_trailing_zeros((int) $variant['price']) }}</span>
                     @if ($variant['compare_at_price'] && $variant['compare_at_price'] > $variant['price'])
-                        <span class="text-xs leading-none text-gray-400 line-through">{{ money_without_trailing_zeros((int) $variant['compare_at_price']) }}</span>
+                        <span class="text-[10px] leading-none text-gray-400 line-through">{{ money_without_trailing_zeros((int) $variant['compare_at_price']) }}</span>
                     @endif
                 @else
                     <span class="text-xs leading-none text-gray-400">{{ __('Price unavailable') }}</span>
@@ -83,13 +83,13 @@
         $sellByUnitFloat = is_numeric($product?->sell_by_unit ?? null) ? (float) $product->sell_by_unit : 1.0;
         $sellByUnitFloat = $sellByUnitFloat > 0 ? $sellByUnitFloat : 1.0;
     @endphp
-    <div class="mt-auto p-2.5 pt-0" x-data="{ variantId: {{ $variantId !== null ? $variantId : 'null' }}, quantity: {{ $sellByUnitFloat }} }">
+    <div class="mt-auto p-2 pt-0" x-data="{ variantId: {{ $variantId !== null ? $variantId : 'null' }}, quantity: {{ $sellByUnitFloat }} }">
         @if ($cta && $cta['type'] === 'add_to_cart')
             <button type="button" @click="console.log('Adding variant:', variantId, 'Qty:', quantity); if(!variantId){ console.error('Cart add failed: variantId is null', $el); $store.cart.toast('Variant not available', 'error'); return; } $store.cart.add(variantId, quantity)" :disabled="variantId && $store.cart.pending[variantId]"
-                class="flex h-8 w-full items-center justify-center gap-1.5 rounded-full bg-green-600 px-3 text-xs font-semibold text-white transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600 disabled:cursor-not-allowed">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                <span x-show="!variantId || !$store.cart.pending[variantId]">{{ __('Add to Cart') }}</span>
-                <span x-show="variantId && $store.cart.pending[variantId]" x-cloak>{{ __('Adding…') }}</span>
+                class="flex h-8 w-full items-center justify-center gap-1 rounded-full bg-green-600 px-1 py-1.5 text-[11px] sm:text-xs font-semibold text-white whitespace-nowrap transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600 disabled:cursor-not-allowed">
+                <svg class="hidden h-4 w-4 shrink-0 sm:inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span x-show="!variantId || !$store.cart.pending[variantId]" class="whitespace-nowrap">{{ __('Add to Cart') }}</span>
+                <span x-show="variantId && $store.cart.pending[variantId]" x-cloak class="whitespace-nowrap">{{ __('Adding…') }}</span>
             </button>
         @elseif ($cta && $cta['type'] === 'select_options')
             <x-storefront.variant-modal :card="$card" />
