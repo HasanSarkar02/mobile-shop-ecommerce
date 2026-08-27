@@ -83,10 +83,10 @@
         $sellByUnitFloat = is_numeric($product?->sell_by_unit ?? null) ? (float) $product->sell_by_unit : 1.0;
         $sellByUnitFloat = $sellByUnitFloat > 0 ? $sellByUnitFloat : 1.0;
     @endphp
-    <div class="mt-auto p-2.5 pt-0" x-data="{ variantId: {{ $variantId ?? 'null' }}, quantity: {{ $sellByUnitFloat }} }">
+    <div class="mt-auto p-2.5 pt-0" x-data="{ variantId: {{ $variantId !== null ? $variantId : 'null' }}, quantity: {{ $sellByUnitFloat }} }">
         @if ($cta && $cta['type'] === 'add_to_cart')
             <button type="button" @click="console.log('Adding variant:', variantId, 'Qty:', quantity); if(!variantId){ console.error('Cart add failed: variantId is null', $el); $store.cart.toast('Variant not available', 'error'); return; } $store.cart.add(variantId, quantity)" :disabled="variantId && $store.cart.pending[variantId]"
-                class="flex h-8 w-full items-center justify-center gap-1.5 rounded-full bg-[var(--brand)] px-3 text-xs font-semibold text-white transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--brand)] disabled:opacity-60">
+                class="flex h-8 w-full items-center justify-center gap-1.5 rounded-full bg-green-600 px-3 text-xs font-semibold text-white transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600 disabled:cursor-not-allowed">
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 <span x-show="!variantId || !$store.cart.pending[variantId]">{{ __('Add to Cart') }}</span>
                 <span x-show="variantId && $store.cart.pending[variantId]" x-cloak>{{ __('Adding…') }}</span>

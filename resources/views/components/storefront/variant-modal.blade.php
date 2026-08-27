@@ -10,22 +10,30 @@
     $dimensions = $card['modal_dimensions'] ?? [];
     $productName = $card['name'] ?? '';
     $productUrl = $card['url'] ?? '#';
+    $product = $card['product'] ?? null;
+    $sellByUnit = is_numeric($product?->sell_by_unit ?? null) ? (float) $product->sell_by_unit : 1.0;
+    $sellByUnit = $sellByUnit > 0 ? $sellByUnit : 1.0;
 @endphp
 <div x-data="{
         open: false,
         ...variantSelectionState(@js($variants), @js($dimensions), true, null),
         cartLoading: false,
+        quantity: {{ $sellByUnit }},
+        sellByUnit: {{ $sellByUnit }},
         close() {
             this.open = false;
             this.selected = {};
             this.currentVariantId = null;
             this.unavailable = false;
+            this.quantity = this.sellByUnit;
         },
         addToCart() {
             const v = this.current();
             if (!v || !v.purchasable) return;
             this.cartLoading = true;
-            this.$store.cart.add(v.id).then(() => {
+            const qty = Number(this.quantity) || this.sellByUnit;
+            console.log('Adding variant:', v.id, 'Qty:', qty);
+            this.$store.cart.add(v.id, qty).then(() => {
                 // Close only after the store reports success (pending cleared)
                 this.close();
             }).finally(() => {
@@ -35,12 +43,11 @@
     }"
     class="contents"
 >
-    {{-- Trigger: visually identical to the former "Select Options" link, but
-         opens the modal when JS is available. No-JS fallback is the link to PDP
-         inside the modal footer. --}}
+    {{-- Trigger: now labeled Add to Cart for consistent UX, still opens modal for multi-variant --}}
     <button type="button" @click="open = true"
-        class="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-gray-300 px-3 text-xs font-semibold text-gray-800 transition hover:border-[var(--brand)] hover:text-[var(--brand)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--brand)] dark:border-gray-700 dark:text-gray-100 dark:focus-visible:ring-offset-gray-900 sm:text-sm">
-        Select Options
+        class="flex h-8 w-full items-center justify-center gap-1.5 rounded-full bg-green-600 px-3 text-xs font-semibold text-white transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600 disabled:cursor-not-allowed">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        {{ __('Add to Cart') }}
     </button>
 
     <template x-teleport="body">
@@ -85,6 +92,18 @@
                             <template x-if="current().compare_at_price && current().compare_at_price > current().price">
                                 <span class="text-gray-400 line-through text-sm" x-text="formatPrice(current().compare_at_price)"></span>
                             </template>
+                        </div>
+                    </template>
+
+                    <template x-if="current()">
+                        <div class="flex items-center gap-3 pt-2">
+                            <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ __('Quantity') }}:</span>
+                            <div class="flex items-center rounded-full border border-gray-300 dark:border-gray-700 overflow-hidden">
+                                <button type="button" @click="quantity = Math.max(sellByUnit, parseFloat((quantity - sellByUnit).toFixed(3)))" class="h-8 w-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">−</button>
+                                <input type="number" x-model.number="quantity" :step="sellByUnit" :min="sellByUnit" class="h-8 w-14 text-center text-sm bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
+                                <button type="button" @click="quantity = parseFloat((quantity + sellByUnit).toFixed(3))" class="h-8 w-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">+</button>
+                            </div>
+                            <span class="text-xs text-gray-500" x-text="quantity + ' × ' + sellByUnit"></span>
                         </div>
                     </template>
                 </div>

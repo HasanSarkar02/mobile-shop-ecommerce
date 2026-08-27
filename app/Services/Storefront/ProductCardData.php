@@ -359,7 +359,7 @@ class ProductCardData
         if ($active->count() > 1) {
             return [
                 'type' => 'select_options',
-                'label' => __('Select Options'),
+                'label' => __('Add to Cart'),
                 'variant_id' => null,
                 'url' => $url,
                 'disabled' => false,
