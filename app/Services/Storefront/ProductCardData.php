@@ -378,13 +378,15 @@ class ProductCardData
             ];
         }
 
-        // Single-variant products should always show Add to Cart (not disabled) — stock/price validation
-        // is handled when actually adding to cart (InventoryService), matching Bangladeshi grocery UX where
-        // every single-pack card is tappable. Multi-variant already goes to select_options above.
-        // Keep disabled only for true discontinued; otherwise fall through to add_to_cart.
-        // if (! $this->isPurchasable($variant, $states, $facts)) {
-        //     return disabled — removed per fix request
-        // }
+        if (! $this->isPurchasable($variant, $states, $facts)) {
+            return [
+                'type' => 'disabled',
+                'label' => __('Out of Stock'),
+                'variant_id' => null,
+                'url' => $url,
+                'disabled' => true,
+            ];
+        }
 
         $stockStatus = $states->get($variant->id)['stock_status'] ?? StockStatus::OutOfStock;
 

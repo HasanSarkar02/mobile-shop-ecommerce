@@ -148,10 +148,12 @@ function registerStores() {
             window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
         },
 
-        add(variantId, quantity = 1) {
+        add(variantId, quantity = 1, explicitUrl = null) {
             if (this.pending[variantId]) return Promise.resolve(false);
 
-            if (!this.endpoint()) {
+            const url = explicitUrl || this.endpoint();
+            if (!url) {
+                this.pending[variantId] = false;
                 this.toast('Could not add to cart — please try again', 'error');
                 return Promise.resolve(false);
             }
@@ -162,7 +164,7 @@ function registerStores() {
             window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.count } }));
             if (window.Livewire) window.Livewire.dispatch('cart-updated');
 
-            return fetch(this.endpoint(), {
+            return fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
