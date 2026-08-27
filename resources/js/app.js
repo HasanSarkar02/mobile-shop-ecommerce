@@ -3,26 +3,29 @@ import collapse from '@alpinejs/collapse';
 
 Alpine.plugin(collapse);
 
-// Shared money helper (Phase A): locale-aware grouping via Intl.NumberFormat
-// but Western numerals (matches Chaldal/Daraz). Keeps int minor-unit contract.
+// Shared money helper — Bangla digits strictly when active locale is bn
 window.money = function (cents, currency = 'BDT', locale = null, withTrailingZeros = true) {
     const loc = locale || document.documentElement.lang || 'en';
     const tag = loc === 'bn' ? 'bn-BD' : 'en-BD';
     const symbol = { BDT: '৳', USD: '$', EUR: '€', GBP: '£', INR: '₹', PKR: '₨' }[currency] || (currency + ' ');
     const major = cents / 100;
-    const opts = { minimumFractionDigits: withTrailingZeros ? 2 : 0, maximumFractionDigits: withTrailingZeros ? 2 : 0 };
+    const opts = {
+        minimumFractionDigits: withTrailingZeros ? 2 : 0,
+        maximumFractionDigits: withTrailingZeros ? 2 : 0,
+    };
     let formatted = new Intl.NumberFormat(tag, opts).format(major);
-    // Force Western numerals even for bn-BD
-    formatted = formatted.replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+    // Keep Bangla digits when locale is bn, otherwise force Western
+    if (loc !== 'bn') {
+        formatted = formatted.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+    }
     return symbol + formatted;
 };
+
 window.moneyWithoutTrailingZeros = function (cents, currency = 'BDT', locale = null) {
     return window.money(cents, currency, locale, false);
 };
 
-// Shared variant-selection engine (F.7): single source of truth for
-// dimension-driven selection. Both the PDP (`productDetail`) and the card
-// variant modal reuse this — no second implementation.
+// Shared variant-selection engine
 window.variantSelectionState = function (variants, dimensions, requiresSelection, initialVariantId) {
     return {
         variants: variants || [],
@@ -59,7 +62,9 @@ window.variantSelectionState = function (variants, dimensions, requiresSelection
             if (this.unavailable) return null;
             if (this.requiresSelection) {
                 if (!this.selectionComplete()) return null;
-                const matches = this.activeVariants().filter((v) => this.dimensions.every((d) => v.dims[d.code] === this.selected[d.code]));
+                const matches = this.activeVariants().filter((v) =>
+                    this.dimensions.every((d) => v.dims[d.code] === this.selected[d.code])
+                );
                 return matches.length === 1 ? matches[0] : null;
             }
             return this.activeVariants().find((v) => v.id === this.currentVariantId) ?? null;
@@ -99,23 +104,19 @@ window.variantSelectionState = function (variants, dimensions, requiresSelection
     };
 };
 
-// Global UI state that needs to be triggered from more than one place in the
-// DOM tree (the mobile header's hamburger button, and the "Categories" tab
-// in the mobile bottom nav both open the same drawer, but sit in separate
-// x-data scopes as siblings in layout.blade.php — a plain local x-data
-// variable can't coordinate across them). Registered before Livewire.start()
-// so it exists for the very first paint.
-document.addEventListener('alpine:init', () => {
+function registerStores() {
+    // Prevent double registration
+    if (Alpine.store('ui') !== undefined) {
+        console.log('[stores] already registered – skipping');
+        return;
+    }
+
+    console.log('[stores] registering ui / cart / wishlist');
+
     Alpine.store('ui', {
         mobileMenuOpen: false,
     });
 
-    // Shared cart-store state for the product-card "Add to Cart" CTA. One store
-    // keeps a per-variant pending guard so rapid clicks on the same card (or
-    // across the many cards on a page) can never double-submit, and every card
-    // surfaces the same loading/disabled/toast behaviour. The request goes to
-    // the existing CartController::store endpoint; CartService remains the
-    // single authoritative validation layer.
     Alpine.store('cart', {
         pending: {},
         count: null,
@@ -133,11 +134,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         endpoint() {
-            const url = document.body.dataset.cartStore;
-            if (!url && window.console) {
-                console.error('[cart store] Missing data-cart-store attribute on <body> — Add to Cart cannot submit.');
+            const url = document.body?.dataset?.cartStore || '';
+            if (!url) {
+                console.error('[cart] Missing data-cart-store on <body>');
             }
-            return url || '';
+            return url;
         },
 
         csrfToken() {
@@ -150,9 +151,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         add(variantId, quantity = 1) {
-            if (this.pending[variantId]) {
-                return Promise.resolve(false);
-            }
+            if (this.pending[variantId]) return Promise.resolve(false);
 
             if (!this.endpoint()) {
                 this.toast('Could not add to cart — please try again', 'error');
@@ -161,33 +160,29 @@ document.addEventListener('alpine:init', () => {
 
             this.pending[variantId] = true;
             const qty = Number(quantity) || 1;
-            // Optimistic increment for instant badge feedback
             this.syncCount(qty);
             window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.count } }));
             if (window.Livewire) window.Livewire.dispatch('cart-updated');
 
             return fetch(this.endpoint(), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': this.csrfToken(),
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        product_variant_id: variantId,
-                        quantity,
-                    }),
-                })
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken(),
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({
+                    product_variant_id: variantId,
+                    quantity: qty,
+                }),
+            })
                 .then((response) => {
-                    if (!response.ok) {
-                        throw new Error('Request failed');
-                    }
+                    if (!response.ok) throw new Error('Request failed');
                     this.toast('Added to cart');
                     if (window.Livewire) window.Livewire.dispatch('cart-updated');
                     window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.count } }));
                 })
                 .catch(() => {
-                    // Roll back optimistic count on failure
                     this.syncCount(-qty);
                     window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.count } }));
                     if (window.Livewire) window.Livewire.dispatch('cart-updated');
@@ -199,9 +194,6 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
-    // Offer countdown used by the reusable offers/countdown partial: segmented
-    // days/hours/minutes/seconds tiles ticking once per second, flipping to an
-    // "ended" state cleanly when the deadline passes.
     Alpine.data('offerCountdown', (endsAtMs) => ({
         live: Date.now() < endsAtMs,
         days: '00',
@@ -234,20 +226,16 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    // Shared wishlist state. Every product card and the PDP buy-box wishlist
-    // button read/write this one store, so all instances of the same product
-    // on a page stay in sync and the header/mobile count badge reacts to
-    // changes. Toggle is optimistic: flip immediately, POST to the existing
-    // endpoint, reconcile with the server's returned `wishlisted` value, and
-    // roll back on any HTTP/network error.
     Alpine.store('wishlist', {
         state: {},
         pending: {},
         count: null,
 
         seed(productId, wishlisted) {
-            if (!(productId in this.state)) {
-                this.state[productId] = !!wishlisted;
+            const id = String(productId); // normalize key
+            if (!(id in this.state)) {
+                this.state[id] = !!wishlisted;
+                console.log('[wishlist] seeded', id, '→', this.state[id]);
             }
         },
 
@@ -258,20 +246,22 @@ document.addEventListener('alpine:init', () => {
         },
 
         isWishlisted(productId) {
-            return this.state[productId] === true;
+            return this.state[String(productId)] === true;
         },
 
         endpoint() {
-            const url = document.body.dataset.wishlistToggle;
-            if (!url && window.console) {
-                console.error('[wishlist store] Missing data-wishlist-toggle attribute on <body> — wishlist cannot submit.');
+            const url = document.body?.dataset?.wishlistToggle || '';
+            if (!url) {
+                console.error('[wishlist] Missing data-wishlist-toggle on <body>');
             }
-            return url || '';
+            return url;
         },
 
         csrfToken() {
             const meta = document.querySelector('meta[name="csrf-token"]');
-            return meta ? meta.content : '';
+            const token = meta ? meta.content : '';
+            if (!token) console.error('[wishlist] CSRF token meta missing');
+            return token;
         },
 
         toast(message, type = 'success') {
@@ -285,55 +275,97 @@ document.addEventListener('alpine:init', () => {
         },
 
         toggle(productId) {
-            if (this.pending[productId]) {
+            const id = String(productId);
+            console.log('[wishlist] toggle called for', id);
+
+            if (this.pending[id]) {
+                console.log('[wishlist] already pending – ignored');
                 return Promise.resolve(false);
             }
 
-            if (!this.endpoint()) {
+            const url = this.endpoint();
+            if (!url) {
                 this.toast('Could not update wishlist — please try again', 'error');
                 return Promise.resolve(false);
             }
 
-            this.pending[productId] = true;
-            const wasWishlisted = this.isWishlisted(productId);
+            this.pending[id] = true;
+            const wasWishlisted = this.isWishlisted(id);
 
-            // Optimistic flip so the UI responds immediately.
-            this.state[productId] = !wasWishlisted;
+            // Optimistic flip
+            this.state[id] = !wasWishlisted;
+            console.log('[wishlist] optimistic →', this.state[id]);
 
-            return fetch(this.endpoint(), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': this.csrfToken(),
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({ product_id: productId }),
-                })
-                .then((response) => {
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken(),
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({ product_id: Number(productId) || productId }),
+                credentials: 'same-origin',
+            })
+                .then(async (response) => {
+                    console.log('[wishlist] response status', response.status);
                     if (!response.ok) {
-                        throw new Error('Request failed');
+                        const text = await response.text();
+                        console.error('[wishlist] non-OK response body:', text.slice(0, 500));
+                        throw new Error(`HTTP ${response.status}`);
                     }
                     return response.json();
                 })
                 .then((data) => {
+                    console.log('[wishlist] server replied', data);
                     const wishlisted = !!data.wishlisted;
-                    this.state[productId] = wishlisted;
+                    this.state[id] = wishlisted;
                     if (wishlisted !== wasWishlisted) {
                         this.syncCount(wishlisted ? 1 : -1);
                     }
                     this.toast(wishlisted ? 'Added to wishlist' : 'Removed from wishlist');
                     if (window.Livewire) window.Livewire.dispatch('wishlist-updated');
                 })
-                .catch(() => {
-                    // Roll back the optimistic flip on HTTP or network error.
-                    this.state[productId] = wasWishlisted;
+                .catch((err) => {
+                    console.error('[wishlist] toggle failed', err);
+                    // Roll back
+                    this.state[id] = wasWishlisted;
                     this.toast('Could not update wishlist — please try again', 'error');
                 })
                 .finally(() => {
-                    this.pending[productId] = false;
+                    this.pending[id] = false;
                 });
         },
     });
+
+    console.log('[stores] registration complete. wishlist store exists?', !!Alpine.store('wishlist'));
+}
+
+// Register BEFORE Livewire.start() – this is the correct order for the ESM build
+registerStores();
+
+// Safety nets
+document.addEventListener('alpine:init', () => {
+    console.log('[alpine:init] fired');
+    registerStores();
+});
+
+if (typeof window !== 'undefined' && window.Alpine && typeof window.Alpine.store === 'function') {
+    if (window.Alpine.store('ui') === undefined) {
+        console.log('[fallback] registering on window.Alpine');
+        registerStores();
+    }
+}
+
+document.addEventListener('livewire:initialized', () => {
+    console.log('[livewire:initialized]');
+    if (window.Livewire) {
+        window.Livewire.hook('morph.updated', ({ el }) => {
+            if (window.Alpine?.initTree) {
+                window.Alpine.initTree(el);
+            }
+        });
+    }
 });
 
 Livewire.start();
+console.log('[app.js] Livewire.start() called');

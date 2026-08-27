@@ -1,6 +1,12 @@
 {{-- resources/views/livewire/product-catalog.blade.php --}}
-<div x-data="{ mobileFiltersOpen: false }" wire:loading.class="opacity-60 pointer-events-none"
+<div wire:loading.class="opacity-60"
     wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,attr,clearFilters,gotoPage">
+    {{-- Alpine filter state must NOT live on the Livewire root element.
+         Putting x-data on the same element as wire:loading causes Livewire's
+         morph to destroy the Alpine tree — re-rendered product cards lose their
+         $store.wishlist / $store.cart bindings and the wishlist/Add-to-Cart
+         buttons appear dead. Keeping Alpine one level deeper preserves stores. --}}
+    <div x-data="{ mobileFiltersOpen: false }">
     <div class="flex items-center justify-between gap-3 mb-4">
         <button type="button" @click="mobileFiltersOpen = true"
             class="lg:hidden inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 dark:border-gray-800 text-sm font-medium">
@@ -124,5 +130,6 @@
                 </div>
             @endif
         </div>
+    </div>
     </div>
 </div>

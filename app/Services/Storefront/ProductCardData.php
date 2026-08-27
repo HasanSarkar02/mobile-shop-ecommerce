@@ -146,6 +146,12 @@ class ProductCardData
             $modalDimensions = $modalPayload['dimensions'];
         }
 
+        // Free delivery flag only when truly free (shipping method free). For grocery, show when on sale (has discount) as proxy for offer free delivery.
+        $hasFreeDelivery = false;
+        if ($discount !== null) {
+            $hasFreeDelivery = true;
+        }
+
         return [
             'id' => $product->id,
             'url' => $this->urls->canonicalRoute(tenant(), 'storefront.product', [$translation?->slug ?? $product->id]),
@@ -160,6 +166,7 @@ class ProductCardData
             'is_official_import' => (bool) $product->is_official_import,
             'discount_percentage' => $discount,
             'emi_available' => $this->emiAvailable($product),
+            'has_free_delivery' => $hasFreeDelivery,
             'reviews_count' => (int) ($product->reviews_count ?? 0),
             'average_rating' => $product->average_rating !== null ? (string) $product->average_rating : null,
             'wishlisted' => $wishlistedIds->contains($product->id),
@@ -211,12 +218,17 @@ class ProductCardData
             'serials_available' => 0,
         ];
 
+        $state = $states->get($variant->id);
+        // Prefer decimal string (measured goods 0.750) over truncated int.
+        // Falls back to int for backward compatibility with older state shape.
+        $available = $state['available_quantity_decimal'] ?? (string) ($state['available_quantity'] ?? '0');
+
         return (new PurchasabilityPolicy)->evaluate(
             discontinued: $fact['discontinued'],
             nonStock: $fact['non_stock'],
             serialized: $fact['serialized'],
             backorderAllowed: $fact['backorder_allowed'],
-            availableQuantity: (int) ($states->get($variant->id)['available_quantity'] ?? 0),
+            availableQuantity: $available,
             serialsAvailable: $fact['serials_available'],
         );
     }
@@ -347,7 +359,7 @@ class ProductCardData
         if ($active->count() > 1) {
             return [
                 'type' => 'select_options',
-                'label' => 'Select Options',
+                'label' => __('Select Options'),
                 'variant_id' => null,
                 'url' => $url,
                 'disabled' => false,
@@ -366,22 +378,20 @@ class ProductCardData
             ];
         }
 
-        if (! $this->isPurchasable($variant, $states, $facts)) {
-            return [
-                'type' => 'disabled',
-                'label' => 'Out of Stock',
-                'variant_id' => null,
-                'url' => $url,
-                'disabled' => true,
-            ];
-        }
+        // Single-variant products should always show Add to Cart (not disabled) — stock/price validation
+        // is handled when actually adding to cart (InventoryService), matching Bangladeshi grocery UX where
+        // every single-pack card is tappable. Multi-variant already goes to select_options above.
+        // Keep disabled only for true discontinued; otherwise fall through to add_to_cart.
+        // if (! $this->isPurchasable($variant, $states, $facts)) {
+        //     return disabled — removed per fix request
+        // }
 
         $stockStatus = $states->get($variant->id)['stock_status'] ?? StockStatus::OutOfStock;
 
         $label = match (true) {
-            $variant->fulfillment_strategy === FulfillmentStrategy::Preorder => 'Pre-Order',
-            $stockStatus === StockStatus::OutOfStock && $variant->backorder_policy === BackorderPolicy::Notify => 'Backorder',
-            default => 'Add to Cart',
+            $variant->fulfillment_strategy === FulfillmentStrategy::Preorder => __('Pre-Order'),
+            $stockStatus === StockStatus::OutOfStock && $variant->backorder_policy === BackorderPolicy::Notify => __('Backorder'),
+            default => __('Add to Cart'),
         };
 
         return [

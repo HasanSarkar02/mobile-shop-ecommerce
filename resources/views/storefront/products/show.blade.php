@@ -1,13 +1,18 @@
 ﻿@extends('storefront.layout')
 
-@section('title', (($product->translation() ?? $product->translation('en'))?->name ?? 'Product') . ' - ' . tenant()->name)
+@php
+    $productName = optional($product->translation() ?? $product->translation('en'))->name ?? 'Product';
+@endphp
+
+@section('title', $productName . ' - ' . tenant()->name)
 
 @section('content')
     @php
-        $productDescription = ($product->translation() ?? $product->translation('en'))?->sanitizedDescription();
+        $translation = $product->translation() ?? $product->translation('en');
+        $productDescription = optional($translation)->sanitizedDescription();
         $showSpecifications = $specificationGroups->isNotEmpty();
         $showDescription = filled($productDescription);
-        $showWarranty = filled(($product->translation() ?? $product->translation('en'))?->warranty_info);
+        $showWarranty = filled(optional($translation)->warranty_info);
         $showReviews = $product->reviews_count > 0;
         $showFaqs = $product->faqs->isNotEmpty();
         $navSections = collect([
@@ -30,19 +35,12 @@
         $policyLinks = collect($policyLinks ?? []);
         $warrantyPolicyLink = $policyLinks->first(fn($link) => $link['label'] === 'Warranty');
         $canonicalProductUrl = app(\App\Support\Tenancy\TenantUrlGenerator::class)
-            ->canonicalRoute(tenant(), 'storefront.product', [($product->translation() ?? $product->translation('en'))?->slug]);
+            ->canonicalRoute(tenant(), 'storefront.product', [optional($translation)->slug]);
 
-        // Server-rendered EMI figures (progressive enhancement baseline). Uses
-        // the first variant's price â€” the same variant Alpine starts on â€” and
-        // mirrors the client formula exactly: round(price * (1 + rate/100) / tenure).
         $emiBasePrice = $product->variants->first()?->price ?? 0;
         $emiFromMonthly = $product->emiPlans->isNotEmpty()
             ? $product->emiPlans
-                ->map(
-                    fn($plan) => round(
-                        ($emiBasePrice * (1 + (float) $plan->interest_rate / 100)) / $plan->tenure_months,
-                    ),
-                )
+                ->map(fn($plan) => round(($emiBasePrice * (1 + (float) $plan->interest_rate / 100)) / $plan->tenure_months))
                 ->min()
             : null;
         $emiHasZero = $product->emiPlans->contains(fn($plan) => (float) $plan->interest_rate === 0.0);
@@ -115,21 +113,28 @@
                         @endif
                     </div>
                     <div class="flex gap-2 flex-shrink-0">
-                        <button @click="$store.wishlist.toggle({{ $product->id }})"
-                            :disabled="$store.wishlist.pending[{{ $product->id }}]"
-                            :aria-busy="$store.wishlist.pending[{{ $product->id }}]"
+                        <button
+                            type="button"
+                            x-data="{}"
+                            x-init="$store.wishlist.seed({{ $product->id }}, {{ ($isWishlisted ?? false) ? 'true' : 'false' }})"
+                            @click.prevent.stop="$store.wishlist.toggle({{ $product->id }})"
+                            :disabled="$store.wishlist.pending[{{ $product->id }}] || false"
+                            :aria-busy="$store.wishlist.pending[{{ $product->id }}] ? 'true' : 'false'"
                             class="p-2.5 rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-                            :class="$store.wishlist.isWishlisted({{ $product->id }}) ?
-                                'border-red-300 bg-red-50 dark:bg-red-950 text-red-600' :
-                                'border-gray-300 dark:border-gray-700'"
-                            :aria-pressed="$store.wishlist.isWishlisted({{ $product->id }})"
-                            :aria-label="$store.wishlist.isWishlisted({{ $product->id }}) ?
-                                'Remove {{ ($product->translation() ?? $product->translation('en'))?->name }} from wishlist' :
-                                'Add {{ ($product->translation() ?? $product->translation('en'))?->name }} to wishlist'">
-                            <span x-show="!$store.wishlist.isWishlisted({{ $product->id }})"><x-ui.icon name="heart"
-                                    class="w-5 h-5" /></span>
-                            <span x-show="$store.wishlist.isWishlisted({{ $product->id }})" x-cloak><x-ui.icon
-                                    name="heart" :solid="true" class="w-5 h-5 text-red-600" /></span>
+                            :class="$store.wishlist.isWishlisted({{ $product->id }})
+                                ? 'border-red-300 bg-red-50 dark:bg-red-950 text-red-600'
+                                : 'border-gray-300 dark:border-gray-700'"
+                            :aria-pressed="$store.wishlist.isWishlisted({{ $product->id }}) ? 'true' : 'false'"
+                            :aria-label="$store.wishlist.isWishlisted({{ $product->id }})
+                                ? 'Remove {{ $productName }} from wishlist'
+                                : 'Add {{ $productName }} to wishlist'"
+                        >
+                            <span x-show="!$store.wishlist.isWishlisted({{ $product->id }})">
+                                <x-ui.icon name="heart" class="w-5 h-5" />
+                            </span>
+                            <span x-show="$store.wishlist.isWishlisted({{ $product->id }})" x-cloak>
+                                <x-ui.icon name="heart" :solid="true" class="w-5 h-5 text-red-600" />
+                            </span>
                         </button>
                         <button @click="toggleCompare()" :disabled="compareLoading"
                             class="p-2.5 rounded-xl border transition text-sm"
@@ -339,7 +344,9 @@
 
         @php
             $waNumber = tenant()?->themeSettings?->social_links['whatsapp'] ?? null;
-            $waUrl = \App\Support\WhatsApp::url(is_string($waNumber) ? $waNumber : null, 'Hi, I am interested in '.($product->translation() ?? $product->translation('en'))?->name.' ('.url()->current().')');
+            $waTranslation = $product->translation() ?? $product->translation('en');
+            $waProductName = $waTranslation?->name ?? $product->name ?? '';
+            $waUrl = \App\Support\WhatsApp::url(is_string($waNumber) ? $waNumber : null, 'Hi, I am interested in '.$waProductName.' ('.url()->current().')');
         @endphp
         @if ($waUrl)
             <div class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">

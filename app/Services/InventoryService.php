@@ -166,7 +166,15 @@ class InventoryService
     {
         $ids = $variants->pluck('id')->values()->all();
 
-        $location = Location::query()->where('is_default', true)->first();
+        // Use tenant-scoped default location (creates it if missing) so single-variant
+        // cards never resolve as OutOfStock just because stock_items lookup missed the
+        // tenant's location. Previous raw where('is_default') without tenant could
+        // return null and silently mark every variant as 0 stock → CTA disabled.
+        try {
+            $location = $this->defaultLocation();
+        } catch (\Throwable) {
+            $location = Location::query()->where('is_default', true)->first();
+        }
 
         $stockItems = collect();
         if ($location !== null && $ids !== []) {
@@ -181,22 +189,23 @@ class InventoryService
 
         return $variants->mapWithKeys(function (ProductVariant $variant) use ($stockItems, $defaultThreshold): array {
             if ($variant->availability->value === 'discontinued') {
-                return [$variant->id => ['stock_status' => StockStatus::Discontinued, 'available_quantity' => 0, 'low_stock_threshold' => null]];
+                return [$variant->id => ['stock_status' => StockStatus::Discontinued, 'available_quantity' => 0, 'available_quantity_decimal' => '0.000', 'low_stock_threshold' => null]];
             }
 
             if ($variant->fulfillment_strategy === FulfillmentStrategy::Preorder) {
-                return [$variant->id => ['stock_status' => StockStatus::Preorder, 'available_quantity' => 0, 'low_stock_threshold' => null]];
+                return [$variant->id => ['stock_status' => StockStatus::Preorder, 'available_quantity' => 0, 'available_quantity_decimal' => '0.000', 'low_stock_threshold' => null]];
             }
 
             if ($variant->fulfillment_strategy === FulfillmentStrategy::Dropship) {
-                return [$variant->id => ['stock_status' => StockStatus::Dropship, 'available_quantity' => 0, 'low_stock_threshold' => null]];
+                return [$variant->id => ['stock_status' => StockStatus::Dropship, 'available_quantity' => 0, 'available_quantity_decimal' => '0.000', 'low_stock_threshold' => null]];
             }
 
             $stockItem = $stockItems->get($variant->id);
             $availableDecimal = $stockItem?->availableQuantityDecimal() ?? '0.000';
-            // Storefront surfaces still consume whole units (Phase C-1 UI
-            // lands decimal display later); status is decided by bccomp so a
-            // measured 0.750 kg correctly reads InStock.
+            // Keep both int (backward compat) and decimal string. Decimal is
+            // authoritative for measured goods (0.750 kg) where (int) truncation
+            // would wrongly report 0 and force isPurchasable false → disabled CTA
+            // for single-variant products. Status already uses bccomp on decimal.
             $available = (int) $availableDecimal;
             $itemThreshold = $stockItem !== null && $stockItem->low_stock_threshold !== null
                 ? (int) $stockItem->low_stock_threshold
@@ -206,6 +215,7 @@ class InventoryService
                 return [$variant->id => [
                     'stock_status' => StockStatus::OutOfStock,
                     'available_quantity' => $available,
+                    'available_quantity_decimal' => $availableDecimal,
                     'low_stock_threshold' => $itemThreshold,
                 ]];
             }
@@ -215,6 +225,7 @@ class InventoryService
             return [$variant->id => [
                 'stock_status' => bccomp($availableDecimal, $threshold, StockItem::SCALE) !== 1 ? StockStatus::LowStock : StockStatus::InStock,
                 'available_quantity' => $available,
+                'available_quantity_decimal' => $availableDecimal,
                 'low_stock_threshold' => $itemThreshold,
             ]];
         });

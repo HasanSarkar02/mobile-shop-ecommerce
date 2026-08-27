@@ -141,7 +141,7 @@ return [
             ],
             'ui' => [
                 'container_class' => 'max-w-[1600px] mx-auto',
-                'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5',
+                'grid_class' => 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6',
                 'image_aspect' => 'aspect-square',
                 'card_component' => 'storefront.product-cards.grocery',
             ],

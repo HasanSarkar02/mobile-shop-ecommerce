@@ -48,19 +48,19 @@ if (! function_exists('money')) {
     function money(int $minor, ?string $currency = null, ?string $locale = null, bool $withTrailingZeros = true): string
     {
         $locale ??= app()->getLocale();
-        // Use en-BD grouping for both en and bn to keep Western numerals;
-        // bn-BD would emit Bengali digits which we then map back.
         $localeTag = $locale === 'bn' ? 'bn-BD' : 'en-BD';
         $symbol = currency_symbol($currency);
         $major = $minor / 100;
 
         $formatted = Number::format($major, precision: $withTrailingZeros ? 2 : 0, locale: $localeTag);
 
-        // Force Western numerals even when locale is bn-BD
-        $formatted = strtr($formatted, [
-            '০' => '0', '১' => '1', '২' => '2', '৩' => '3', '৪' => '4',
-            '৫' => '5', '৬' => '6', '৭' => '7', '৮' => '8', '৯' => '9',
-        ]);
+        // Bangla digits strictly when active locale is bn, otherwise Western (en)
+        if ($locale !== 'bn') {
+            $formatted = strtr($formatted, [
+                '০' => '0', '১' => '1', '২' => '2', '৩' => '3', '৪' => '4',
+                '৫' => '5', '৬' => '6', '৭' => '7', '৮' => '8', '৯' => '9',
+            ]);
+        }
 
         return $symbol.$formatted;
     }
