@@ -31,8 +31,17 @@ class CartController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
+        // Server-truth for hybrid optimistic reconciliation: always return decimal-aware cart_count
+        // Use bcadd to sum decimal quantities correctly for sell_by_unit measured goods.
+        $cartForCount = $carts->getOrCreateCart(auth('customer')->user(), $request->cookie('cart_token'));
+        $cartForCount->load('items');
+        $cartCount = '0.000';
+        foreach ($cartForCount->items as $item) {
+            $cartCount = bcadd($cartCount, (string) $item->quantity, 3);
+        }
+
         if ($request->expectsJson()) {
-            return response()->json(['message' => 'Added to cart.']);
+            return response()->json(['message' => 'Added to cart.', 'cart_count' => $cartCount]);
         }
 
         return back()->with('status', 'Added to cart.');

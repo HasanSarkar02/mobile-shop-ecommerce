@@ -128,9 +128,7 @@ function registerStores() {
         },
 
         syncCount(delta) {
-            if (this.count !== null) {
-                this.count = Math.max(0, this.count + delta);
-            }
+            this.count = Math.max(0, (this.count ?? 0) + Number(delta));
         },
 
         endpoint() {
@@ -176,8 +174,24 @@ function registerStores() {
                     quantity: qty,
                 }),
             })
-                .then((response) => {
-                    if (!response.ok) throw new Error('Request failed');
+                .then(async (response) => {
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(text || 'Request failed');
+                    }
+                    // Try parse JSON for cart_count reconciliation
+                    let data = {};
+                    try {
+                        const txt = await response.clone().text();
+                        data = txt ? JSON.parse(txt) : {};
+                    } catch {}
+                    return data;
+                })
+                .then((data) => {
+                    // Server reconciliation: override with authoritative count if provided
+                    if (data && data.cart_count !== undefined && data.cart_count !== null) {
+                        this.count = Number(data.cart_count);
+                    }
                     this.toast('Added to cart');
                     if (window.Livewire) window.Livewire.dispatch('cart-updated');
                     window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.count } }));
@@ -269,9 +283,7 @@ function registerStores() {
         },
 
         syncCount(delta) {
-            if (this.count !== null) {
-                this.count = Math.max(0, this.count + delta);
-            }
+            this.count = Math.max(0, (this.count ?? 0) + Number(delta));
         },
 
         toggle(productId) {

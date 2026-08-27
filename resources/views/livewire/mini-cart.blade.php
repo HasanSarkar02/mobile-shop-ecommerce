@@ -5,7 +5,7 @@
             aria-label="Cart">
             <span class="relative">
                 <x-ui.icon name="cart" class="w-6 h-6" />
-                <span x-data x-init="$store.cart.seedCount({{ $itemCount }})" x-show="$store.cart.count > 0" x-cloak x-text="$store.cart.count"
+                <span x-show="$store.cart.count > 0" x-cloak x-text="$store.cart.count"
                     class="absolute -top-1 -right-1.5 bg-[var(--brand)] text-white text-[9px] font-semibold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5">{{ $itemCount }}</span>
             </span>
             <span>{{ __('Cart') }}</span>
@@ -15,7 +15,7 @@
             class="relative p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
             aria-label="Cart">
             <x-ui.icon name="cart" class="w-[22px] h-[22px]" />
-            <span x-data x-init="$store.cart.seedCount({{ $itemCount }})" x-show="$store.cart.count > 0" x-cloak x-text="$store.cart.count"
+            <span x-show="$store.cart.count > 0" x-cloak x-text="$store.cart.count"
                 class="absolute -top-0.5 -right-0.5 bg-[var(--brand)] text-white text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{{ $itemCount }}</span>
         </button>
 

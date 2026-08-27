@@ -62,6 +62,31 @@
 
     @stack('scripts')
     @livewireScriptConfig
+    @php
+        $initialCartCount = '0.000';
+        try {
+            $initialCart = app(\App\Services\CartService::class)->getOrCreateCart(auth('customer')->user(), request()->cookie('cart_token'));
+            $initialCart->load('items');
+            $initialCartCount = '0.000';
+            foreach ($initialCart->items as $it) { $initialCartCount = bcadd($initialCartCount, (string) $it->quantity, 3); }
+        } catch (\Throwable $e) { $initialCartCount = '0.000'; }
+    @endphp
+    <script>
+        // Robust page-level seed: not inside Livewire-morphable DOM, survives re-renders
+        document.addEventListener('alpine:init', () => {
+            if (window.Alpine && Alpine.store('cart')) {
+                const raw = '{{ $initialCartCount }}';
+                const n = Number(raw);
+                if (Alpine.store('cart').count === null) {
+                    Alpine.store('cart').count = isNaN(n) ? 0 : n;
+                }
+            }
+        });
+        // Fallback if Alpine already booted before this script
+        if (window.Alpine && Alpine.store('cart') && Alpine.store('cart').count === null) {
+            Alpine.store('cart').count = Number('{{ $initialCartCount }}') || 0;
+        }
+    </script>
     @include('components.ui.toast-container')
 </body>
 

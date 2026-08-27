@@ -991,28 +991,27 @@
                     const v = this.current();
                     if (!v || !v.purchasable) return;
                     this.cartLoading = true;
-                    fetch('{{ route('storefront.cart.store') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': this.csrfToken(),
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                product_variant_id: this.currentVariantId,
-                                quantity: this.quantity
-                            }),
-                        })
-                        .then(r => {
-                            if (!r.ok) throw new Error();
-                            return r;
-                        })
-                        .then(() => {
-                            this.toast('Added to cart');
-                            if (window.Livewire) window.Livewire.dispatch('cart-updated');
-                        })
-                        .catch(() => this.toast('Could not add to cart â€” please try again', 'error'))
-                        .finally(() => this.cartLoading = false);
+                    // Unify with product-card: use global Alpine store for optimistic + server-reconciled badge
+                    const qty = this.quantity;
+                    const vid = this.currentVariantId;
+                    const store = this.$store?.cart;
+                    if (store && typeof store.add === 'function') {
+                        store.add(vid, qty).finally(() => this.cartLoading = false);
+                    } else {
+                        fetch('{{ route('storefront.cart.store') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': this.csrfToken(),
+                                    Accept: 'application/json'
+                                },
+                                body: JSON.stringify({ product_variant_id: vid, quantity: qty }),
+                            })
+                            .then(r => { if (!r.ok) throw new Error(); return r; })
+                            .then(() => { this.toast('Added to cart'); if (window.Livewire) window.Livewire.dispatch('cart-updated'); })
+                            .catch(() => this.toast('Could not add to cart — please try again', 'error'))
+                            .finally(() => this.cartLoading = false);
+                    }
                 },
                 toggleCompare() {
                     this.compareLoading = true;
