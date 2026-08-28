@@ -52,7 +52,40 @@
                         <x-ui.input name="guestAddress.phone" wire:model="guestAddress.phone" label="Delivery phone" />
                         <x-ui.input name="guestAddress.address_line_1" wire:model="guestAddress.address_line_1"
                             label="Address" class="sm:col-span-2" />
-                        <x-ui.input name="guestAddress.city" wire:model="guestAddress.city" label="City" />
+                        <div>
+                            <label for="bd_division_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Division *</label>
+                            <select id="bd_division_id" wire:model.live="bd_division_id"
+                                class="w-full rounded-xl border-gray-200 dark:border-gray-800 dark:bg-gray-900 text-sm focus:border-[var(--brand)] focus:ring-[var(--brand)]">
+                                <option value="">Select Division</option>
+                                @foreach ($divisions as $division)
+                                    <option value="{{ $division->id }}">{{ $division->name_en }} — {{ $division->name_bn }}</option>
+                                @endforeach
+                            </select>
+                            @error('bd_division_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="bd_district_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">District *</label>
+                            <select id="bd_district_id" wire:model.live="bd_district_id"
+                                class="w-full rounded-xl border-gray-200 dark:border-gray-800 dark:bg-gray-900 text-sm focus:border-[var(--brand)] focus:ring-[var(--brand)]">
+                                <option value="">Select District</option>
+                                @foreach ($districts as $district)
+                                    <option value="{{ $district->id }}">{{ $district->name_en }} — {{ $district->name_bn }}</option>
+                                @endforeach
+                            </select>
+                            @error('bd_district_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="bd_upazila_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Upazila</label>
+                            <select id="bd_upazila_id" wire:model.live="bd_upazila_id"
+                                class="w-full rounded-xl border-gray-200 dark:border-gray-800 dark:bg-gray-900 text-sm focus:border-[var(--brand)] focus:ring-[var(--brand)]">
+                                <option value="">Select Upazila</option>
+                                @foreach ($upazilas as $upazila)
+                                    <option value="{{ $upazila->id }}">{{ $upazila->name_en }} — {{ $upazila->name_bn }}</option>
+                                @endforeach
+                            </select>
+                            @error('bd_upazila_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <x-ui.input name="guestAddress.city" wire:model="guestAddress.city" label="City (legacy)" />
                     </div>
                     <p class="text-sm text-gray-500 mt-3">Already have an account? <a
                             href="{{ route('storefront.login') }}" class="text-[var(--brand)] font-medium">Log in</a>

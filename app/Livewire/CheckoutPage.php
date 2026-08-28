@@ -8,11 +8,16 @@ use App\Enums\OrderSource;
 use App\Exceptions\CartAlreadyConvertedException;
 use App\Exceptions\ReservationLimitExceededException;
 use App\Models\Address;
+use App\Models\BdDistrict;
+use App\Models\BdDivision;
+use App\Models\BdUpazila;
 use App\Models\PaymentMethod;
 use App\Models\ShippingMethod;
 use App\Services\CartService;
 use App\Services\CouponService;
 use App\Services\OrderService;
+use App\Services\ShippingService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
@@ -41,6 +46,21 @@ class CheckoutPage extends Component
 
     public bool $preorder_ack = false;
 
+    public ?int $bd_division_id = null;
+
+    public ?int $bd_district_id = null;
+
+    public ?int $bd_upazila_id = null;
+
+    /** @var Collection<int, BdDivision> */
+    public Collection $divisions;
+
+    /** @var Collection<int, BdDistrict> */
+    public Collection $districts;
+
+    /** @var Collection<int, BdUpazila> */
+    public Collection $upazilas;
+
     // Secondary, UX-only guard against a rapid double-click sending two
     // near-simultaneous requests before the wire:loading disabled state (see
     // the checkout button markup) takes effect. The authoritative protection
@@ -54,9 +74,52 @@ class CheckoutPage extends Component
         $cart = $carts->getOrCreateCart(Auth::guard('customer')->user(), request()->cookie('cart_token'));
         $result = $carts->revalidate($cart);
         $this->issues = $result['issues']->all();
+
+        $this->divisions = BdDivision::query()->orderBy('name_en')->get();
+        $this->districts = collect();
+        $this->upazilas = collect();
     }
 
-    public function placeOrder(CartService $carts, OrderService $orders): void
+    public function updatedBdDivisionId(?int $value): void
+    {
+        $this->bd_district_id = null;
+        $this->bd_upazila_id = null;
+        $this->districts = $value ? BdDistrict::query()->where('division_id', $value)->orderBy('name_en')->get() : collect();
+        $this->upazilas = collect();
+        // Sync to guestAddress for snapshot persistence
+        $this->guestAddress['bd_division_id'] = $value;
+        $this->guestAddress['bd_district_id'] = null;
+        $this->guestAddress['bd_upazila_id'] = null;
+    }
+
+    public function updatedBdDistrictId(?int $value): void
+    {
+        $this->bd_upazila_id = null;
+        $this->upazilas = $value ? BdUpazila::query()->where('district_id', $value)->orderBy('name_en')->get() : collect();
+        $this->guestAddress['bd_district_id'] = $value;
+        $this->guestAddress['bd_upazila_id'] = null;
+    }
+
+    public function updatedBdUpazilaId(?int $value): void
+    {
+        $this->guestAddress['bd_upazila_id'] = $value;
+    }
+
+    public function updatedSelectedAddressId(?int $value): void
+    {
+        if ($value !== null) {
+            $address = Address::query()->find($value);
+            if ($address !== null) {
+                $this->bd_division_id = $address->bd_division_id;
+                $this->bd_district_id = $address->bd_district_id;
+                $this->bd_upazila_id = $address->bd_upazila_id;
+                $this->districts = $this->bd_division_id ? BdDistrict::query()->where('division_id', $this->bd_division_id)->orderBy('name_en')->get() : collect();
+                $this->upazilas = $this->bd_district_id ? BdUpazila::query()->where('district_id', $this->bd_district_id)->orderBy('name_en')->get() : collect();
+            }
+        }
+    }
+
+    public function placeOrder(CartService $carts, OrderService $orders, ShippingService $shippingService): void
     {
         if ($this->isPlacingOrder) {
             return;
@@ -82,7 +145,11 @@ class CheckoutPage extends Component
                 return;
             }
 
+            // Dynamic shipping cost via geo hierarchy
+            $dynamicShippingCost = $this->resolveDynamicShippingCost($shippingService, $customer);
+
             $shipping = ShippingMethod::query()->find($this->shippingMethodId);
+            $shippingCost = $dynamicShippingCost ?? $shipping?->cost ?? 0;
 
             $cart->loadMissing('items.variant');
             $hasPreorder = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'preorder');
@@ -95,7 +162,7 @@ class CheckoutPage extends Component
             $orderData = [
                 'shipping_method_id' => $this->shippingMethodId,
                 'payment_method_id' => $this->paymentMethodId,
-                'shipping_cost' => $shipping?->cost ?? 0,
+                'shipping_cost' => $shippingCost,
                 'customer_note' => $this->customerNote,
                 'preorder_ack_at' => $hasPreorder && $this->preorder_ack ? now() : null,
             ];
@@ -105,9 +172,17 @@ class CheckoutPage extends Component
                 abort_unless($address->customer_id === $customer->id, 403);
 
                 $orderData['shipping_address_id'] = $address->id;
-                $orderData['shipping_address'] = $address->only([
-                    'recipient_name', 'phone', 'address_line_1', 'address_line_2', 'city', 'area', 'postal_code', 'country',
-                ]);
+                $orderData['shipping_address'] = array_merge(
+                    $address->only([
+                        'recipient_name', 'phone', 'address_line_1', 'address_line_2', 'city', 'area', 'postal_code', 'country',
+                        'bd_division_id', 'bd_district_id', 'bd_upazila_id',
+                    ]),
+                    [
+                        'bd_division_name' => $address->division?->name_en,
+                        'bd_district_name' => $address->district?->name_en,
+                        'bd_upazila_name' => $address->upazila?->name_en,
+                    ]
+                );
             } else {
                 $this->validate([
                     'guestName' => ['required', 'string'],
@@ -117,12 +192,23 @@ class CheckoutPage extends Component
                     'guestAddress.phone' => ['required', 'string'],
                     'guestAddress.address_line_1' => ['required', 'string'],
                     'guestAddress.city' => ['required', 'string'],
+                    'bd_division_id' => ['required', 'integer', 'exists:bd_divisions,id'],
+                    'bd_district_id' => ['required', 'integer', 'exists:bd_districts,id'],
+                    'bd_upazila_id' => ['nullable', 'integer', 'exists:bd_upazilas,id'],
                 ]);
 
                 $orderData['guest_name'] = $this->guestName;
                 $orderData['guest_email'] = $this->guestEmail;
                 $orderData['guest_phone'] = $this->guestPhone;
-                $orderData['shipping_address'] = $this->guestAddress;
+                $guestSnapshot = array_merge($this->guestAddress, [
+                    'bd_division_id' => $this->bd_division_id,
+                    'bd_district_id' => $this->bd_district_id,
+                    'bd_upazila_id' => $this->bd_upazila_id,
+                    'bd_division_name' => $this->divisions->firstWhere('id', $this->bd_division_id)?->name_en,
+                    'bd_district_name' => $this->districts->firstWhere('id', $this->bd_district_id)?->name_en,
+                    'bd_upazila_name' => $this->upazilas->firstWhere('id', $this->bd_upazila_id)?->name_en,
+                ]);
+                $orderData['shipping_address'] = $guestSnapshot;
             }
 
             try {
@@ -152,7 +238,28 @@ class CheckoutPage extends Component
         }
     }
 
-    public function render(CartService $carts, CouponService $coupons)
+    private function resolveDynamicShippingCost(ShippingService $shippingService, mixed $customer): ?int
+    {
+        // Prefer explicit geo selection (guest) or selected address geo (customer)
+        if ($this->bd_upazila_id !== null || $this->bd_district_id !== null) {
+            return $shippingService->quote($this->bd_upazila_id, $this->bd_district_id, $this->bd_division_id);
+        }
+
+        if ($this->selectedAddressId !== null) {
+            $address = Address::query()->find($this->selectedAddressId);
+            if ($address !== null) {
+                return $shippingService->quote($address->bd_upazila_id, $address->bd_district_id, $address->bd_division_id, $address);
+            }
+        }
+
+        if (! empty($this->guestAddress['bd_upazila_id']) || ! empty($this->guestAddress['bd_district_id'])) {
+            return $shippingService->quoteForGuest($this->guestAddress);
+        }
+
+        return null;
+    }
+
+    public function render(CartService $carts, CouponService $coupons, ShippingService $shippingService)
     {
         $customer = Auth::guard('customer')->user();
         $cart = $carts->getOrCreateCart($customer, request()->cookie('cart_token'));
@@ -160,6 +267,10 @@ class CheckoutPage extends Component
         $subtotal = $cart->items->sum(fn ($item) => $item->lineTotal());
         $couponResult = $coupons->computeForCart($cart, $customer);
         $shipping = ShippingMethod::query()->find($this->shippingMethodId);
+
+        // Dynamic shipping overrides flat method when geo selected
+        $dynamicCost = $this->resolveDynamicShippingCost($shippingService, $customer);
+        $shippingCost = $dynamicCost ?? $shipping?->cost ?? 0;
 
         $hasPreorder = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'preorder');
         $hasStock = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'stock');
@@ -173,6 +284,13 @@ class CheckoutPage extends Component
                 ->first();
         }
 
+        // Ensure divisions always available for dropdowns
+        if (! isset($this->divisions) || $this->divisions->isEmpty()) {
+            $this->divisions = BdDivision::query()->orderBy('name_en')->get();
+            $this->districts = $this->bd_division_id ? BdDistrict::query()->where('division_id', $this->bd_division_id)->orderBy('name_en')->get() : collect();
+            $this->upazilas = $this->bd_district_id ? BdUpazila::query()->where('district_id', $this->bd_district_id)->orderBy('name_en')->get() : collect();
+        }
+
         return view('livewire.checkout-page', [
             'customer' => $customer,
             'addresses' => $customer ? Address::query()->where('customer_id', $customer->id)->get() : collect(),
@@ -181,10 +299,13 @@ class CheckoutPage extends Component
             'cartItems' => $cart->items,
             'subtotal' => $subtotal,
             'discount' => $couponResult->valid ? $couponResult->discountAmount : 0,
-            'shippingCost' => $shipping?->cost ?? 0,
+            'shippingCost' => $shippingCost,
             'hasPreorder' => $hasPreorder,
             'isMixed' => $isMixed,
             'preorderEta' => $preorderEta,
+            'divisions' => $this->divisions,
+            'districts' => $this->districts,
+            'upazilas' => $this->upazilas,
         ]);
     }
 }
