@@ -19,17 +19,89 @@ class BdGeoSeeder extends Seeder
      */
     public function run(): void
     {
+        $divisionsPathHyphen = database_path('seeders/data/bd-divisions.json');
+        $districtsPathHyphen = database_path('seeders/data/bd-districts.json');
+        $upazilasPathHyphen = database_path('seeders/data/bd-upazilas.json');
         $divisionsPath = database_path('seeders/data/bd_divisions.json');
         $districtsPath = database_path('seeders/data/bd_districts.json');
         $upazilasPath = database_path('seeders/data/bd_upazilas.json');
 
-        if (is_file($divisionsPath) && is_file($districtsPath) && is_file($upazilasPath)) {
+        $useHyphen = is_file($divisionsPathHyphen) && is_file($districtsPathHyphen) && is_file($upazilasPathHyphen);
+        $useUnderscore = is_file($divisionsPath) && is_file($districtsPath) && is_file($upazilasPath);
+
+        if ($useHyphen || $useUnderscore) {
             // Full JSON seeding: truncate global tables to avoid legacy Dhaka-only bbs_code 10 collision
             DB::statement('SET FOREIGN_KEY_CHECKS=0');
             BdUpazila::query()->delete();
             BdDistrict::query()->delete();
             BdDivision::query()->delete();
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+            if ($useHyphen) {
+                $rawDivisions = json_decode((string) file_get_contents($divisionsPathHyphen), true);
+                $divisionsData = $rawDivisions['divisions'] ?? $rawDivisions;
+                $bbsMap = ['1' => '10', '2' => '20', '3' => '30', '4' => '40', '5' => '50', '6' => '55', '7' => '60', '8' => '45'];
+                $divisionIdMap = [];
+                foreach ($divisionsData as $div) {
+                    $id = (string) ($div['id'] ?? '');
+                    $bbs = $bbsMap[$id] ?? $id;
+                    $created = BdDivision::query()->updateOrCreate(
+                        ['bbs_code' => $bbs],
+                        [
+                            'name_en' => $div['name'] ?? $div['name_en'],
+                            'name_bn' => $div['bn_name'] ?? $div['name_bn'],
+                            'bn_name' => $div['bn_name'] ?? $div['name_bn'] ?? null,
+                            'url' => $div['url'] ?? null,
+                            'lat' => $div['lat'] ?? null,
+                            'lon' => $div['long'] ?? $div['lon'] ?? null,
+                        ]
+                    );
+                    $divisionIdMap[$id] = $created->id;
+                }
+
+                $rawDistricts = json_decode((string) file_get_contents($districtsPathHyphen), true);
+                $districtsData = $rawDistricts['districts'] ?? $rawDistricts;
+                $districtIdMap = [];
+                foreach ($districtsData as $dist) {
+                    $origDivisionId = (string) ($dist['division_id'] ?? '');
+                    $divisionId = $divisionIdMap[$origDivisionId] ?? null;
+                    if ($divisionId === null) {
+                        continue;
+                    }
+                    $bbs = $dist['id'] ?? $dist['bbs_code'] ?? $dist['name'];
+                    // Make bbs_code globally unique using division bbs
+                    $divisionBbs = BdDivision::query()->find($divisionId)?->bbs_code ?? $origDivisionId;
+                    $uniqueBbs = $divisionBbs.'-'.$bbs;
+                    $created = BdDistrict::query()->updateOrCreate(
+                        ['bbs_code' => $uniqueBbs],
+                        [
+                            'division_id' => $divisionId,
+                            'name_en' => $dist['name'] ?? $dist['name_en'],
+                            'name_bn' => $dist['bn_name'] ?? $dist['name_bn'],
+                            'lat' => $dist['lat'] ?? null,
+                            'lon' => $dist['long'] ?? $dist['lon'] ?? null,
+                            'url' => $dist['url'] ?? null,
+                        ]
+                    );
+                    $districtIdMap[(string) $dist['id']] = $created->id;
+                }
+
+                $rawUpazilas = json_decode((string) file_get_contents($upazilasPathHyphen), true);
+                $upazilasData = $rawUpazilas['upazilas'] ?? $rawUpazilas;
+                foreach ($upazilasData as $upa) {
+                    $origDistrictId = (string) ($upa['district_id'] ?? '');
+                    $districtId = $districtIdMap[$origDistrictId] ?? null;
+                    if ($districtId === null) {
+                        continue;
+                    }
+                    BdUpazila::query()->updateOrCreate(
+                        ['name_en' => $upa['name'], 'district_id' => $districtId],
+                        ['name_bn' => $upa['bn_name'] ?? $upa['name']]
+                    );
+                }
+
+                return;
+            }
 
             $divisions = json_decode((string) file_get_contents($divisionsPath), true);
             $districts = json_decode((string) file_get_contents($districtsPath), true);
