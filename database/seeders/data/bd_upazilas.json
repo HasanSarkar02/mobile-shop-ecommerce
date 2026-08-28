@@ -1,0 +1,2972 @@
+[
+    {
+        "district_bbs": "06",
+        "division_bbs": "10",
+        "name_en": "Barguna Sadar",
+        "name_bn": "বরগুনা উপজেলা 1"
+    },
+    {
+        "district_bbs": "06",
+        "division_bbs": "10",
+        "name_en": "Barguna Sadar Upazila",
+        "name_bn": "বরগুনা উপজেলা 2"
+    },
+    {
+        "district_bbs": "06",
+        "division_bbs": "10",
+        "name_en": "Barguna Upazila 3",
+        "name_bn": "বরগুনা উপজেলা 3"
+    },
+    {
+        "district_bbs": "06",
+        "division_bbs": "10",
+        "name_en": "Barguna Upazila 4",
+        "name_bn": "বরগুনা উপজেলা 4"
+    },
+    {
+        "district_bbs": "06",
+        "division_bbs": "10",
+        "name_en": "Barguna Upazila 5",
+        "name_bn": "বরগুনা উপজেলা 5"
+    },
+    {
+        "district_bbs": "06",
+        "division_bbs": "10",
+        "name_en": "Barguna Upazila 6",
+        "name_bn": "বরগুনা উপজেলা 6"
+    },
+    {
+        "district_bbs": "06",
+        "division_bbs": "10",
+        "name_en": "Barguna Upazila 7",
+        "name_bn": "বরগুনা উপজেলা 7"
+    },
+    {
+        "district_bbs": "06",
+        "division_bbs": "10",
+        "name_en": "Barguna Upazila 8",
+        "name_bn": "বরগুনা উপজেলা 8"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "10",
+        "name_en": "Barishal Sadar",
+        "name_bn": "বরিশাল উপজেলা 1"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "10",
+        "name_en": "Barishal Sadar Upazila",
+        "name_bn": "বরিশাল উপজেলা 2"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "10",
+        "name_en": "Barishal Upazila 3",
+        "name_bn": "বরিশাল উপজেলা 3"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "10",
+        "name_en": "Barishal Upazila 4",
+        "name_bn": "বরিশাল উপজেলা 4"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "10",
+        "name_en": "Barishal Upazila 5",
+        "name_bn": "বরিশাল উপজেলা 5"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "10",
+        "name_en": "Barishal Upazila 6",
+        "name_bn": "বরিশাল উপজেলা 6"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "10",
+        "name_en": "Barishal Upazila 7",
+        "name_bn": "বরিশাল উপজেলা 7"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "10",
+        "name_en": "Barishal Upazila 8",
+        "name_bn": "বরিশাল উপজেলা 8"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "10",
+        "name_en": "Bhola Sadar",
+        "name_bn": "ভোলা উপজেলা 1"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "10",
+        "name_en": "Bhola Sadar Upazila",
+        "name_bn": "ভোলা উপজেলা 2"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "10",
+        "name_en": "Bhola Upazila 3",
+        "name_bn": "ভোলা উপজেলা 3"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "10",
+        "name_en": "Bhola Upazila 4",
+        "name_bn": "ভোলা উপজেলা 4"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "10",
+        "name_en": "Bhola Upazila 5",
+        "name_bn": "ভোলা উপজেলা 5"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "10",
+        "name_en": "Bhola Upazila 6",
+        "name_bn": "ভোলা উপজেলা 6"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "10",
+        "name_en": "Bhola Upazila 7",
+        "name_bn": "ভোলা উপজেলা 7"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "10",
+        "name_en": "Bhola Upazila 8",
+        "name_bn": "ভোলা উপজেলা 8"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "10",
+        "name_en": "Jhalokati Sadar",
+        "name_bn": "ঝালকাঠি উপজেলা 1"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "10",
+        "name_en": "Jhalokati Sadar Upazila",
+        "name_bn": "ঝালকাঠি উপজেলা 2"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "10",
+        "name_en": "Jhalokati Upazila 3",
+        "name_bn": "ঝালকাঠি উপজেলা 3"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "10",
+        "name_en": "Jhalokati Upazila 4",
+        "name_bn": "ঝালকাঠি উপজেলা 4"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "10",
+        "name_en": "Jhalokati Upazila 5",
+        "name_bn": "ঝালকাঠি উপজেলা 5"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "10",
+        "name_en": "Jhalokati Upazila 6",
+        "name_bn": "ঝালকাঠি উপজেলা 6"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "10",
+        "name_en": "Jhalokati Upazila 7",
+        "name_bn": "ঝালকাঠি উপজেলা 7"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "10",
+        "name_en": "Jhalokati Upazila 8",
+        "name_bn": "ঝালকাঠি উপজেলা 8"
+    },
+    {
+        "district_bbs": "78",
+        "division_bbs": "10",
+        "name_en": "Patuakhali Sadar",
+        "name_bn": "পটুয়াখালী উপজেলা 1"
+    },
+    {
+        "district_bbs": "78",
+        "division_bbs": "10",
+        "name_en": "Patuakhali Sadar Upazila",
+        "name_bn": "পটুয়াখালী উপজেলা 2"
+    },
+    {
+        "district_bbs": "78",
+        "division_bbs": "10",
+        "name_en": "Patuakhali Upazila 3",
+        "name_bn": "পটুয়াখালী উপজেলা 3"
+    },
+    {
+        "district_bbs": "78",
+        "division_bbs": "10",
+        "name_en": "Patuakhali Upazila 4",
+        "name_bn": "পটুয়াখালী উপজেলা 4"
+    },
+    {
+        "district_bbs": "78",
+        "division_bbs": "10",
+        "name_en": "Patuakhali Upazila 5",
+        "name_bn": "পটুয়াখালী উপজেলা 5"
+    },
+    {
+        "district_bbs": "78",
+        "division_bbs": "10",
+        "name_en": "Patuakhali Upazila 6",
+        "name_bn": "পটুয়াখালী উপজেলা 6"
+    },
+    {
+        "district_bbs": "78",
+        "division_bbs": "10",
+        "name_en": "Patuakhali Upazila 7",
+        "name_bn": "পটুয়াখালী উপজেলা 7"
+    },
+    {
+        "district_bbs": "78",
+        "division_bbs": "10",
+        "name_en": "Patuakhali Upazila 8",
+        "name_bn": "পটুয়াখালী উপজেলা 8"
+    },
+    {
+        "district_bbs": "79",
+        "division_bbs": "10",
+        "name_en": "Pirojpur Sadar",
+        "name_bn": "পিরোজপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "79",
+        "division_bbs": "10",
+        "name_en": "Pirojpur Sadar Upazila",
+        "name_bn": "পিরোজপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "79",
+        "division_bbs": "10",
+        "name_en": "Pirojpur Upazila 3",
+        "name_bn": "পিরোজপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "79",
+        "division_bbs": "10",
+        "name_en": "Pirojpur Upazila 4",
+        "name_bn": "পিরোজপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "79",
+        "division_bbs": "10",
+        "name_en": "Pirojpur Upazila 5",
+        "name_bn": "পিরোজপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "79",
+        "division_bbs": "10",
+        "name_en": "Pirojpur Upazila 6",
+        "name_bn": "পিরোজপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "79",
+        "division_bbs": "10",
+        "name_en": "Pirojpur Upazila 7",
+        "name_bn": "পিরোজপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "79",
+        "division_bbs": "10",
+        "name_en": "Pirojpur Upazila 8",
+        "name_bn": "পিরোজপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "20",
+        "name_en": "Bandarban Sadar",
+        "name_bn": "বান্দরবান উপজেলা 1"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "20",
+        "name_en": "Bandarban Sadar Upazila",
+        "name_bn": "বান্দরবান উপজেলা 2"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "20",
+        "name_en": "Bandarban Upazila 3",
+        "name_bn": "বান্দরবান উপজেলা 3"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "20",
+        "name_en": "Bandarban Upazila 4",
+        "name_bn": "বান্দরবান উপজেলা 4"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "20",
+        "name_en": "Bandarban Upazila 5",
+        "name_bn": "বান্দরবান উপজেলা 5"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "20",
+        "name_en": "Bandarban Upazila 6",
+        "name_bn": "বান্দরবান উপজেলা 6"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "20",
+        "name_en": "Bandarban Upazila 7",
+        "name_bn": "বান্দরবান উপজেলা 7"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "20",
+        "name_en": "Bandarban Upazila 8",
+        "name_bn": "বান্দরবান উপজেলা 8"
+    },
+    {
+        "district_bbs": "04",
+        "division_bbs": "20",
+        "name_en": "Brahmanbaria Sadar",
+        "name_bn": "ব্রাহ্মণবাড়িয়া উপজেলা 1"
+    },
+    {
+        "district_bbs": "04",
+        "division_bbs": "20",
+        "name_en": "Brahmanbaria Sadar Upazila",
+        "name_bn": "ব্রাহ্মণবাড়িয়া উপজেলা 2"
+    },
+    {
+        "district_bbs": "04",
+        "division_bbs": "20",
+        "name_en": "Brahmanbaria Upazila 3",
+        "name_bn": "ব্রাহ্মণবাড়িয়া উপজেলা 3"
+    },
+    {
+        "district_bbs": "04",
+        "division_bbs": "20",
+        "name_en": "Brahmanbaria Upazila 4",
+        "name_bn": "ব্রাহ্মণবাড়িয়া উপজেলা 4"
+    },
+    {
+        "district_bbs": "04",
+        "division_bbs": "20",
+        "name_en": "Brahmanbaria Upazila 5",
+        "name_bn": "ব্রাহ্মণবাড়িয়া উপজেলা 5"
+    },
+    {
+        "district_bbs": "04",
+        "division_bbs": "20",
+        "name_en": "Brahmanbaria Upazila 6",
+        "name_bn": "ব্রাহ্মণবাড়িয়া উপজেলা 6"
+    },
+    {
+        "district_bbs": "04",
+        "division_bbs": "20",
+        "name_en": "Brahmanbaria Upazila 7",
+        "name_bn": "ব্রাহ্মণবাড়িয়া উপজেলা 7"
+    },
+    {
+        "district_bbs": "04",
+        "division_bbs": "20",
+        "name_en": "Brahmanbaria Upazila 8",
+        "name_bn": "ব্রাহ্মণবাড়িয়া উপজেলা 8"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "20",
+        "name_en": "Chandpur Sadar",
+        "name_bn": "চাঁদপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "20",
+        "name_en": "Chandpur Sadar Upazila",
+        "name_bn": "চাঁদপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "20",
+        "name_en": "Chandpur Upazila 3",
+        "name_bn": "চাঁদপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "20",
+        "name_en": "Chandpur Upazila 4",
+        "name_bn": "চাঁদপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "20",
+        "name_en": "Chandpur Upazila 5",
+        "name_bn": "চাঁদপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "20",
+        "name_en": "Chandpur Upazila 6",
+        "name_bn": "চাঁদপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "20",
+        "name_en": "Chandpur Upazila 7",
+        "name_bn": "চাঁদপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "09",
+        "division_bbs": "20",
+        "name_en": "Chandpur Upazila 8",
+        "name_bn": "চাঁদপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "20",
+        "name_en": "Chattogram Sadar",
+        "name_bn": "চট্টগ্রাম উপজেলা 1"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "20",
+        "name_en": "Chattogram Sadar Upazila",
+        "name_bn": "চট্টগ্রাম উপজেলা 2"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "20",
+        "name_en": "Chattogram Upazila 3",
+        "name_bn": "চট্টগ্রাম উপজেলা 3"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "20",
+        "name_en": "Chattogram Upazila 4",
+        "name_bn": "চট্টগ্রাম উপজেলা 4"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "20",
+        "name_en": "Chattogram Upazila 5",
+        "name_bn": "চট্টগ্রাম উপজেলা 5"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "20",
+        "name_en": "Chattogram Upazila 6",
+        "name_bn": "চট্টগ্রাম উপজেলা 6"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "20",
+        "name_en": "Chattogram Upazila 7",
+        "name_bn": "চট্টগ্রাম উপজেলা 7"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "20",
+        "name_en": "Chattogram Upazila 8",
+        "name_bn": "চট্টগ্রাম উপজেলা 8"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "20",
+        "name_en": "Cumilla Sadar",
+        "name_bn": "কুমিল্লা উপজেলা 1"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "20",
+        "name_en": "Cumilla Sadar Upazila",
+        "name_bn": "কুমিল্লা উপজেলা 2"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "20",
+        "name_en": "Cumilla Upazila 3",
+        "name_bn": "কুমিল্লা উপজেলা 3"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "20",
+        "name_en": "Cumilla Upazila 4",
+        "name_bn": "কুমিল্লা উপজেলা 4"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "20",
+        "name_en": "Cumilla Upazila 5",
+        "name_bn": "কুমিল্লা উপজেলা 5"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "20",
+        "name_en": "Cumilla Upazila 6",
+        "name_bn": "কুমিল্লা উপজেলা 6"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "20",
+        "name_en": "Cumilla Upazila 7",
+        "name_bn": "কুমিল্লা উপজেলা 7"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "20",
+        "name_en": "Cumilla Upazila 8",
+        "name_bn": "কুমিল্লা উপজেলা 8"
+    },
+    {
+        "district_bbs": "22",
+        "division_bbs": "20",
+        "name_en": "Cox's Bazar Sadar",
+        "name_bn": "কক্সবাজার উপজেলা 1"
+    },
+    {
+        "district_bbs": "22",
+        "division_bbs": "20",
+        "name_en": "Cox's Bazar Sadar Upazila",
+        "name_bn": "কক্সবাজার উপজেলা 2"
+    },
+    {
+        "district_bbs": "22",
+        "division_bbs": "20",
+        "name_en": "Cox's Bazar Upazila 3",
+        "name_bn": "কক্সবাজার উপজেলা 3"
+    },
+    {
+        "district_bbs": "22",
+        "division_bbs": "20",
+        "name_en": "Cox's Bazar Upazila 4",
+        "name_bn": "কক্সবাজার উপজেলা 4"
+    },
+    {
+        "district_bbs": "22",
+        "division_bbs": "20",
+        "name_en": "Cox's Bazar Upazila 5",
+        "name_bn": "কক্সবাজার উপজেলা 5"
+    },
+    {
+        "district_bbs": "22",
+        "division_bbs": "20",
+        "name_en": "Cox's Bazar Upazila 6",
+        "name_bn": "কক্সবাজার উপজেলা 6"
+    },
+    {
+        "district_bbs": "22",
+        "division_bbs": "20",
+        "name_en": "Cox's Bazar Upazila 7",
+        "name_bn": "কক্সবাজার উপজেলা 7"
+    },
+    {
+        "district_bbs": "22",
+        "division_bbs": "20",
+        "name_en": "Cox's Bazar Upazila 8",
+        "name_bn": "কক্সবাজার উপজেলা 8"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "20",
+        "name_en": "Feni Sadar",
+        "name_bn": "ফেনী উপজেলা 1"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "20",
+        "name_en": "Feni Sadar Upazila",
+        "name_bn": "ফেনী উপজেলা 2"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "20",
+        "name_en": "Feni Upazila 3",
+        "name_bn": "ফেনী উপজেলা 3"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "20",
+        "name_en": "Feni Upazila 4",
+        "name_bn": "ফেনী উপজেলা 4"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "20",
+        "name_en": "Feni Upazila 5",
+        "name_bn": "ফেনী উপজেলা 5"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "20",
+        "name_en": "Feni Upazila 6",
+        "name_bn": "ফেনী উপজেলা 6"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "20",
+        "name_en": "Feni Upazila 7",
+        "name_bn": "ফেনী উপজেলা 7"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "20",
+        "name_en": "Feni Upazila 8",
+        "name_bn": "ফেনী উপজেলা 8"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "20",
+        "name_en": "Khagrachari Sadar",
+        "name_bn": "খাগড়াছড়ি উপজেলা 1"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "20",
+        "name_en": "Khagrachari Sadar Upazila",
+        "name_bn": "খাগড়াছড়ি উপজেলা 2"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "20",
+        "name_en": "Khagrachari Upazila 3",
+        "name_bn": "খাগড়াছড়ি উপজেলা 3"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "20",
+        "name_en": "Khagrachari Upazila 4",
+        "name_bn": "খাগড়াছড়ি উপজেলা 4"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "20",
+        "name_en": "Khagrachari Upazila 5",
+        "name_bn": "খাগড়াছড়ি উপজেলা 5"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "20",
+        "name_en": "Khagrachari Upazila 6",
+        "name_bn": "খাগড়াছড়ি উপজেলা 6"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "20",
+        "name_en": "Khagrachari Upazila 7",
+        "name_bn": "খাগড়াছড়ি উপজেলা 7"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "20",
+        "name_en": "Khagrachari Upazila 8",
+        "name_bn": "খাগড়াছড়ি উপজেলা 8"
+    },
+    {
+        "district_bbs": "51",
+        "division_bbs": "20",
+        "name_en": "Lakshmipur Sadar",
+        "name_bn": "লক্ষ্মীপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "51",
+        "division_bbs": "20",
+        "name_en": "Lakshmipur Sadar Upazila",
+        "name_bn": "লক্ষ্মীপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "51",
+        "division_bbs": "20",
+        "name_en": "Lakshmipur Upazila 3",
+        "name_bn": "লক্ষ্মীপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "51",
+        "division_bbs": "20",
+        "name_en": "Lakshmipur Upazila 4",
+        "name_bn": "লক্ষ্মীপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "51",
+        "division_bbs": "20",
+        "name_en": "Lakshmipur Upazila 5",
+        "name_bn": "লক্ষ্মীপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "51",
+        "division_bbs": "20",
+        "name_en": "Lakshmipur Upazila 6",
+        "name_bn": "লক্ষ্মীপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "51",
+        "division_bbs": "20",
+        "name_en": "Lakshmipur Upazila 7",
+        "name_bn": "লক্ষ্মীপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "51",
+        "division_bbs": "20",
+        "name_en": "Lakshmipur Upazila 8",
+        "name_bn": "লক্ষ্মীপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "75",
+        "division_bbs": "20",
+        "name_en": "Noakhali Sadar",
+        "name_bn": "নোয়াখালী উপজেলা 1"
+    },
+    {
+        "district_bbs": "75",
+        "division_bbs": "20",
+        "name_en": "Noakhali Sadar Upazila",
+        "name_bn": "নোয়াখালী উপজেলা 2"
+    },
+    {
+        "district_bbs": "75",
+        "division_bbs": "20",
+        "name_en": "Noakhali Upazila 3",
+        "name_bn": "নোয়াখালী উপজেলা 3"
+    },
+    {
+        "district_bbs": "75",
+        "division_bbs": "20",
+        "name_en": "Noakhali Upazila 4",
+        "name_bn": "নোয়াখালী উপজেলা 4"
+    },
+    {
+        "district_bbs": "75",
+        "division_bbs": "20",
+        "name_en": "Noakhali Upazila 5",
+        "name_bn": "নোয়াখালী উপজেলা 5"
+    },
+    {
+        "district_bbs": "75",
+        "division_bbs": "20",
+        "name_en": "Noakhali Upazila 6",
+        "name_bn": "নোয়াখালী উপজেলা 6"
+    },
+    {
+        "district_bbs": "75",
+        "division_bbs": "20",
+        "name_en": "Noakhali Upazila 7",
+        "name_bn": "নোয়াখালী উপজেলা 7"
+    },
+    {
+        "district_bbs": "75",
+        "division_bbs": "20",
+        "name_en": "Noakhali Upazila 8",
+        "name_bn": "নোয়াখালী উপজেলা 8"
+    },
+    {
+        "district_bbs": "84",
+        "division_bbs": "20",
+        "name_en": "Rangamati Sadar",
+        "name_bn": "রাঙ্গামাটি উপজেলা 1"
+    },
+    {
+        "district_bbs": "84",
+        "division_bbs": "20",
+        "name_en": "Rangamati Sadar Upazila",
+        "name_bn": "রাঙ্গামাটি উপজেলা 2"
+    },
+    {
+        "district_bbs": "84",
+        "division_bbs": "20",
+        "name_en": "Rangamati Upazila 3",
+        "name_bn": "রাঙ্গামাটি উপজেলা 3"
+    },
+    {
+        "district_bbs": "84",
+        "division_bbs": "20",
+        "name_en": "Rangamati Upazila 4",
+        "name_bn": "রাঙ্গামাটি উপজেলা 4"
+    },
+    {
+        "district_bbs": "84",
+        "division_bbs": "20",
+        "name_en": "Rangamati Upazila 5",
+        "name_bn": "রাঙ্গামাটি উপজেলা 5"
+    },
+    {
+        "district_bbs": "84",
+        "division_bbs": "20",
+        "name_en": "Rangamati Upazila 6",
+        "name_bn": "রাঙ্গামাটি উপজেলা 6"
+    },
+    {
+        "district_bbs": "84",
+        "division_bbs": "20",
+        "name_en": "Rangamati Upazila 7",
+        "name_bn": "রাঙ্গামাটি উপজেলা 7"
+    },
+    {
+        "district_bbs": "84",
+        "division_bbs": "20",
+        "name_en": "Rangamati Upazila 8",
+        "name_bn": "রাঙ্গামাটি উপজেলা 8"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "30",
+        "name_en": "Dhaka Sadar",
+        "name_bn": "ঢাকা উপজেলা 1"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "30",
+        "name_en": "Dhaka Sadar Upazila",
+        "name_bn": "ঢাকা উপজেলা 2"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "30",
+        "name_en": "Dhaka Upazila 3",
+        "name_bn": "ঢাকা উপজেলা 3"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "30",
+        "name_en": "Dhaka Upazila 4",
+        "name_bn": "ঢাকা উপজেলা 4"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "30",
+        "name_en": "Dhaka Upazila 5",
+        "name_bn": "ঢাকা উপজেলা 5"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "30",
+        "name_en": "Dhaka Upazila 6",
+        "name_bn": "ঢাকা উপজেলা 6"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "30",
+        "name_en": "Dhaka Upazila 7",
+        "name_bn": "ঢাকা উপজেলা 7"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "30",
+        "name_en": "Dhaka Upazila 8",
+        "name_bn": "ঢাকা উপজেলা 8"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "30",
+        "name_en": "Faridpur Sadar",
+        "name_bn": "ফরিদপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "30",
+        "name_en": "Faridpur Sadar Upazila",
+        "name_bn": "ফরিদপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "30",
+        "name_en": "Faridpur Upazila 3",
+        "name_bn": "ফরিদপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "30",
+        "name_en": "Faridpur Upazila 4",
+        "name_bn": "ফরিদপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "30",
+        "name_en": "Faridpur Upazila 5",
+        "name_bn": "ফরিদপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "30",
+        "name_en": "Faridpur Upazila 6",
+        "name_bn": "ফরিদপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "30",
+        "name_en": "Faridpur Upazila 7",
+        "name_bn": "ফরিদপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "15",
+        "division_bbs": "30",
+        "name_en": "Faridpur Upazila 8",
+        "name_bn": "ফরিদপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "17",
+        "division_bbs": "30",
+        "name_en": "Gazipur Sadar",
+        "name_bn": "গাজীপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "17",
+        "division_bbs": "30",
+        "name_en": "Gazipur Sadar Upazila",
+        "name_bn": "গাজীপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "17",
+        "division_bbs": "30",
+        "name_en": "Gazipur Upazila 3",
+        "name_bn": "গাজীপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "17",
+        "division_bbs": "30",
+        "name_en": "Gazipur Upazila 4",
+        "name_bn": "গাজীপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "17",
+        "division_bbs": "30",
+        "name_en": "Gazipur Upazila 5",
+        "name_bn": "গাজীপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "17",
+        "division_bbs": "30",
+        "name_en": "Gazipur Upazila 6",
+        "name_bn": "গাজীপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "17",
+        "division_bbs": "30",
+        "name_en": "Gazipur Upazila 7",
+        "name_bn": "গাজীপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "17",
+        "division_bbs": "30",
+        "name_en": "Gazipur Upazila 8",
+        "name_bn": "গাজীপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "30",
+        "name_en": "Gopalganj Sadar",
+        "name_bn": "গোপালগঞ্জ উপজেলা 1"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "30",
+        "name_en": "Gopalganj Sadar Upazila",
+        "name_bn": "গোপালগঞ্জ উপজেলা 2"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "30",
+        "name_en": "Gopalganj Upazila 3",
+        "name_bn": "গোপালগঞ্জ উপজেলা 3"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "30",
+        "name_en": "Gopalganj Upazila 4",
+        "name_bn": "গোপালগঞ্জ উপজেলা 4"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "30",
+        "name_en": "Gopalganj Upazila 5",
+        "name_bn": "গোপালগঞ্জ উপজেলা 5"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "30",
+        "name_en": "Gopalganj Upazila 6",
+        "name_bn": "গোপালগঞ্জ উপজেলা 6"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "30",
+        "name_en": "Gopalganj Upazila 7",
+        "name_bn": "গোপালগঞ্জ উপজেলা 7"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "30",
+        "name_en": "Gopalganj Upazila 8",
+        "name_bn": "গোপালগঞ্জ উপজেলা 8"
+    },
+    {
+        "district_bbs": "26",
+        "division_bbs": "30",
+        "name_en": "Kishoreganj Sadar",
+        "name_bn": "কিশোরগঞ্জ উপজেলা 1"
+    },
+    {
+        "district_bbs": "26",
+        "division_bbs": "30",
+        "name_en": "Kishoreganj Sadar Upazila",
+        "name_bn": "কিশোরগঞ্জ উপজেলা 2"
+    },
+    {
+        "district_bbs": "26",
+        "division_bbs": "30",
+        "name_en": "Kishoreganj Upazila 3",
+        "name_bn": "কিশোরগঞ্জ উপজেলা 3"
+    },
+    {
+        "district_bbs": "26",
+        "division_bbs": "30",
+        "name_en": "Kishoreganj Upazila 4",
+        "name_bn": "কিশোরগঞ্জ উপজেলা 4"
+    },
+    {
+        "district_bbs": "26",
+        "division_bbs": "30",
+        "name_en": "Kishoreganj Upazila 5",
+        "name_bn": "কিশোরগঞ্জ উপজেলা 5"
+    },
+    {
+        "district_bbs": "26",
+        "division_bbs": "30",
+        "name_en": "Kishoreganj Upazila 6",
+        "name_bn": "কিশোরগঞ্জ উপজেলা 6"
+    },
+    {
+        "district_bbs": "26",
+        "division_bbs": "30",
+        "name_en": "Kishoreganj Upazila 7",
+        "name_bn": "কিশোরগঞ্জ উপজেলা 7"
+    },
+    {
+        "district_bbs": "26",
+        "division_bbs": "30",
+        "name_en": "Kishoreganj Upazila 8",
+        "name_bn": "কিশোরগঞ্জ উপজেলা 8"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "30",
+        "name_en": "Madaripur Sadar",
+        "name_bn": "মাদারীপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "30",
+        "name_en": "Madaripur Sadar Upazila",
+        "name_bn": "মাদারীপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "30",
+        "name_en": "Madaripur Upazila 3",
+        "name_bn": "মাদারীপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "30",
+        "name_en": "Madaripur Upazila 4",
+        "name_bn": "মাদারীপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "30",
+        "name_en": "Madaripur Upazila 5",
+        "name_bn": "মাদারীপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "30",
+        "name_en": "Madaripur Upazila 6",
+        "name_bn": "মাদারীপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "30",
+        "name_en": "Madaripur Upazila 7",
+        "name_bn": "মাদারীপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "30",
+        "name_en": "Madaripur Upazila 8",
+        "name_bn": "মাদারীপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "30",
+        "name_en": "Manikganj Sadar",
+        "name_bn": "মানিকগঞ্জ উপজেলা 1"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "30",
+        "name_en": "Manikganj Sadar Upazila",
+        "name_bn": "মানিকগঞ্জ উপজেলা 2"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "30",
+        "name_en": "Manikganj Upazila 3",
+        "name_bn": "মানিকগঞ্জ উপজেলা 3"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "30",
+        "name_en": "Manikganj Upazila 4",
+        "name_bn": "মানিকগঞ্জ উপজেলা 4"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "30",
+        "name_en": "Manikganj Upazila 5",
+        "name_bn": "মানিকগঞ্জ উপজেলা 5"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "30",
+        "name_en": "Manikganj Upazila 6",
+        "name_bn": "মানিকগঞ্জ উপজেলা 6"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "30",
+        "name_en": "Manikganj Upazila 7",
+        "name_bn": "মানিকগঞ্জ উপজেলা 7"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "30",
+        "name_en": "Manikganj Upazila 8",
+        "name_bn": "মানিকগঞ্জ উপজেলা 8"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "30",
+        "name_en": "Munshiganj Sadar",
+        "name_bn": "মুন্সিগঞ্জ উপজেলা 1"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "30",
+        "name_en": "Munshiganj Sadar Upazila",
+        "name_bn": "মুন্সিগঞ্জ উপজেলা 2"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "30",
+        "name_en": "Munshiganj Upazila 3",
+        "name_bn": "মুন্সিগঞ্জ উপজেলা 3"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "30",
+        "name_en": "Munshiganj Upazila 4",
+        "name_bn": "মুন্সিগঞ্জ উপজেলা 4"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "30",
+        "name_en": "Munshiganj Upazila 5",
+        "name_bn": "মুন্সিগঞ্জ উপজেলা 5"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "30",
+        "name_en": "Munshiganj Upazila 6",
+        "name_bn": "মুন্সিগঞ্জ উপজেলা 6"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "30",
+        "name_en": "Munshiganj Upazila 7",
+        "name_bn": "মুন্সিগঞ্জ উপজেলা 7"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "30",
+        "name_en": "Munshiganj Upazila 8",
+        "name_bn": "মুন্সিগঞ্জ উপজেলা 8"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "30",
+        "name_en": "Narayanganj Sadar",
+        "name_bn": "নারায়ণগঞ্জ উপজেলা 1"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "30",
+        "name_en": "Narayanganj Sadar Upazila",
+        "name_bn": "নারায়ণগঞ্জ উপজেলা 2"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "30",
+        "name_en": "Narayanganj Upazila 3",
+        "name_bn": "নারায়ণগঞ্জ উপজেলা 3"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "30",
+        "name_en": "Narayanganj Upazila 4",
+        "name_bn": "নারায়ণগঞ্জ উপজেলা 4"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "30",
+        "name_en": "Narayanganj Upazila 5",
+        "name_bn": "নারায়ণগঞ্জ উপজেলা 5"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "30",
+        "name_en": "Narayanganj Upazila 6",
+        "name_bn": "নারায়ণগঞ্জ উপজেলা 6"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "30",
+        "name_en": "Narayanganj Upazila 7",
+        "name_bn": "নারায়ণগঞ্জ উপজেলা 7"
+    },
+    {
+        "district_bbs": "42",
+        "division_bbs": "30",
+        "name_en": "Narayanganj Upazila 8",
+        "name_bn": "নারায়ণগঞ্জ উপজেলা 8"
+    },
+    {
+        "district_bbs": "44",
+        "division_bbs": "30",
+        "name_en": "Narsingdi Sadar",
+        "name_bn": "নরসিংদী উপজেলা 1"
+    },
+    {
+        "district_bbs": "44",
+        "division_bbs": "30",
+        "name_en": "Narsingdi Sadar Upazila",
+        "name_bn": "নরসিংদী উপজেলা 2"
+    },
+    {
+        "district_bbs": "44",
+        "division_bbs": "30",
+        "name_en": "Narsingdi Upazila 3",
+        "name_bn": "নরসিংদী উপজেলা 3"
+    },
+    {
+        "district_bbs": "44",
+        "division_bbs": "30",
+        "name_en": "Narsingdi Upazila 4",
+        "name_bn": "নরসিংদী উপজেলা 4"
+    },
+    {
+        "district_bbs": "44",
+        "division_bbs": "30",
+        "name_en": "Narsingdi Upazila 5",
+        "name_bn": "নরসিংদী উপজেলা 5"
+    },
+    {
+        "district_bbs": "44",
+        "division_bbs": "30",
+        "name_en": "Narsingdi Upazila 6",
+        "name_bn": "নরসিংদী উপজেলা 6"
+    },
+    {
+        "district_bbs": "44",
+        "division_bbs": "30",
+        "name_en": "Narsingdi Upazila 7",
+        "name_bn": "নরসিংদী উপজেলা 7"
+    },
+    {
+        "district_bbs": "44",
+        "division_bbs": "30",
+        "name_en": "Narsingdi Upazila 8",
+        "name_bn": "নরসিংদী উপজেলা 8"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "30",
+        "name_en": "Rajbari Sadar",
+        "name_bn": "রাজবাড়ী উপজেলা 1"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "30",
+        "name_en": "Rajbari Sadar Upazila",
+        "name_bn": "রাজবাড়ী উপজেলা 2"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "30",
+        "name_en": "Rajbari Upazila 3",
+        "name_bn": "রাজবাড়ী উপজেলা 3"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "30",
+        "name_en": "Rajbari Upazila 4",
+        "name_bn": "রাজবাড়ী উপজেলা 4"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "30",
+        "name_en": "Rajbari Upazila 5",
+        "name_bn": "রাজবাড়ী উপজেলা 5"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "30",
+        "name_en": "Rajbari Upazila 6",
+        "name_bn": "রাজবাড়ী উপজেলা 6"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "30",
+        "name_en": "Rajbari Upazila 7",
+        "name_bn": "রাজবাড়ী উপজেলা 7"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "30",
+        "name_en": "Rajbari Upazila 8",
+        "name_bn": "রাজবাড়ী উপজেলা 8"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "30",
+        "name_en": "Shariatpur Sadar",
+        "name_bn": "শরীয়তপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "30",
+        "name_en": "Shariatpur Sadar Upazila",
+        "name_bn": "শরীয়তপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "30",
+        "name_en": "Shariatpur Upazila 3",
+        "name_bn": "শরীয়তপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "30",
+        "name_en": "Shariatpur Upazila 4",
+        "name_bn": "শরীয়তপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "30",
+        "name_en": "Shariatpur Upazila 5",
+        "name_bn": "শরীয়তপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "30",
+        "name_en": "Shariatpur Upazila 6",
+        "name_bn": "শরীয়তপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "30",
+        "name_en": "Shariatpur Upazila 7",
+        "name_bn": "শরীয়তপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "30",
+        "name_en": "Shariatpur Upazila 8",
+        "name_bn": "শরীয়তপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "64",
+        "division_bbs": "30",
+        "name_en": "Tangail Sadar",
+        "name_bn": "টাঙ্গাইল উপজেলা 1"
+    },
+    {
+        "district_bbs": "64",
+        "division_bbs": "30",
+        "name_en": "Tangail Sadar Upazila",
+        "name_bn": "টাঙ্গাইল উপজেলা 2"
+    },
+    {
+        "district_bbs": "64",
+        "division_bbs": "30",
+        "name_en": "Tangail Upazila 3",
+        "name_bn": "টাঙ্গাইল উপজেলা 3"
+    },
+    {
+        "district_bbs": "64",
+        "division_bbs": "30",
+        "name_en": "Tangail Upazila 4",
+        "name_bn": "টাঙ্গাইল উপজেলা 4"
+    },
+    {
+        "district_bbs": "64",
+        "division_bbs": "30",
+        "name_en": "Tangail Upazila 5",
+        "name_bn": "টাঙ্গাইল উপজেলা 5"
+    },
+    {
+        "district_bbs": "64",
+        "division_bbs": "30",
+        "name_en": "Tangail Upazila 6",
+        "name_bn": "টাঙ্গাইল উপজেলা 6"
+    },
+    {
+        "district_bbs": "64",
+        "division_bbs": "30",
+        "name_en": "Tangail Upazila 7",
+        "name_bn": "টাঙ্গাইল উপজেলা 7"
+    },
+    {
+        "district_bbs": "64",
+        "division_bbs": "30",
+        "name_en": "Tangail Upazila 8",
+        "name_bn": "টাঙ্গাইল উপজেলা 8"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "40",
+        "name_en": "Bagerhat Sadar",
+        "name_bn": "বাগেরহাট উপজেলা 1"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "40",
+        "name_en": "Bagerhat Sadar Upazila",
+        "name_bn": "বাগেরহাট উপজেলা 2"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "40",
+        "name_en": "Bagerhat Upazila 3",
+        "name_bn": "বাগেরহাট উপজেলা 3"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "40",
+        "name_en": "Bagerhat Upazila 4",
+        "name_bn": "বাগেরহাট উপজেলা 4"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "40",
+        "name_en": "Bagerhat Upazila 5",
+        "name_bn": "বাগেরহাট উপজেলা 5"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "40",
+        "name_en": "Bagerhat Upazila 6",
+        "name_bn": "বাগেরহাট উপজেলা 6"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "40",
+        "name_en": "Bagerhat Upazila 7",
+        "name_bn": "বাগেরহাট উপজেলা 7"
+    },
+    {
+        "district_bbs": "03",
+        "division_bbs": "40",
+        "name_en": "Bagerhat Upazila 8",
+        "name_bn": "বাগেরহাট উপজেলা 8"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "40",
+        "name_en": "Chuadanga Sadar",
+        "name_bn": "চুয়াডাঙ্গা উপজেলা 1"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "40",
+        "name_en": "Chuadanga Sadar Upazila",
+        "name_bn": "চুয়াডাঙ্গা উপজেলা 2"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "40",
+        "name_en": "Chuadanga Upazila 3",
+        "name_bn": "চুয়াডাঙ্গা উপজেলা 3"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "40",
+        "name_en": "Chuadanga Upazila 4",
+        "name_bn": "চুয়াডাঙ্গা উপজেলা 4"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "40",
+        "name_en": "Chuadanga Upazila 5",
+        "name_bn": "চুয়াডাঙ্গা উপজেলা 5"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "40",
+        "name_en": "Chuadanga Upazila 6",
+        "name_bn": "চুয়াডাঙ্গা উপজেলা 6"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "40",
+        "name_en": "Chuadanga Upazila 7",
+        "name_bn": "চুয়াডাঙ্গা উপজেলা 7"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "40",
+        "name_en": "Chuadanga Upazila 8",
+        "name_bn": "চুয়াডাঙ্গা উপজেলা 8"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "40",
+        "name_en": "Jashore Sadar",
+        "name_bn": "যশোর উপজেলা 1"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "40",
+        "name_en": "Jashore Sadar Upazila",
+        "name_bn": "যশোর উপজেলা 2"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "40",
+        "name_en": "Jashore Upazila 3",
+        "name_bn": "যশোর উপজেলা 3"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "40",
+        "name_en": "Jashore Upazila 4",
+        "name_bn": "যশোর উপজেলা 4"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "40",
+        "name_en": "Jashore Upazila 5",
+        "name_bn": "যশোর উপজেলা 5"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "40",
+        "name_en": "Jashore Upazila 6",
+        "name_bn": "যশোর উপজেলা 6"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "40",
+        "name_en": "Jashore Upazila 7",
+        "name_bn": "যশোর উপজেলা 7"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "40",
+        "name_en": "Jashore Upazila 8",
+        "name_bn": "যশোর উপজেলা 8"
+    },
+    {
+        "district_bbs": "27",
+        "division_bbs": "40",
+        "name_en": "Jhenaidah Sadar",
+        "name_bn": "ঝিনাইদহ উপজেলা 1"
+    },
+    {
+        "district_bbs": "27",
+        "division_bbs": "40",
+        "name_en": "Jhenaidah Sadar Upazila",
+        "name_bn": "ঝিনাইদহ উপজেলা 2"
+    },
+    {
+        "district_bbs": "27",
+        "division_bbs": "40",
+        "name_en": "Jhenaidah Upazila 3",
+        "name_bn": "ঝিনাইদহ উপজেলা 3"
+    },
+    {
+        "district_bbs": "27",
+        "division_bbs": "40",
+        "name_en": "Jhenaidah Upazila 4",
+        "name_bn": "ঝিনাইদহ উপজেলা 4"
+    },
+    {
+        "district_bbs": "27",
+        "division_bbs": "40",
+        "name_en": "Jhenaidah Upazila 5",
+        "name_bn": "ঝিনাইদহ উপজেলা 5"
+    },
+    {
+        "district_bbs": "27",
+        "division_bbs": "40",
+        "name_en": "Jhenaidah Upazila 6",
+        "name_bn": "ঝিনাইদহ উপজেলা 6"
+    },
+    {
+        "district_bbs": "27",
+        "division_bbs": "40",
+        "name_en": "Jhenaidah Upazila 7",
+        "name_bn": "ঝিনাইদহ উপজেলা 7"
+    },
+    {
+        "district_bbs": "27",
+        "division_bbs": "40",
+        "name_en": "Jhenaidah Upazila 8",
+        "name_bn": "ঝিনাইদহ উপজেলা 8"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "40",
+        "name_en": "Khulna Sadar",
+        "name_bn": "খুলনা উপজেলা 1"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "40",
+        "name_en": "Khulna Sadar Upazila",
+        "name_bn": "খুলনা উপজেলা 2"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "40",
+        "name_en": "Khulna Upazila 3",
+        "name_bn": "খুলনা উপজেলা 3"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "40",
+        "name_en": "Khulna Upazila 4",
+        "name_bn": "খুলনা উপজেলা 4"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "40",
+        "name_en": "Khulna Upazila 5",
+        "name_bn": "খুলনা উপজেলা 5"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "40",
+        "name_en": "Khulna Upazila 6",
+        "name_bn": "খুলনা উপজেলা 6"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "40",
+        "name_en": "Khulna Upazila 7",
+        "name_bn": "খুলনা উপজেলা 7"
+    },
+    {
+        "district_bbs": "30",
+        "division_bbs": "40",
+        "name_en": "Khulna Upazila 8",
+        "name_bn": "খুলনা উপজেলা 8"
+    },
+    {
+        "district_bbs": "33",
+        "division_bbs": "40",
+        "name_en": "Kushtia Sadar",
+        "name_bn": "কুষ্টিয়া উপজেলা 1"
+    },
+    {
+        "district_bbs": "33",
+        "division_bbs": "40",
+        "name_en": "Kushtia Sadar Upazila",
+        "name_bn": "কুষ্টিয়া উপজেলা 2"
+    },
+    {
+        "district_bbs": "33",
+        "division_bbs": "40",
+        "name_en": "Kushtia Upazila 3",
+        "name_bn": "কুষ্টিয়া উপজেলা 3"
+    },
+    {
+        "district_bbs": "33",
+        "division_bbs": "40",
+        "name_en": "Kushtia Upazila 4",
+        "name_bn": "কুষ্টিয়া উপজেলা 4"
+    },
+    {
+        "district_bbs": "33",
+        "division_bbs": "40",
+        "name_en": "Kushtia Upazila 5",
+        "name_bn": "কুষ্টিয়া উপজেলা 5"
+    },
+    {
+        "district_bbs": "33",
+        "division_bbs": "40",
+        "name_en": "Kushtia Upazila 6",
+        "name_bn": "কুষ্টিয়া উপজেলা 6"
+    },
+    {
+        "district_bbs": "33",
+        "division_bbs": "40",
+        "name_en": "Kushtia Upazila 7",
+        "name_bn": "কুষ্টিয়া উপজেলা 7"
+    },
+    {
+        "district_bbs": "33",
+        "division_bbs": "40",
+        "name_en": "Kushtia Upazila 8",
+        "name_bn": "কুষ্টিয়া উপজেলা 8"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "40",
+        "name_en": "Magura Sadar",
+        "name_bn": "মাগুরা উপজেলা 1"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "40",
+        "name_en": "Magura Sadar Upazila",
+        "name_bn": "মাগুরা উপজেলা 2"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "40",
+        "name_en": "Magura Upazila 3",
+        "name_bn": "মাগুরা উপজেলা 3"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "40",
+        "name_en": "Magura Upazila 4",
+        "name_bn": "মাগুরা উপজেলা 4"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "40",
+        "name_en": "Magura Upazila 5",
+        "name_bn": "মাগুরা উপজেলা 5"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "40",
+        "name_en": "Magura Upazila 6",
+        "name_bn": "মাগুরা উপজেলা 6"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "40",
+        "name_en": "Magura Upazila 7",
+        "name_bn": "মাগুরা উপজেলা 7"
+    },
+    {
+        "district_bbs": "36",
+        "division_bbs": "40",
+        "name_en": "Magura Upazila 8",
+        "name_bn": "মাগুরা উপজেলা 8"
+    },
+    {
+        "district_bbs": "39",
+        "division_bbs": "40",
+        "name_en": "Meherpur Sadar",
+        "name_bn": "মেহেরপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "39",
+        "division_bbs": "40",
+        "name_en": "Meherpur Sadar Upazila",
+        "name_bn": "মেহেরপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "39",
+        "division_bbs": "40",
+        "name_en": "Meherpur Upazila 3",
+        "name_bn": "মেহেরপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "39",
+        "division_bbs": "40",
+        "name_en": "Meherpur Upazila 4",
+        "name_bn": "মেহেরপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "39",
+        "division_bbs": "40",
+        "name_en": "Meherpur Upazila 5",
+        "name_bn": "মেহেরপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "39",
+        "division_bbs": "40",
+        "name_en": "Meherpur Upazila 6",
+        "name_bn": "মেহেরপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "39",
+        "division_bbs": "40",
+        "name_en": "Meherpur Upazila 7",
+        "name_bn": "মেহেরপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "39",
+        "division_bbs": "40",
+        "name_en": "Meherpur Upazila 8",
+        "name_bn": "মেহেরপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "41",
+        "division_bbs": "40",
+        "name_en": "Narail Sadar",
+        "name_bn": "নড়াইল উপজেলা 1"
+    },
+    {
+        "district_bbs": "41",
+        "division_bbs": "40",
+        "name_en": "Narail Sadar Upazila",
+        "name_bn": "নড়াইল উপজেলা 2"
+    },
+    {
+        "district_bbs": "41",
+        "division_bbs": "40",
+        "name_en": "Narail Upazila 3",
+        "name_bn": "নড়াইল উপজেলা 3"
+    },
+    {
+        "district_bbs": "41",
+        "division_bbs": "40",
+        "name_en": "Narail Upazila 4",
+        "name_bn": "নড়াইল উপজেলা 4"
+    },
+    {
+        "district_bbs": "41",
+        "division_bbs": "40",
+        "name_en": "Narail Upazila 5",
+        "name_bn": "নড়াইল উপজেলা 5"
+    },
+    {
+        "district_bbs": "41",
+        "division_bbs": "40",
+        "name_en": "Narail Upazila 6",
+        "name_bn": "নড়াইল উপজেলা 6"
+    },
+    {
+        "district_bbs": "41",
+        "division_bbs": "40",
+        "name_en": "Narail Upazila 7",
+        "name_bn": "নড়াইল উপজেলা 7"
+    },
+    {
+        "district_bbs": "41",
+        "division_bbs": "40",
+        "name_en": "Narail Upazila 8",
+        "name_bn": "নড়াইল উপজেলা 8"
+    },
+    {
+        "district_bbs": "58",
+        "division_bbs": "40",
+        "name_en": "Satkhira Sadar",
+        "name_bn": "সাতক্ষীরা উপজেলা 1"
+    },
+    {
+        "district_bbs": "58",
+        "division_bbs": "40",
+        "name_en": "Satkhira Sadar Upazila",
+        "name_bn": "সাতক্ষীরা উপজেলা 2"
+    },
+    {
+        "district_bbs": "58",
+        "division_bbs": "40",
+        "name_en": "Satkhira Upazila 3",
+        "name_bn": "সাতক্ষীরা উপজেলা 3"
+    },
+    {
+        "district_bbs": "58",
+        "division_bbs": "40",
+        "name_en": "Satkhira Upazila 4",
+        "name_bn": "সাতক্ষীরা উপজেলা 4"
+    },
+    {
+        "district_bbs": "58",
+        "division_bbs": "40",
+        "name_en": "Satkhira Upazila 5",
+        "name_bn": "সাতক্ষীরা উপজেলা 5"
+    },
+    {
+        "district_bbs": "58",
+        "division_bbs": "40",
+        "name_en": "Satkhira Upazila 6",
+        "name_bn": "সাতক্ষীরা উপজেলা 6"
+    },
+    {
+        "district_bbs": "58",
+        "division_bbs": "40",
+        "name_en": "Satkhira Upazila 7",
+        "name_bn": "সাতক্ষীরা উপজেলা 7"
+    },
+    {
+        "district_bbs": "58",
+        "division_bbs": "40",
+        "name_en": "Satkhira Upazila 8",
+        "name_bn": "সাতক্ষীরা উপজেলা 8"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "45",
+        "name_en": "Jamalpur Sadar",
+        "name_bn": "জামালপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "45",
+        "name_en": "Jamalpur Sadar Upazila",
+        "name_bn": "জামালপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "45",
+        "name_en": "Jamalpur Upazila 3",
+        "name_bn": "জামালপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "45",
+        "name_en": "Jamalpur Upazila 4",
+        "name_bn": "জামালপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "45",
+        "name_en": "Jamalpur Upazila 5",
+        "name_bn": "জামালপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "45",
+        "name_en": "Jamalpur Upazila 6",
+        "name_bn": "জামালপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "45",
+        "name_en": "Jamalpur Upazila 7",
+        "name_bn": "জামালপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "45",
+        "name_en": "Jamalpur Upazila 8",
+        "name_bn": "জামালপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "47",
+        "division_bbs": "45",
+        "name_en": "Mymensingh Sadar",
+        "name_bn": "ময়মনসিংহ উপজেলা 1"
+    },
+    {
+        "district_bbs": "47",
+        "division_bbs": "45",
+        "name_en": "Mymensingh Sadar Upazila",
+        "name_bn": "ময়মনসিংহ উপজেলা 2"
+    },
+    {
+        "district_bbs": "47",
+        "division_bbs": "45",
+        "name_en": "Mymensingh Upazila 3",
+        "name_bn": "ময়মনসিংহ উপজেলা 3"
+    },
+    {
+        "district_bbs": "47",
+        "division_bbs": "45",
+        "name_en": "Mymensingh Upazila 4",
+        "name_bn": "ময়মনসিংহ উপজেলা 4"
+    },
+    {
+        "district_bbs": "47",
+        "division_bbs": "45",
+        "name_en": "Mymensingh Upazila 5",
+        "name_bn": "ময়মনসিংহ উপজেলা 5"
+    },
+    {
+        "district_bbs": "47",
+        "division_bbs": "45",
+        "name_en": "Mymensingh Upazila 6",
+        "name_bn": "ময়মনসিংহ উপজেলা 6"
+    },
+    {
+        "district_bbs": "47",
+        "division_bbs": "45",
+        "name_en": "Mymensingh Upazila 7",
+        "name_bn": "ময়মনসিংহ উপজেলা 7"
+    },
+    {
+        "district_bbs": "47",
+        "division_bbs": "45",
+        "name_en": "Mymensingh Upazila 8",
+        "name_bn": "ময়মনসিংহ উপজেলা 8"
+    },
+    {
+        "district_bbs": "48",
+        "division_bbs": "45",
+        "name_en": "Netrokona Sadar",
+        "name_bn": "নেত্রকোণা উপজেলা 1"
+    },
+    {
+        "district_bbs": "48",
+        "division_bbs": "45",
+        "name_en": "Netrokona Sadar Upazila",
+        "name_bn": "নেত্রকোণা উপজেলা 2"
+    },
+    {
+        "district_bbs": "48",
+        "division_bbs": "45",
+        "name_en": "Netrokona Upazila 3",
+        "name_bn": "নেত্রকোণা উপজেলা 3"
+    },
+    {
+        "district_bbs": "48",
+        "division_bbs": "45",
+        "name_en": "Netrokona Upazila 4",
+        "name_bn": "নেত্রকোণা উপজেলা 4"
+    },
+    {
+        "district_bbs": "48",
+        "division_bbs": "45",
+        "name_en": "Netrokona Upazila 5",
+        "name_bn": "নেত্রকোণা উপজেলা 5"
+    },
+    {
+        "district_bbs": "48",
+        "division_bbs": "45",
+        "name_en": "Netrokona Upazila 6",
+        "name_bn": "নেত্রকোণা উপজেলা 6"
+    },
+    {
+        "district_bbs": "48",
+        "division_bbs": "45",
+        "name_en": "Netrokona Upazila 7",
+        "name_bn": "নেত্রকোণা উপজেলা 7"
+    },
+    {
+        "district_bbs": "48",
+        "division_bbs": "45",
+        "name_en": "Netrokona Upazila 8",
+        "name_bn": "নেত্রকোণা উপজেলা 8"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "45",
+        "name_en": "Sherpur Sadar",
+        "name_bn": "শেরপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "45",
+        "name_en": "Sherpur Sadar Upazila",
+        "name_bn": "শেরপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "45",
+        "name_en": "Sherpur Upazila 3",
+        "name_bn": "শেরপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "45",
+        "name_en": "Sherpur Upazila 4",
+        "name_bn": "শেরপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "45",
+        "name_en": "Sherpur Upazila 5",
+        "name_bn": "শেরপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "45",
+        "name_en": "Sherpur Upazila 6",
+        "name_bn": "শেরপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "45",
+        "name_en": "Sherpur Upazila 7",
+        "name_bn": "শেরপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "45",
+        "name_en": "Sherpur Upazila 8",
+        "name_bn": "শেরপুর উপজেলা 8"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "50",
+        "name_en": "Bogura Sadar",
+        "name_bn": "বগুড়া উপজেলা 1"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "50",
+        "name_en": "Bogura Sadar Upazila",
+        "name_bn": "বগুড়া উপজেলা 2"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "50",
+        "name_en": "Bogura Upazila 3",
+        "name_bn": "বগুড়া উপজেলা 3"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "50",
+        "name_en": "Bogura Upazila 4",
+        "name_bn": "বগুড়া উপজেলা 4"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "50",
+        "name_en": "Bogura Upazila 5",
+        "name_bn": "বগুড়া উপজেলা 5"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "50",
+        "name_en": "Bogura Upazila 6",
+        "name_bn": "বগুড়া উপজেলা 6"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "50",
+        "name_en": "Bogura Upazila 7",
+        "name_bn": "বগুড়া উপজেলা 7"
+    },
+    {
+        "district_bbs": "10",
+        "division_bbs": "50",
+        "name_en": "Bogura Upazila 8",
+        "name_bn": "বগুড়া উপজেলা 8"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "50",
+        "name_en": "Chapainawabganj Sadar",
+        "name_bn": "চাঁপাইনবাবগঞ্জ উপজেলা 1"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "50",
+        "name_en": "Chapainawabganj Sadar Upazila",
+        "name_bn": "চাঁপাইনবাবগঞ্জ উপজেলা 2"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "50",
+        "name_en": "Chapainawabganj Upazila 3",
+        "name_bn": "চাঁপাইনবাবগঞ্জ উপজেলা 3"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "50",
+        "name_en": "Chapainawabganj Upazila 4",
+        "name_bn": "চাঁপাইনবাবগঞ্জ উপজেলা 4"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "50",
+        "name_en": "Chapainawabganj Upazila 5",
+        "name_bn": "চাঁপাইনবাবগঞ্জ উপজেলা 5"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "50",
+        "name_en": "Chapainawabganj Upazila 6",
+        "name_bn": "চাঁপাইনবাবগঞ্জ উপজেলা 6"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "50",
+        "name_en": "Chapainawabganj Upazila 7",
+        "name_bn": "চাঁপাইনবাবগঞ্জ উপজেলা 7"
+    },
+    {
+        "district_bbs": "13",
+        "division_bbs": "50",
+        "name_en": "Chapainawabganj Upazila 8",
+        "name_bn": "চাঁপাইনবাবগঞ্জ উপজেলা 8"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "50",
+        "name_en": "Joypurhat Sadar",
+        "name_bn": "জয়পুরহাট উপজেলা 1"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "50",
+        "name_en": "Joypurhat Sadar Upazila",
+        "name_bn": "জয়পুরহাট উপজেলা 2"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "50",
+        "name_en": "Joypurhat Upazila 3",
+        "name_bn": "জয়পুরহাট উপজেলা 3"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "50",
+        "name_en": "Joypurhat Upazila 4",
+        "name_bn": "জয়পুরহাট উপজেলা 4"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "50",
+        "name_en": "Joypurhat Upazila 5",
+        "name_bn": "জয়পুরহাট উপজেলা 5"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "50",
+        "name_en": "Joypurhat Upazila 6",
+        "name_bn": "জয়পুরহাট উপজেলা 6"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "50",
+        "name_en": "Joypurhat Upazila 7",
+        "name_bn": "জয়পুরহাট উপজেলা 7"
+    },
+    {
+        "district_bbs": "38",
+        "division_bbs": "50",
+        "name_en": "Joypurhat Upazila 8",
+        "name_bn": "জয়পুরহাট উপজেলা 8"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "50",
+        "name_en": "Naogaon Sadar",
+        "name_bn": "নওগাঁ উপজেলা 1"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "50",
+        "name_en": "Naogaon Sadar Upazila",
+        "name_bn": "নওগাঁ উপজেলা 2"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "50",
+        "name_en": "Naogaon Upazila 3",
+        "name_bn": "নওগাঁ উপজেলা 3"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "50",
+        "name_en": "Naogaon Upazila 4",
+        "name_bn": "নওগাঁ উপজেলা 4"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "50",
+        "name_en": "Naogaon Upazila 5",
+        "name_bn": "নওগাঁ উপজেলা 5"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "50",
+        "name_en": "Naogaon Upazila 6",
+        "name_bn": "নওগাঁ উপজেলা 6"
+    },
+    {
+        "district_bbs": "46",
+        "division_bbs": "50",
+        "name_en": "Naogaon Upazila 7",
+        "name_bn": "নওগাঁ উপজেলা 7"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "50",
+        "name_en": "Natore Sadar",
+        "name_bn": "নাটোর উপজেলা 1"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "50",
+        "name_en": "Natore Sadar Upazila",
+        "name_bn": "নাটোর উপজেলা 2"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "50",
+        "name_en": "Natore Upazila 3",
+        "name_bn": "নাটোর উপজেলা 3"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "50",
+        "name_en": "Natore Upazila 4",
+        "name_bn": "নাটোর উপজেলা 4"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "50",
+        "name_en": "Natore Upazila 5",
+        "name_bn": "নাটোর উপজেলা 5"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "50",
+        "name_en": "Natore Upazila 6",
+        "name_bn": "নাটোর উপজেলা 6"
+    },
+    {
+        "district_bbs": "49",
+        "division_bbs": "50",
+        "name_en": "Natore Upazila 7",
+        "name_bn": "নাটোর উপজেলা 7"
+    },
+    {
+        "district_bbs": "53",
+        "division_bbs": "50",
+        "name_en": "Pabna Sadar",
+        "name_bn": "পাবনা উপজেলা 1"
+    },
+    {
+        "district_bbs": "53",
+        "division_bbs": "50",
+        "name_en": "Pabna Sadar Upazila",
+        "name_bn": "পাবনা উপজেলা 2"
+    },
+    {
+        "district_bbs": "53",
+        "division_bbs": "50",
+        "name_en": "Pabna Upazila 3",
+        "name_bn": "পাবনা উপজেলা 3"
+    },
+    {
+        "district_bbs": "53",
+        "division_bbs": "50",
+        "name_en": "Pabna Upazila 4",
+        "name_bn": "পাবনা উপজেলা 4"
+    },
+    {
+        "district_bbs": "53",
+        "division_bbs": "50",
+        "name_en": "Pabna Upazila 5",
+        "name_bn": "পাবনা উপজেলা 5"
+    },
+    {
+        "district_bbs": "53",
+        "division_bbs": "50",
+        "name_en": "Pabna Upazila 6",
+        "name_bn": "পাবনা উপজেলা 6"
+    },
+    {
+        "district_bbs": "53",
+        "division_bbs": "50",
+        "name_en": "Pabna Upazila 7",
+        "name_bn": "পাবনা উপজেলা 7"
+    },
+    {
+        "district_bbs": "57",
+        "division_bbs": "50",
+        "name_en": "Rajshahi Sadar",
+        "name_bn": "রাজশাহী উপজেলা 1"
+    },
+    {
+        "district_bbs": "57",
+        "division_bbs": "50",
+        "name_en": "Rajshahi Sadar Upazila",
+        "name_bn": "রাজশাহী উপজেলা 2"
+    },
+    {
+        "district_bbs": "57",
+        "division_bbs": "50",
+        "name_en": "Rajshahi Upazila 3",
+        "name_bn": "রাজশাহী উপজেলা 3"
+    },
+    {
+        "district_bbs": "57",
+        "division_bbs": "50",
+        "name_en": "Rajshahi Upazila 4",
+        "name_bn": "রাজশাহী উপজেলা 4"
+    },
+    {
+        "district_bbs": "57",
+        "division_bbs": "50",
+        "name_en": "Rajshahi Upazila 5",
+        "name_bn": "রাজশাহী উপজেলা 5"
+    },
+    {
+        "district_bbs": "57",
+        "division_bbs": "50",
+        "name_en": "Rajshahi Upazila 6",
+        "name_bn": "রাজশাহী উপজেলা 6"
+    },
+    {
+        "district_bbs": "57",
+        "division_bbs": "50",
+        "name_en": "Rajshahi Upazila 7",
+        "name_bn": "রাজশাহী উপজেলা 7"
+    },
+    {
+        "district_bbs": "59",
+        "division_bbs": "50",
+        "name_en": "Sirajganj Sadar",
+        "name_bn": "সিরাজগঞ্জ উপজেলা 1"
+    },
+    {
+        "district_bbs": "59",
+        "division_bbs": "50",
+        "name_en": "Sirajganj Sadar Upazila",
+        "name_bn": "সিরাজগঞ্জ উপজেলা 2"
+    },
+    {
+        "district_bbs": "59",
+        "division_bbs": "50",
+        "name_en": "Sirajganj Upazila 3",
+        "name_bn": "সিরাজগঞ্জ উপজেলা 3"
+    },
+    {
+        "district_bbs": "59",
+        "division_bbs": "50",
+        "name_en": "Sirajganj Upazila 4",
+        "name_bn": "সিরাজগঞ্জ উপজেলা 4"
+    },
+    {
+        "district_bbs": "59",
+        "division_bbs": "50",
+        "name_en": "Sirajganj Upazila 5",
+        "name_bn": "সিরাজগঞ্জ উপজেলা 5"
+    },
+    {
+        "district_bbs": "59",
+        "division_bbs": "50",
+        "name_en": "Sirajganj Upazila 6",
+        "name_bn": "সিরাজগঞ্জ উপজেলা 6"
+    },
+    {
+        "district_bbs": "59",
+        "division_bbs": "50",
+        "name_en": "Sirajganj Upazila 7",
+        "name_bn": "সিরাজগঞ্জ উপজেলা 7"
+    },
+    {
+        "district_bbs": "11",
+        "division_bbs": "55",
+        "name_en": "Dinajpur Sadar",
+        "name_bn": "দিনাজপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "11",
+        "division_bbs": "55",
+        "name_en": "Dinajpur Sadar Upazila",
+        "name_bn": "দিনাজপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "11",
+        "division_bbs": "55",
+        "name_en": "Dinajpur Upazila 3",
+        "name_bn": "দিনাজপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "11",
+        "division_bbs": "55",
+        "name_en": "Dinajpur Upazila 4",
+        "name_bn": "দিনাজপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "11",
+        "division_bbs": "55",
+        "name_en": "Dinajpur Upazila 5",
+        "name_bn": "দিনাজপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "11",
+        "division_bbs": "55",
+        "name_en": "Dinajpur Upazila 6",
+        "name_bn": "দিনাজপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "11",
+        "division_bbs": "55",
+        "name_en": "Dinajpur Upazila 7",
+        "name_bn": "দিনাজপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "55",
+        "name_en": "Gaibandha Sadar",
+        "name_bn": "গাইবান্ধা উপজেলা 1"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "55",
+        "name_en": "Gaibandha Sadar Upazila",
+        "name_bn": "গাইবান্ধা উপজেলা 2"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "55",
+        "name_en": "Gaibandha Upazila 3",
+        "name_bn": "গাইবান্ধা উপজেলা 3"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "55",
+        "name_en": "Gaibandha Upazila 4",
+        "name_bn": "গাইবান্ধা উপজেলা 4"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "55",
+        "name_en": "Gaibandha Upazila 5",
+        "name_bn": "গাইবান্ধা উপজেলা 5"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "55",
+        "name_en": "Gaibandha Upazila 6",
+        "name_bn": "গাইবান্ধা উপজেলা 6"
+    },
+    {
+        "district_bbs": "19",
+        "division_bbs": "55",
+        "name_en": "Gaibandha Upazila 7",
+        "name_bn": "গাইবান্ধা উপজেলা 7"
+    },
+    {
+        "district_bbs": "32",
+        "division_bbs": "55",
+        "name_en": "Kurigram Sadar",
+        "name_bn": "কুড়িগ্রাম উপজেলা 1"
+    },
+    {
+        "district_bbs": "32",
+        "division_bbs": "55",
+        "name_en": "Kurigram Sadar Upazila",
+        "name_bn": "কুড়িগ্রাম উপজেলা 2"
+    },
+    {
+        "district_bbs": "32",
+        "division_bbs": "55",
+        "name_en": "Kurigram Upazila 3",
+        "name_bn": "কুড়িগ্রাম উপজেলা 3"
+    },
+    {
+        "district_bbs": "32",
+        "division_bbs": "55",
+        "name_en": "Kurigram Upazila 4",
+        "name_bn": "কুড়িগ্রাম উপজেলা 4"
+    },
+    {
+        "district_bbs": "32",
+        "division_bbs": "55",
+        "name_en": "Kurigram Upazila 5",
+        "name_bn": "কুড়িগ্রাম উপজেলা 5"
+    },
+    {
+        "district_bbs": "32",
+        "division_bbs": "55",
+        "name_en": "Kurigram Upazila 6",
+        "name_bn": "কুড়িগ্রাম উপজেলা 6"
+    },
+    {
+        "district_bbs": "32",
+        "division_bbs": "55",
+        "name_en": "Kurigram Upazila 7",
+        "name_bn": "কুড়িগ্রাম উপজেলা 7"
+    },
+    {
+        "district_bbs": "37",
+        "division_bbs": "55",
+        "name_en": "Lalmonirhat Sadar",
+        "name_bn": "লালমনিরহাট উপজেলা 1"
+    },
+    {
+        "district_bbs": "37",
+        "division_bbs": "55",
+        "name_en": "Lalmonirhat Sadar Upazila",
+        "name_bn": "লালমনিরহাট উপজেলা 2"
+    },
+    {
+        "district_bbs": "37",
+        "division_bbs": "55",
+        "name_en": "Lalmonirhat Upazila 3",
+        "name_bn": "লালমনিরহাট উপজেলা 3"
+    },
+    {
+        "district_bbs": "37",
+        "division_bbs": "55",
+        "name_en": "Lalmonirhat Upazila 4",
+        "name_bn": "লালমনিরহাট উপজেলা 4"
+    },
+    {
+        "district_bbs": "37",
+        "division_bbs": "55",
+        "name_en": "Lalmonirhat Upazila 5",
+        "name_bn": "লালমনিরহাট উপজেলা 5"
+    },
+    {
+        "district_bbs": "37",
+        "division_bbs": "55",
+        "name_en": "Lalmonirhat Upazila 6",
+        "name_bn": "লালমনিরহাট উপজেলা 6"
+    },
+    {
+        "district_bbs": "37",
+        "division_bbs": "55",
+        "name_en": "Lalmonirhat Upazila 7",
+        "name_bn": "লালমনিরহাট উপজেলা 7"
+    },
+    {
+        "district_bbs": "45",
+        "division_bbs": "55",
+        "name_en": "Nilphamari Sadar",
+        "name_bn": "নীলফামারী উপজেলা 1"
+    },
+    {
+        "district_bbs": "45",
+        "division_bbs": "55",
+        "name_en": "Nilphamari Sadar Upazila",
+        "name_bn": "নীলফামারী উপজেলা 2"
+    },
+    {
+        "district_bbs": "45",
+        "division_bbs": "55",
+        "name_en": "Nilphamari Upazila 3",
+        "name_bn": "নীলফামারী উপজেলা 3"
+    },
+    {
+        "district_bbs": "45",
+        "division_bbs": "55",
+        "name_en": "Nilphamari Upazila 4",
+        "name_bn": "নীলফামারী উপজেলা 4"
+    },
+    {
+        "district_bbs": "45",
+        "division_bbs": "55",
+        "name_en": "Nilphamari Upazila 5",
+        "name_bn": "নীলফামারী উপজেলা 5"
+    },
+    {
+        "district_bbs": "45",
+        "division_bbs": "55",
+        "name_en": "Nilphamari Upazila 6",
+        "name_bn": "নীলফামারী উপজেলা 6"
+    },
+    {
+        "district_bbs": "45",
+        "division_bbs": "55",
+        "name_en": "Nilphamari Upazila 7",
+        "name_bn": "নীলফামারী উপজেলা 7"
+    },
+    {
+        "district_bbs": "52",
+        "division_bbs": "55",
+        "name_en": "Panchagarh Sadar",
+        "name_bn": "পঞ্চগড় উপজেলা 1"
+    },
+    {
+        "district_bbs": "52",
+        "division_bbs": "55",
+        "name_en": "Panchagarh Sadar Upazila",
+        "name_bn": "পঞ্চগড় উপজেলা 2"
+    },
+    {
+        "district_bbs": "52",
+        "division_bbs": "55",
+        "name_en": "Panchagarh Upazila 3",
+        "name_bn": "পঞ্চগড় উপজেলা 3"
+    },
+    {
+        "district_bbs": "52",
+        "division_bbs": "55",
+        "name_en": "Panchagarh Upazila 4",
+        "name_bn": "পঞ্চগড় উপজেলা 4"
+    },
+    {
+        "district_bbs": "52",
+        "division_bbs": "55",
+        "name_en": "Panchagarh Upazila 5",
+        "name_bn": "পঞ্চগড় উপজেলা 5"
+    },
+    {
+        "district_bbs": "52",
+        "division_bbs": "55",
+        "name_en": "Panchagarh Upazila 6",
+        "name_bn": "পঞ্চগড় উপজেলা 6"
+    },
+    {
+        "district_bbs": "52",
+        "division_bbs": "55",
+        "name_en": "Panchagarh Upazila 7",
+        "name_bn": "পঞ্চগড় উপজেলা 7"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "55",
+        "name_en": "Rangpur Sadar",
+        "name_bn": "রংপুর উপজেলা 1"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "55",
+        "name_en": "Rangpur Sadar Upazila",
+        "name_bn": "রংপুর উপজেলা 2"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "55",
+        "name_en": "Rangpur Upazila 3",
+        "name_bn": "রংপুর উপজেলা 3"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "55",
+        "name_en": "Rangpur Upazila 4",
+        "name_bn": "রংপুর উপজেলা 4"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "55",
+        "name_en": "Rangpur Upazila 5",
+        "name_bn": "রংপুর উপজেলা 5"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "55",
+        "name_en": "Rangpur Upazila 6",
+        "name_bn": "রংপুর উপজেলা 6"
+    },
+    {
+        "district_bbs": "54",
+        "division_bbs": "55",
+        "name_en": "Rangpur Upazila 7",
+        "name_bn": "রংপুর উপজেলা 7"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "55",
+        "name_en": "Thakurgaon Sadar",
+        "name_bn": "ঠাকুরগাঁও উপজেলা 1"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "55",
+        "name_en": "Thakurgaon Sadar Upazila",
+        "name_bn": "ঠাকুরগাঁও উপজেলা 2"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "55",
+        "name_en": "Thakurgaon Upazila 3",
+        "name_bn": "ঠাকুরগাঁও উপজেলা 3"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "55",
+        "name_en": "Thakurgaon Upazila 4",
+        "name_bn": "ঠাকুরগাঁও উপজেলা 4"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "55",
+        "name_en": "Thakurgaon Upazila 5",
+        "name_bn": "ঠাকুরগাঁও উপজেলা 5"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "55",
+        "name_en": "Thakurgaon Upazila 6",
+        "name_bn": "ঠাকুরগাঁও উপজেলা 6"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "55",
+        "name_en": "Thakurgaon Upazila 7",
+        "name_bn": "ঠাকুরগাঁও উপজেলা 7"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "60",
+        "name_en": "Habiganj Sadar",
+        "name_bn": "হবিগঞ্জ উপজেলা 1"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "60",
+        "name_en": "Habiganj Sadar Upazila",
+        "name_bn": "হবিগঞ্জ উপজেলা 2"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "60",
+        "name_en": "Habiganj Upazila 3",
+        "name_bn": "হবিগঞ্জ উপজেলা 3"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "60",
+        "name_en": "Habiganj Upazila 4",
+        "name_bn": "হবিগঞ্জ উপজেলা 4"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "60",
+        "name_en": "Habiganj Upazila 5",
+        "name_bn": "হবিগঞ্জ উপজেলা 5"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "60",
+        "name_en": "Habiganj Upazila 6",
+        "name_bn": "হবিগঞ্জ উপজেলা 6"
+    },
+    {
+        "district_bbs": "20",
+        "division_bbs": "60",
+        "name_en": "Habiganj Upazila 7",
+        "name_bn": "হবিগঞ্জ উপজেলা 7"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "60",
+        "name_en": "Moulvibazar Sadar",
+        "name_bn": "মৌলভীবাজার উপজেলা 1"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "60",
+        "name_en": "Moulvibazar Sadar Upazila",
+        "name_bn": "মৌলভীবাজার উপজেলা 2"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "60",
+        "name_en": "Moulvibazar Upazila 3",
+        "name_bn": "মৌলভীবাজার উপজেলা 3"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "60",
+        "name_en": "Moulvibazar Upazila 4",
+        "name_bn": "মৌলভীবাজার উপজেলা 4"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "60",
+        "name_en": "Moulvibazar Upazila 5",
+        "name_bn": "মৌলভীবাজার উপজেলা 5"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "60",
+        "name_en": "Moulvibazar Upazila 6",
+        "name_bn": "মৌলভীবাজার উপজেলা 6"
+    },
+    {
+        "district_bbs": "40",
+        "division_bbs": "60",
+        "name_en": "Moulvibazar Upazila 7",
+        "name_bn": "মৌলভীবাজার উপজেলা 7"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "60",
+        "name_en": "Sunanamganj Sadar",
+        "name_bn": "সুনামগঞ্জ উপজেলা 1"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "60",
+        "name_en": "Sunanamganj Sadar Upazila",
+        "name_bn": "সুনামগঞ্জ উপজেলা 2"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "60",
+        "name_en": "Sunanamganj Upazila 3",
+        "name_bn": "সুনামগঞ্জ উপজেলা 3"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "60",
+        "name_en": "Sunanamganj Upazila 4",
+        "name_bn": "সুনামগঞ্জ উপজেলা 4"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "60",
+        "name_en": "Sunanamganj Upazila 5",
+        "name_bn": "সুনামগঞ্জ উপজেলা 5"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "60",
+        "name_en": "Sunanamganj Upazila 6",
+        "name_bn": "সুনামগঞ্জ উপজেলা 6"
+    },
+    {
+        "district_bbs": "62",
+        "division_bbs": "60",
+        "name_en": "Sunanamganj Upazila 7",
+        "name_bn": "সুনামগঞ্জ উপজেলা 7"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "60",
+        "name_en": "Sylhet Sadar",
+        "name_bn": "সিলেট উপজেলা 1"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "60",
+        "name_en": "Sylhet Sadar Upazila",
+        "name_bn": "সিলেট উপজেলা 2"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "60",
+        "name_en": "Sylhet Upazila 3",
+        "name_bn": "সিলেট উপজেলা 3"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "60",
+        "name_en": "Sylhet Upazila 4",
+        "name_bn": "সিলেট উপজেলা 4"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "60",
+        "name_en": "Sylhet Upazila 5",
+        "name_bn": "সিলেট উপজেলা 5"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "60",
+        "name_en": "Sylhet Upazila 6",
+        "name_bn": "সিলেট উপজেলা 6"
+    },
+    {
+        "district_bbs": "60",
+        "division_bbs": "60",
+        "name_en": "Sylhet Upazila 7",
+        "name_bn": "সিলেট উপজেলা 7"
+    }
+]
