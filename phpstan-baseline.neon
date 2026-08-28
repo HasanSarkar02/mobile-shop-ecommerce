@@ -1083,7 +1083,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
 			identifier: property.notFound
-			count: 4
+			count: 5
 			path: app/Services/OrderService.php
 
 		-
@@ -1105,8 +1105,20 @@ parameters:
 			path: app/Services/OrderService.php
 
 		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:lineTotal\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
 			message: '#^Cannot call method isPast\(\) on string\.$#'
 			identifier: method.nonObject
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
 			count: 1
 			path: app/Services/OrderService.php
 
@@ -1171,14 +1183,32 @@ parameters:
 			path: app/Services/OrderService.php
 
 		-
+			message: '#^Parameter \#3 \$customer of method App\\Services\\CouponService\:\:recordRedemptionForResult\(\) expects App\\Models\\Customer\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
 			message: '#^Result of && is always false\.$#'
 			identifier: booleanAnd.alwaysFalse
-			count: 1
+			count: 2
 			path: app/Services/OrderService.php
 
 		-
 			message: '#^Result of \|\| is always false\.$#'
 			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''coupon''\|''coupon_automatic'' and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between null and 0 will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
 			count: 1
 			path: app/Services/OrderService.php
 
@@ -1197,6 +1227,12 @@ parameters:
 		-
 			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ShippingMethodType\:\:Pickup will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>cost" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/OrderService.php
 

@@ -63,6 +63,10 @@ class CheckoutPage extends Component
     /** @var Collection<int, BdUpazila> */
     public Collection $upazilas;
 
+    public string $couponCode = '';
+
+    public ?string $couponError = null;
+
     // Secondary, UX-only guard against a rapid double-click sending two
     // near-simultaneous requests before the wire:loading disabled state (see
     // the checkout button markup) takes effect. The authoritative protection
@@ -119,6 +123,28 @@ class CheckoutPage extends Component
                 $this->upazilas = $this->bd_district_id ? BdUpazila::query()->where('district_id', $this->bd_district_id)->orderBy('name_en')->get() : collect();
             }
         }
+    }
+
+    public function applyCoupon(CartService $carts, CouponService $coupons): void
+    {
+        $customer = Auth::guard('customer')->user();
+        $cart = $carts->getOrCreateCart($customer, request()->cookie('cart_token'));
+        $result = $coupons->applyToCart($cart, $this->couponCode, $customer);
+
+        $this->couponError = $result->valid ? null : $result->message;
+        $this->couponCode = $result->valid ? '' : $this->couponCode;
+
+        if ($result->valid) {
+            $this->dispatch('cart-updated');
+        }
+    }
+
+    public function removeCoupon(CartService $carts, CouponService $coupons): void
+    {
+        $cart = $carts->getOrCreateCart(Auth::guard('customer')->user(), request()->cookie('cart_token'));
+        $coupons->removeFromCart($cart);
+        $this->couponError = null;
+        $this->dispatch('cart-updated');
     }
 
     public function placeOrder(CartService $carts, OrderService $orders, ShippingService $shippingService): void
@@ -317,17 +343,25 @@ class CheckoutPage extends Component
         // Unified priority: 1.Method Free/Pickup ->0, 2.Coupon FreeShipping ->0, 3.Geo free_threshold (post-discount) ->0, 4.Geo charge
         $isFreeOrPickup = $shipping !== null && ($shipping->type === ShippingMethodType::Free || $shipping->type === ShippingMethodType::Pickup);
         $isCouponFree = $couponResult->valid && $couponResult->freeShipping;
+        $appliedCoupon = $couponResult->coupon ?? null;
+        $isAutomaticCoupon = $appliedCoupon !== null && empty($appliedCoupon->code);
         $freeReason = null;
         $nextFreeThreshold = null;
         $geoName = null;
         $originalShippingCost = null;
+        $couponWarning = null;
+
         if ($isFreeOrPickup) {
             $shippingCost = 0;
             $freeReason = $shipping->type === ShippingMethodType::Pickup ? 'Store Pickup' : 'Free Delivery Method';
             $originalShippingCost = $shipping?->cost ?? 0;
         } elseif ($isCouponFree) {
             $shippingCost = 0;
-            $freeReason = 'Coupon Applied';
+            $freeReason = $isAutomaticCoupon ? 'Free delivery over '.money((int) ($appliedCoupon->min_order_amount ?? 0)).' — automatic' : 'Coupon Applied';
+            // More precise automatic label if free_threshold coupon
+            if ($isAutomaticCoupon && $appliedCoupon->min_order_amount) {
+                $freeReason = 'Free delivery — automatic';
+            }
             $matchedRateTmp = $this->resolveMatchedRate($shippingService);
             $originalShippingCost = $matchedRateTmp?->charge ?? $shipping?->cost ?? 0;
         } else {
@@ -343,6 +377,10 @@ class CheckoutPage extends Component
                         $freeReason = 'Order over '.money((int) $matchedRate->free_threshold);
                     } elseif ($shippingCost !== 0) {
                         $nextFreeThreshold = (int) $matchedRate->free_threshold;
+                        // Warning: discount coupon caused loss of free delivery
+                        if ($discount > 0 && $subtotal >= $matchedRate->free_threshold && $subtotalAfterDiscount < $matchedRate->free_threshold) {
+                            $couponWarning = 'This coupon saved '.money($discount).' but you lost free delivery. Add '.money($matchedRate->free_threshold - $subtotalAfterDiscount).' more to get it back, or remove the coupon.';
+                        }
                     }
                 }
             } else {
@@ -383,6 +421,10 @@ class CheckoutPage extends Component
             'nextFreeThreshold' => $nextFreeThreshold,
             'geoName' => $geoName,
             'subtotalAfterDiscount' => $subtotalAfterDiscount,
+            'appliedCoupon' => $appliedCoupon,
+            'isAutomaticCoupon' => $isAutomaticCoupon,
+            'couponError' => $this->couponError,
+            'couponWarning' => $couponWarning,
             'hasPreorder' => $hasPreorder,
             'isMixed' => $isMixed,
             'preorderEta' => $preorderEta,

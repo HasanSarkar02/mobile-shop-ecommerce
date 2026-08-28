@@ -16,15 +16,17 @@ class OrderItem extends Model
     protected $fillable = [
         'tenant_id',
         'order_id', 'order_fulfillment_id', 'product_variant_id', 'product_name_snapshot', 'variant_sku_snapshot',
-        'unit_price', 'quantity', 'line_total', 'fulfillment_strategy', 'expected_available_at',
+        'unit_price', 'unit_cost_price', 'quantity', 'line_total', 'line_cost', 'fulfillment_strategy', 'expected_available_at',
     ];
 
     protected function casts(): array
     {
         return [
             'unit_price' => 'integer',
+            'unit_cost_price' => 'integer',
             'quantity' => 'decimal:3',
             'line_total' => 'integer',
+            'line_cost' => 'integer',
             'expected_available_at' => 'datetime',
         ];
     }

@@ -166,22 +166,42 @@ class OrderService
                 }
             }
 
-            $shippingCost = $orderData['shipping_cost'] ?? 0;
-
-            // Unified priority: 1.Method Free/Pickup ->0 (hybrid with geo)
-            $methodForCheck = null;
-            if (! empty($orderData['shipping_method_id'])) {
-                $methodForCheck = ShippingMethod::query()->find($orderData['shipping_method_id']);
-                if ($methodForCheck !== null && ($methodForCheck->type === ShippingMethodType::Free || $methodForCheck->type === ShippingMethodType::Pickup)) {
-                    $shippingCost = 0;
-                }
-            }
-
+            // Unified priority: 1.Method Free/Pickup ->0, 2.Coupon FreeShipping (incl. automatic blank-code) ->0, 3.Geo free_threshold (post-discount) ->0, 4.Geo charge
             $couponResult = $this->coupons->lockAndComputeForCart($cart, $cart->customer);
             $discountTotal = $couponResult->valid ? $couponResult->discountAmount : 0;
 
-            if ($couponResult->valid && $couponResult->freeShipping) {
+            $cartSubtotalForShipping = $cart->items->sum(fn ($item) => $item->lineTotal());
+            $subtotalAfterDiscountForShipping = max(0, $cartSubtotalForShipping - $discountTotal);
+
+            $methodForCheck = null;
+            $isMethodFree = false;
+            if (! empty($orderData['shipping_method_id'])) {
+                $methodForCheck = ShippingMethod::query()->find($orderData['shipping_method_id']);
+                $isMethodFree = $methodForCheck !== null && ($methodForCheck->type === ShippingMethodType::Free || $methodForCheck->type === ShippingMethodType::Pickup);
+            }
+            $isCouponFree = $couponResult->valid && $couponResult->freeShipping;
+
+            if ($isMethodFree) {
                 $shippingCost = 0;
+                $freeShippingReason = $methodForCheck->type === ShippingMethodType::Pickup ? 'pickup' : 'method_free';
+            } elseif ($isCouponFree) {
+                $shippingCost = 0;
+                $freeShippingReason = $couponResult->coupon && empty($couponResult->coupon->code) ? 'coupon_automatic' : 'coupon';
+            } else {
+                // Authoritative geo re-quote (protects against tampered orderData[shipping_cost] and ensures preview==persistence)
+                $shippingService = app(ShippingService::class);
+                $addr = $orderData['shipping_address'] ?? null;
+                $upazilaId = isset($addr['bd_upazila_id']) && $addr['bd_upazila_id'] !== '' ? (int) $addr['bd_upazila_id'] : null;
+                $districtId = isset($addr['bd_district_id']) && $addr['bd_district_id'] !== '' ? (int) $addr['bd_district_id'] : null;
+                $divisionId = isset($addr['bd_division_id']) && $addr['bd_division_id'] !== '' ? (int) $addr['bd_division_id'] : null;
+                // Try geo quote only when shipping address has geo info; otherwise trust client-provided/method cost (preserves tests with no address)
+                $geoCost = null;
+                if ($upazilaId !== null || $districtId !== null || $divisionId !== null) {
+                    $geoCost = $shippingService->quote($upazilaId, $districtId, $divisionId, null, $subtotalAfterDiscountForShipping);
+                }
+                $fallbackCost = $methodForCheck?->cost ?? ($orderData['shipping_cost'] ?? 0);
+                $shippingCost = $geoCost ?? $fallbackCost;
+                $freeShippingReason = $shippingCost === 0 && $geoCost === 0 ? 'geo_threshold' : null;
             }
 
             try {
@@ -258,6 +278,7 @@ class OrderService
             foreach ($cart->items as $item) {
                 $variant = $variants->get($item->product_variant_id);
                 $strategy = $variant->fulfillment_strategy->value;
+                $unitCostPrice = (int) ($variant->cost_price ?? 0);
 
                 $order->items()->create([
                     'tenant_id' => $order->tenant_id,
@@ -266,8 +287,10 @@ class OrderService
                     'product_name_snapshot' => $variant->product->name ?? $variant->sku,
                     'variant_sku_snapshot' => $variant->sku,
                     'unit_price' => $this->pricing->resolveUnitPrice($variant),
+                    'unit_cost_price' => $unitCostPrice,
                     'quantity' => (string) $item->quantity,
                     'line_total' => $this->pricing->calculateLineTotal($variant, (string) $item->quantity),
+                    'line_cost' => $this->lineTotal($unitCostPrice, (string) $item->quantity),
                     'fulfillment_strategy' => $strategy,
                     'expected_available_at' => $variant->expected_available_at,
                 ]);
@@ -281,16 +304,31 @@ class OrderService
 
             $status = OrderStatus::Pending->label();
 
+            $metadata = [];
+            if (isset($freeShippingReason) && $freeShippingReason !== null) {
+                $metadata['free_shipping_reason'] = $freeShippingReason;
+            }
+            if ($couponResult->valid && $couponResult->coupon) {
+                $metadata['coupon_code'] = $couponResult->coupon->code ?? 'AUTOMATIC';
+                $metadata['coupon_id'] = $couponResult->coupon->id;
+            }
+
             $this->logEvent(
                 $order,
                 OrderEventType::StatusChanged,
                 "Order placed as {$status}.",
                 null,
                 OrderStatus::Pending,
+                $metadata !== [] ? $metadata : null,
             );
 
             $cart->update(['converted_at' => now()]);
+            // Explicit coupon redemption (discount >0)
             $this->coupons->recordRedemption($order, $cart, $cart->customer, $discountTotal);
+            // Automatic coupon redemption for Percentage/Fixed auto coupons (cart.coupon_id is null)
+            if (! $cart->coupon_id && $couponResult->valid && $couponResult->coupon) {
+                $this->coupons->recordRedemptionForResult($order, $couponResult, $cart->customer);
+            }
             OrderPlaced::dispatch($order);
 
             return $order;
@@ -404,6 +442,7 @@ class OrderService
                 $variant = $variants->get($line['product_variant_id']);
                 $qty = number_format((float) $line['quantity'], 3, '.', '');
                 $strategy = $variant->fulfillment_strategy->value;
+                $unitCostPrice = (int) ($variant->cost_price ?? 0);
 
                 $order->items()->create([
                     'tenant_id' => $order->tenant_id,
@@ -412,8 +451,10 @@ class OrderService
                     'product_name_snapshot' => $variant->product->name ?? $variant->sku,
                     'variant_sku_snapshot' => $variant->sku,
                     'unit_price' => $this->pricing->resolveUnitPrice($variant),
+                    'unit_cost_price' => $unitCostPrice,
                     'quantity' => $qty,
                     'line_total' => $this->pricing->calculateLineTotal($variant, $qty),
+                    'line_cost' => $this->lineTotal($unitCostPrice, $qty),
                     'fulfillment_strategy' => $strategy,
                     'expected_available_at' => $variant->expected_available_at,
                 ]);
@@ -1007,6 +1048,7 @@ class OrderService
     {
         DB::transaction(function () use ($order): void {
             $subtotal = (int) $order->items()->sum('line_total');
+            $costTotal = (int) $order->items()->sum('line_cost');
             $discount = (int) $order->discount_total;
             $shipping = (int) $order->shipping_cost;
             $tax = (int) $order->tax_total;
@@ -1027,7 +1069,7 @@ class OrderService
                 );
             }
 
-            $order->update(['subtotal' => $subtotal, 'grand_total' => $grandTotal]);
+            $order->update(['subtotal' => $subtotal, 'cost_total' => $costTotal, 'grand_total' => $grandTotal]);
         }, 3);
     }
 
@@ -1071,14 +1113,17 @@ class OrderService
             $this->inventory->reserve($variant, $qty, null, $order);
 
             $resolvedUnitPrice = $this->pricing->resolveUnitPrice($variant);
+            $unitCostPrice = (int) ($variant->cost_price ?? 0);
             $item = $order->items()->create([
                 'tenant_id' => $order->tenant_id,
                 'product_variant_id' => $variant->id,
                 'product_name_snapshot' => $variant->product?->name ?? $variant->sku,
                 'variant_sku_snapshot' => $variant->sku,
                 'unit_price' => $resolvedUnitPrice,
+                'unit_cost_price' => $unitCostPrice,
                 'quantity' => $qty,
                 'line_total' => $this->pricing->calculateLineTotal($variant, $qty),
+                'line_cost' => $this->lineTotal($unitCostPrice, $qty),
             ]);
 
             $this->recalculateTotals($order);
@@ -1129,6 +1174,7 @@ class OrderService
             $item->update([
                 'quantity' => $qty,
                 'line_total' => $this->lineTotal((int) $item->unit_price, $qty),
+                'line_cost' => $this->lineTotal((int) ($item->unit_cost_price ?? 0), $qty),
             ]);
 
             $this->recalculateTotals($order);

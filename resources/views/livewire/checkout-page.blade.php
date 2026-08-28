@@ -220,6 +220,31 @@
         <div class="w-full lg:w-80 flex-shrink-0 lg:sticky lg:top-24">
             <div class="rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
                 <h2 class="font-semibold mb-4">Order Summary</h2>
+                {{-- Coupon: automatic vs manual --}}
+                @if (!empty($appliedCoupon))
+                    @if (!empty($isAutomaticCoupon))
+                        <div class="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-900 text-sm mb-4">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span>Automatic free delivery applied</span>
+                        </div>
+                    @else
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-900 text-sm mb-4">
+                            <span>Coupon <strong>{{ $appliedCoupon->code }}</strong> applied</span>
+                            <button wire:click="removeCoupon" wire:loading.attr="disabled" class="text-red-500 hover:underline text-xs">Remove</button>
+                        </div>
+                    @endif
+                @else
+                    <form wire:submit="applyCoupon" class="flex gap-2 mb-3">
+                        <x-ui.input name="couponCode" wire:model="couponCode" placeholder="Coupon code" :error="$couponError" class="flex-1" />
+                        <x-ui.button type="submit" variant="secondary" loading-target="applyCoupon">Apply</x-ui.button>
+                    </form>
+                    @if (!empty($couponError))
+                        <p class="text-xs text-red-600 mb-3">{{ $couponError }}</p>
+                    @endif
+                @endif
+                @if (!empty($couponWarning))
+                    <p class="text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-2 mb-3">{{ $couponWarning }}</p>
+                @endif
                 @if ($isMixed ?? false)
                     <div class="mb-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900 p-2 text-xs text-purple-700 dark:text-purple-300">
                         Stock ships now · Pre-order ships around ETA

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers\Filament;
 
+use App\Filament\Store\Widgets\FinancialOverviewWidget;
 use App\Filament\Store\Widgets\LowStockWidget;
+use App\Filament\Store\Widgets\ProfitTrendChartWidget;
 use App\Filament\Store\Widgets\RecentOrdersWidget;
 use App\Filament\Store\Widgets\StoreStatsOverview;
 use App\Http\Middleware\EnsureTenant;
@@ -40,6 +42,8 @@ class StorePanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')
             ->discoverWidgets(in: app_path('Filament/Store/Widgets'), for: 'App\\Filament\\Store\\Widgets')
             ->widgets([
+                FinancialOverviewWidget::class,
+                ProfitTrendChartWidget::class,
                 StoreStatsOverview::class,
                 RecentOrdersWidget::class,
                 LowStockWidget::class,

@@ -146,6 +146,7 @@ class TenantShippingRateResource extends Resource
                         return '';
                     }),
                 TextColumn::make('charge')->label('Charge')->formatStateUsing(fn (int $state): string => money($state))->sortable(),
+                TextColumn::make('free_threshold')->label('Free over')->formatStateUsing(fn (?int $state): string => $state !== null ? money($state) : '—')->placeholder('—')->sortable(),
                 IconColumn::make('is_active')->boolean()->label('Active'),
             ])
             ->reorderable('sort_order')

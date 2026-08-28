@@ -24,6 +24,9 @@ use Illuminate\Support\Collection as EloquentCollection;
 /**
  * Single source of truth for coupon eligibility, discount computation, and
  * redemption tracking. No other code path applies or computes a discount.
+ *
+ * Option A: coupons with code = null are automatic — applied without user input
+ * when their constraints pass. Explicit cart.coupon_id always wins over automatic.
  */
 class CouponService
 {
@@ -51,17 +54,25 @@ class CouponService
 
     public function computeForCart(Cart $cart, ?Customer $customer): CouponValidationResult
     {
-        if (! $cart->coupon_id) {
-            return CouponValidationResult::none();
+        // Explicit code-gated coupon takes absolute priority
+        if ($cart->coupon_id) {
+            $coupon = Coupon::query()->find($cart->coupon_id);
+
+            if (! $coupon) {
+                return CouponValidationResult::none();
+            }
+
+            return $this->validateAndCompute($coupon, $cart, $customer);
         }
 
-        $coupon = Coupon::query()->find($cart->coupon_id);
+        // No explicit coupon — try automatic (code IS NULL) coupons that validate
+        $auto = $this->findValidAutomaticResult($cart, $customer, false);
 
-        if (! $coupon) {
-            return CouponValidationResult::none();
+        if ($auto !== null) {
+            return $auto;
         }
 
-        return $this->validateAndCompute($coupon, $cart, $customer);
+        return CouponValidationResult::none();
     }
 
     /**
@@ -77,17 +88,24 @@ class CouponService
      */
     public function lockAndComputeForCart(Cart $cart, ?Customer $customer): CouponValidationResult
     {
-        if (! $cart->coupon_id) {
-            return CouponValidationResult::none();
+        if ($cart->coupon_id) {
+            $coupon = Coupon::query()->whereKey($cart->coupon_id)->lockForUpdate()->first();
+
+            if (! $coupon) {
+                return CouponValidationResult::none();
+            }
+
+            return $this->validateAndCompute($coupon, $cart, $customer);
         }
 
-        $coupon = Coupon::query()->whereKey($cart->coupon_id)->lockForUpdate()->first();
+        // Automatic path with row lock for race-safe usage-limit check
+        $auto = $this->findValidAutomaticResult($cart, $customer, true);
 
-        if (! $coupon) {
-            return CouponValidationResult::none();
+        if ($auto !== null) {
+            return $auto;
         }
 
-        return $this->validateAndCompute($coupon, $cart, $customer);
+        return CouponValidationResult::none();
     }
 
     public function recordRedemption(Order $order, Cart $cart, ?Customer $customer, int $discountAmount): void
@@ -102,6 +120,33 @@ class CouponService
             'order_id' => $order->id,
             'customer_id' => $customer?->id,
             'discount_amount' => $discountAmount,
+            'redeemed_at' => now(),
+        ]);
+    }
+
+    /**
+     * Record redemption for automatic coupons (or explicit) based on the
+     * CouponValidationResult that was used to compute the order. This enables
+     * auto Percentage/Fixed coupons to be tracked even though cart.coupon_id is null.
+     * FreeShipping coupons intentionally remain unrecorded when discount is 0 to preserve
+     * existing business rule (no financial redemption row for 0-value free shipping),
+     * but usage limits are still enforced via validateAndCompute.
+     */
+    public function recordRedemptionForResult(Order $order, CouponValidationResult $result, ?Customer $customer): void
+    {
+        if (! $result->valid || $result->coupon === null || $result->discountAmount <= 0) {
+            // For freeShipping auto, we still want to support the legacy path:
+            // if the coupon was explicit (cart.coupon_id) it was already handled by recordRedemption,
+            // so we no-op here to avoid double recording.
+            return;
+        }
+
+        CouponRedemption::query()->create([
+            'tenant_id' => $order->tenant_id,
+            'coupon_id' => $result->coupon->id,
+            'order_id' => $order->id,
+            'customer_id' => $customer?->id,
+            'discount_amount' => $result->discountAmount,
             'redeemed_at' => now(),
         ]);
     }
@@ -155,7 +200,64 @@ class CouponService
             $discount = min($discount, $coupon->max_discount_amount);
         }
 
-        return CouponValidationResult::valid($discount, $coupon->type === CouponType::FreeShipping);
+        return CouponValidationResult::valid($discount, $coupon->type === CouponType::FreeShipping, $coupon);
+    }
+
+    /**
+     * Find the best valid automatic coupon (code IS NULL) for this cart.
+     * Priority: FreeShipping first (for delivery promise), then highest discount, then earliest created.
+     * Returns CouponValidationResult with coupon attached, or null if none valid.
+     * When $lock is true, the winning coupon row is re-fetched with lockForUpdate before final validation.
+     */
+    private function findValidAutomaticResult(Cart $cart, ?Customer $customer, bool $lock): ?CouponValidationResult
+    {
+        $candidates = Coupon::query()
+            ->whereNull('code')
+            ->orderBy('id')
+            ->get();
+
+        $bestResult = null;
+        $bestCoupon = null;
+        $bestPriority = -1;
+
+        foreach ($candidates as $coupon) {
+            // Quick active check before expensive validateAndCompute (which also checks active)
+            if (! $coupon->isCurrentlyActive()) {
+                continue;
+            }
+
+            $result = $this->validateAndCompute($coupon, $cart, $customer);
+
+            if (! $result->valid) {
+                continue;
+            }
+
+            // Priority: FreeShipping (2) > discount>0 (1) > others (0). Within same priority, higher discount wins.
+            $priority = $result->freeShipping ? 2 : ($result->discountAmount > 0 ? 1 : 0);
+            $score = $priority * 10000000 + $result->discountAmount;
+
+            if ($score > $bestPriority) {
+                $bestPriority = $score;
+                $bestResult = $result;
+                $bestCoupon = $coupon;
+            }
+        }
+
+        if ($bestCoupon === null || $bestResult === null) {
+            return null;
+        }
+
+        if ($lock) {
+            $locked = Coupon::query()->whereKey($bestCoupon->id)->lockForUpdate()->first();
+            if (! $locked) {
+                return null;
+            }
+
+            // Re-validate under lock for race-safe usage limit
+            return $this->validateAndCompute($locked, $cart, $customer);
+        }
+
+        return $bestResult;
     }
 
     private function eligibleCartItems(Coupon $coupon, Cart $cart): EloquentCollection

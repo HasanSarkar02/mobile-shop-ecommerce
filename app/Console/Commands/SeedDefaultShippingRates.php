@@ -46,6 +46,7 @@ class SeedDefaultShippingRates extends Command
                     'bd_division_id' => $dhakaDistrict->division_id,
                     'bd_upazila_id' => null,
                     'charge' => 8000,
+                    'free_threshold' => 100000,
                     'is_active' => true,
                     'sort_order' => 1,
                 ]
@@ -58,6 +59,7 @@ class SeedDefaultShippingRates extends Command
                     'bd_district_id' => null,
                     'bd_upazila_id' => null,
                     'charge' => 12000,
+                    'free_threshold' => 100000,
                     'is_active' => true,
                     'sort_order' => 99,
                 ]
