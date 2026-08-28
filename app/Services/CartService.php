@@ -8,6 +8,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Customer;
 use App\Models\ProductVariant;
+use App\Services\Pricing\CartPricingService;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -17,6 +18,7 @@ class CartService
         private readonly InventoryService $inventory,
         private readonly OrderService $orders,
         private readonly CouponService $coupons,
+        private readonly CartPricingService $pricing,
     ) {}
 
     public function getOrCreateCart(?Customer $customer, ?string $cartToken): Cart
@@ -46,10 +48,12 @@ class CartService
 
         $item = $cart->items()->where('product_variant_id', $variant->id)->first();
 
+        $resolvedUnitPrice = $this->pricing->resolveUnitPrice($variant);
+
         if ($item) {
             $newQty = bcadd((string) $item->quantity, $qty, 3);
             $this->validateSellByUnit($variant, $newQty);
-            $item->update(['quantity' => $newQty, 'unit_price' => $variant->price]);
+            $item->update(['quantity' => $newQty, 'unit_price' => $resolvedUnitPrice]);
 
             return $item;
         }
@@ -58,7 +62,7 @@ class CartService
             'tenant_id' => $cart->tenant_id,
             'product_variant_id' => $variant->id,
             'quantity' => $qty,
-            'unit_price' => $variant->price,
+            'unit_price' => $resolvedUnitPrice,
         ]);
     }
 
@@ -110,13 +114,18 @@ class CartService
 
             // Documented rule: authenticated cart wins on conflicting lines, guest-only lines are appended.
             if (! $existing) {
+                $resolvedUnitPrice = $guestItem->unit_price;
+                if ($guestItem->product_variant_id) {
+                    $guestVariant = ProductVariant::find($guestItem->product_variant_id);
+                    if ($guestVariant instanceof ProductVariant) {
+                        $resolvedUnitPrice = $this->pricing->resolveUnitPrice($guestVariant);
+                    }
+                }
                 $customerCart->items()->create([
                     'tenant_id' => $customerCart->tenant_id,
                     'product_variant_id' => $guestItem->product_variant_id,
                     'quantity' => $guestItem->quantity,
-                    'unit_price' => $guestItem->product_variant_id
-                        ? (ProductVariant::find($guestItem->product_variant_id)?->price ?? $guestItem->unit_price)
-                        : $guestItem->unit_price,
+                    'unit_price' => $resolvedUnitPrice,
                 ]);
             }
         }
@@ -162,8 +171,9 @@ class CartService
                 continue;
             }
 
-            if ($item->unit_price !== $item->variant->price) {
-                $item->update(['unit_price' => $item->variant->price]);
+            $expectedUnitPrice = $this->pricing->resolveUnitPrice($item->variant);
+            if ((int) $item->unit_price !== $expectedUnitPrice) {
+                $item->update(['unit_price' => $expectedUnitPrice]);
                 $priceChanged = true;
                 $issues->push("The price of '{$item->variant->sku}' has changed.");
             }

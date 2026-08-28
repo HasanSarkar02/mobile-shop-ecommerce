@@ -27,6 +27,7 @@ use App\Models\OrderItem;
 use App\Models\OrderPayment;
 use App\Models\PaymentMethod;
 use App\Models\ProductVariant;
+use App\Services\Pricing\CartPricingService;
 use App\Support\DatabaseLockRetry;
 use Carbon\CarbonInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -38,6 +39,7 @@ class OrderService
         private readonly InventoryService $inventory,
         private readonly SequenceGenerator $sequences,
         private readonly CouponService $coupons,
+        private readonly CartPricingService $pricing,
     ) {}
 
     /**
@@ -152,7 +154,8 @@ class OrderService
             foreach ($cart->items as $item) {
                 $variant = $variants->get($item->product_variant_id);
 
-                if ((int) $item->unit_price !== (int) $variant->price) {
+                $expectedUnitPrice = $this->pricing->resolveUnitPrice($variant);
+                if ((int) $item->unit_price !== $expectedUnitPrice) {
                     throw new InvalidOrderStateException("The price of '{$variant->sku}' has changed. Refresh your cart before placing the order.");
                 }
 
@@ -251,9 +254,9 @@ class OrderService
                     'product_variant_id' => $item->product_variant_id,
                     'product_name_snapshot' => $variant->product->name ?? $variant->sku,
                     'variant_sku_snapshot' => $variant->sku,
-                    'unit_price' => (int) $variant->price,
+                    'unit_price' => $this->pricing->resolveUnitPrice($variant),
                     'quantity' => (string) $item->quantity,
-                    'line_total' => $this->lineTotal((int) $variant->price, (string) $item->quantity),
+                    'line_total' => $this->pricing->calculateLineTotal($variant, (string) $item->quantity),
                     'fulfillment_strategy' => $strategy,
                     'expected_available_at' => $variant->expected_available_at,
                 ]);
@@ -397,9 +400,9 @@ class OrderService
                     'product_variant_id' => $variant->id,
                     'product_name_snapshot' => $variant->product->name ?? $variant->sku,
                     'variant_sku_snapshot' => $variant->sku,
-                    'unit_price' => (int) $variant->price,
+                    'unit_price' => $this->pricing->resolveUnitPrice($variant),
                     'quantity' => $qty,
-                    'line_total' => $this->lineTotal((int) $variant->price, $qty),
+                    'line_total' => $this->pricing->calculateLineTotal($variant, $qty),
                     'fulfillment_strategy' => $strategy,
                     'expected_available_at' => $variant->expected_available_at,
                 ]);
@@ -1056,14 +1059,15 @@ class OrderService
         return DB::transaction(function () use ($order, $variant, $qty): OrderItem {
             $this->inventory->reserve($variant, $qty, null, $order);
 
+            $resolvedUnitPrice = $this->pricing->resolveUnitPrice($variant);
             $item = $order->items()->create([
                 'tenant_id' => $order->tenant_id,
                 'product_variant_id' => $variant->id,
                 'product_name_snapshot' => $variant->product?->name ?? $variant->sku,
                 'variant_sku_snapshot' => $variant->sku,
-                'unit_price' => (int) $variant->price,
+                'unit_price' => $resolvedUnitPrice,
                 'quantity' => $qty,
-                'line_total' => $this->lineTotal((int) $variant->price, $qty),
+                'line_total' => $this->pricing->calculateLineTotal($variant, $qty),
             ]);
 
             $this->recalculateTotals($order);
@@ -1071,8 +1075,8 @@ class OrderService
             $this->logEvent(
                 $order,
                 OrderEventType::ItemAdded,
-                'Added '.$qty.' × '.$variant->sku.' at '.number_format((int) $variant->price / 100, 2).' each.',
-                metadata: ['product_variant_id' => $variant->id, 'sku' => $variant->sku, 'quantity' => $qty, 'unit_price' => (int) $variant->price],
+                'Added '.$qty.' × '.$variant->sku.' at '.number_format($resolvedUnitPrice / 100, 2).' each.',
+                metadata: ['product_variant_id' => $variant->id, 'sku' => $variant->sku, 'quantity' => $qty, 'unit_price' => $resolvedUnitPrice],
             );
 
             return $item;
@@ -1185,8 +1189,8 @@ class OrderService
                 'product_variant_id' => $newVariant->id,
                 'product_name_snapshot' => $newVariant->product?->name ?? $newVariant->sku,
                 'variant_sku_snapshot' => $newVariant->sku,
-                'unit_price' => (int) $newVariant->price,
-                'line_total' => $this->lineTotal((int) $newVariant->price, (string) $quantity),
+                'unit_price' => $this->pricing->resolveUnitPrice($newVariant),
+                'line_total' => $this->pricing->calculateLineTotal($newVariant, (string) $quantity),
             ]);
 
             $this->recalculateTotals($order);

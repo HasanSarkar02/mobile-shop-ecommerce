@@ -136,6 +136,9 @@ return [
                 'layout' => 'standard',
                 'information_priority' => ['description', 'reviews'],
             ],
+            'pricing' => [
+                'per_unit_enabled' => true,
+            ],
             'theme' => [
                 'preset' => 'grocery',
             ],

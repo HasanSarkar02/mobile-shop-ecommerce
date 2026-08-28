@@ -34,7 +34,7 @@ class Product extends Model implements HasMedia
     use SoftDeletes;
 
     protected $fillable = [
-        'brand_id', 'category_id', 'model_number', 'type', 'base_price', 'uom_id', 'sell_by_unit',
+        'brand_id', 'category_id', 'model_number', 'type', 'base_price', 'uom_id', 'sell_by_unit', 'base_uom_quantity',
         'status', 'is_featured', 'is_serialized', 'published_at', 'created_by', 'updated_by', 'is_official_import', 'max_discount_percentage', 'view_count',
     ];
 
@@ -47,6 +47,7 @@ class Product extends Model implements HasMedia
             'is_serialized' => 'boolean',
             'base_price' => 'integer',
             'sell_by_unit' => 'decimal:3',
+            'base_uom_quantity' => 'decimal:3',
             'published_at' => 'datetime',
             'is_official_import' => 'boolean',
             'max_discount_percentage' => 'integer',

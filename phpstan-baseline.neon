@@ -795,7 +795,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$product_variant_id\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 2
 			path: app/Services/CartService.php
 
 		-
@@ -807,7 +807,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_price\.$#'
 			identifier: property.notFound
-			count: 3
+			count: 2
 			path: app/Services/CartService.php
 
 		-
