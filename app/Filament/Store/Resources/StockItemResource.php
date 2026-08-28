@@ -11,12 +11,16 @@ use App\Models\StockItem;
 use App\Services\InventoryService;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class StockItemResource extends Resource
@@ -32,8 +36,21 @@ class StockItemResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['variant' => fn ($q) => $q->withTrashed(), 'location']))
             ->columns([
-                TextColumn::make('variant.sku')->label('SKU')->searchable(),
+                TextColumn::make('variant.sku')
+                    ->label('SKU')
+                    ->searchable()
+                    ->state(function (StockItem $record): string {
+                        if (! $record->variant) {
+                            return 'Orphan/Deleted';
+                        }
+
+                        return $record->variant->trashed()
+                            ? $record->variant->sku.' — deleted'
+                            : $record->variant->sku;
+                    })
+                    ->color(fn (StockItem $record): ?string => ! $record->variant || $record->variant->trashed() ? 'danger' : null),
                 TextColumn::make('location.name'),
                 TextColumn::make('quantity'),
                 TextColumn::make('reserved_quantity')->label('Reserved'),
@@ -42,8 +59,19 @@ class StockItemResource extends Resource
                     ->state(fn (StockItem $record): int => $record->availableQuantity()),
                 TextColumn::make('status')
                     ->label('Status')
-                    ->state(fn (StockItem $record): string => app(InventoryService::class)->stockStatus($record->variant, $record->location)->label())
-                    ->badge(),
+                    ->state(function (StockItem $record): string {
+                        if (! $record->variant) {
+                            return 'Orphan';
+                        }
+
+                        if ($record->variant->trashed()) {
+                            return 'Variant deleted';
+                        }
+
+                        return app(InventoryService::class)->stockStatus($record->variant, $record->location)->label();
+                    })
+                    ->badge()
+                    ->color(fn (StockItem $record): string => ! $record->variant || $record->variant->trashed() ? 'danger' : 'gray'),
             ])
             ->recordActions([
                 Action::make('restock')
@@ -57,7 +85,7 @@ class StockItemResource extends Resource
                     ->action(function (StockItem $record, array $data): void {
                         app(InventoryService::class)->restock($record->variant, (string) $data['quantity'], $record->location, $data['comment'] ?? null);
                     })
-                    ->visible(fn (StockItem $record): bool => $record->variant->inventory_type !== InventoryType::Serialized),
+                    ->visible(fn (StockItem $record): bool => $record->variant && $record->variant->inventory_type !== InventoryType::Serialized),
                 Action::make('adjust')
                     ->icon('heroicon-o-adjustments-horizontal')
                     ->schema([
@@ -76,7 +104,13 @@ class StockItemResource extends Resource
                             $data['comment'] ?? null,
                         );
                     })
-                    ->visible(fn (StockItem $record): bool => $record->variant->inventory_type !== InventoryType::Serialized),
+                    ->visible(fn (StockItem $record): bool => $record->variant && $record->variant->inventory_type !== InventoryType::Serialized),
+                DeleteAction::make(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ]),
             ]);
     }
 

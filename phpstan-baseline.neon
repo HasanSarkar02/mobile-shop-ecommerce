@@ -1,6 +1,42 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/CleanupOrphanStockItems.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Console/Commands/CleanupOrphanStockItems.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:onlyTrashed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/CleanupOrphanStockItems.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:withTrashed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/CleanupOrphanStockItems.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:trashed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/CleanupOrphanStockItems.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Console/Commands/CleanupOrphanStockItems.php
+
+		-
 			message: '#^Access to an undefined property App\\Filament\\Store\\Pages\\GlobalStoreSettings\:\:\$form\.$#'
 			identifier: property.notFound
 			count: 2
@@ -223,6 +259,18 @@ parameters:
 			path: app/Filament/Store/Resources/StockItemResource.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Filament/Store/Resources/StockItemResource.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:trashed\(\)\.$#'
+			identifier: method.notFound
+			count: 4
+			path: app/Filament/Store/Resources/StockItemResource.php
+
+		-
 			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:adjust\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
 			identifier: argument.type
 			count: 1
@@ -235,7 +283,7 @@ parameters:
 			path: app/Filament/Store/Resources/StockItemResource.php
 
 		-
-			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:stockStatus\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			message: '#^Parameter \#1 \$variant of method App\\Services\\InventoryService\:\:stockStatus\(\) expects App\\Models\\ProductVariant, Illuminate\\Database\\Eloquent\\Model given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Filament/Store/Resources/StockItemResource.php
