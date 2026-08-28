@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire;
 
 use App\Enums\OrderSource;
+use App\Enums\ShippingMethodType;
 use App\Exceptions\CartAlreadyConvertedException;
 use App\Exceptions\ReservationLimitExceededException;
 use App\Models\Address;
@@ -145,11 +146,21 @@ class CheckoutPage extends Component
                 return;
             }
 
-            // Dynamic shipping cost via geo hierarchy
-            $dynamicShippingCost = $this->resolveDynamicShippingCost($shippingService, $customer);
-
+            // Hybrid: if selected method is Free/Pickup, force 0; otherwise geo-based via TenantShippingRate
             $shipping = ShippingMethod::query()->find($this->shippingMethodId);
-            $shippingCost = $dynamicShippingCost ?? $shipping?->cost ?? 0;
+            $isFreeOrPickup = $shipping !== null && ($shipping->type === ShippingMethodType::Free || $shipping->type === ShippingMethodType::Pickup);
+            if ($isFreeOrPickup) {
+                $shippingCost = 0;
+            } else {
+                // Need subtotal after discount for per-geo free_threshold check
+                $cart->load('items');
+                $subtotal = $cart->items->sum(fn ($item) => $item->lineTotal());
+                $couponRes = app(CouponService::class)->computeForCart($cart, $customer);
+                $discount = $couponRes->valid ? $couponRes->discountAmount : 0;
+                $subtotalAfterDiscount = max(0, $subtotal - $discount);
+                $dynamicShippingCost = $this->resolveDynamicShippingCost($shippingService, $customer, $subtotalAfterDiscount);
+                $shippingCost = $dynamicShippingCost ?? $shipping?->cost ?? 0;
+            }
 
             $cart->loadMissing('items.variant');
             $hasPreorder = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'preorder');
@@ -238,22 +249,31 @@ class CheckoutPage extends Component
         }
     }
 
-    private function resolveDynamicShippingCost(ShippingService $shippingService, mixed $customer): ?int
+    private function resolveDynamicShippingCost(ShippingService $shippingService, mixed $customer, ?int $subtotalAfterDiscount = null): ?int
     {
         // Prefer explicit geo selection (guest) or selected address geo (customer)
         if ($this->bd_upazila_id !== null || $this->bd_district_id !== null) {
-            return $shippingService->quote($this->bd_upazila_id, $this->bd_district_id, $this->bd_division_id);
+            return $shippingService->quote($this->bd_upazila_id, $this->bd_district_id, $this->bd_division_id, null, $subtotalAfterDiscount);
         }
 
         if ($this->selectedAddressId !== null) {
             $address = Address::query()->find($this->selectedAddressId);
             if ($address !== null) {
-                return $shippingService->quote($address->bd_upazila_id, $address->bd_district_id, $address->bd_division_id, $address);
+                return $shippingService->quote($address->bd_upazila_id, $address->bd_district_id, $address->bd_division_id, $address, $subtotalAfterDiscount);
             }
         }
 
         if (! empty($this->guestAddress['bd_upazila_id']) || ! empty($this->guestAddress['bd_district_id'])) {
-            return $shippingService->quoteForGuest($this->guestAddress);
+            return $shippingService->quoteForGuest($this->guestAddress, $subtotalAfterDiscount);
+        }
+
+        // Fallback to any geo stored in component state even without explicit selection (for initial render)
+        if ($subtotalAfterDiscount !== null) {
+            // Try with current bd_* even if null — service will fallback to outside rate with threshold check
+            $fallback = $shippingService->quote($this->bd_upazila_id, $this->bd_district_id, $this->bd_division_id, null, $subtotalAfterDiscount);
+            if ($fallback !== null) {
+                return $fallback;
+            }
         }
 
         return null;
@@ -266,11 +286,18 @@ class CheckoutPage extends Component
         $cart->load('items.variant.product.translations', 'items.variant.media');
         $subtotal = $cart->items->sum(fn ($item) => $item->lineTotal());
         $couponResult = $coupons->computeForCart($cart, $customer);
+        $discount = $couponResult->valid ? $couponResult->discountAmount : 0;
+        $subtotalAfterDiscount = max(0, $subtotal - $discount);
         $shipping = ShippingMethod::query()->find($this->shippingMethodId);
 
-        // Dynamic shipping overrides flat method when geo selected
-        $dynamicCost = $this->resolveDynamicShippingCost($shippingService, $customer);
-        $shippingCost = $dynamicCost ?? $shipping?->cost ?? 0;
+        // Hybrid: Pickup/Free type forces 0, otherwise geo-based with threshold
+        $isFreeOrPickup = $shipping !== null && ($shipping->type === ShippingMethodType::Free || $shipping->type === ShippingMethodType::Pickup);
+        if ($isFreeOrPickup) {
+            $shippingCost = 0;
+        } else {
+            $dynamicCost = $this->resolveDynamicShippingCost($shippingService, $customer, $subtotalAfterDiscount);
+            $shippingCost = $dynamicCost ?? $shipping?->cost ?? 0;
+        }
 
         $hasPreorder = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'preorder');
         $hasStock = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'stock');

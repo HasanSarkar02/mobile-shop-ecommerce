@@ -14,9 +14,10 @@ class ShippingService
     /**
      * Quote shipping charge for current tenant based on geo hierarchy.
      * Priority: 1) exact upazila, 2) exact district, 3) fallback (district IS NULL).
+     * If subtotalAfterDiscount is provided, per-geo free_threshold is respected (0 if met).
      * Returns charge in minor units (BDT cents).
      */
-    public function quote(?int $upazilaId = null, ?int $districtId = null, ?int $divisionId = null, ?Address $address = null): int
+    public function quote(?int $upazilaId = null, ?int $districtId = null, ?int $divisionId = null, ?Address $address = null, ?int $subtotalAfterDiscount = null): int
     {
         // Resolve from Address if provided (overrides explicit ids)
         if ($address !== null) {
@@ -24,6 +25,14 @@ class ShippingService
             $districtId = $address->bd_district_id ?? $districtId;
             $divisionId = $address->bd_division_id ?? $divisionId;
         }
+
+        $checkFree = function (?TenantShippingRate $rate) use ($subtotalAfterDiscount): bool {
+            if ($rate === null || $rate->free_threshold === null) {
+                return false;
+            }
+
+            return $subtotalAfterDiscount !== null && $subtotalAfterDiscount >= (int) $rate->free_threshold;
+        };
 
         // 1) Exact upazila match
         if ($upazilaId !== null) {
@@ -33,7 +42,7 @@ class ShippingService
                 ->orderBy('sort_order')
                 ->first();
             if ($rate !== null) {
-                return (int) $rate->charge;
+                return $checkFree($rate) ? 0 : (int) $rate->charge;
             }
 
             // Fallback via upazila's district if upazila not directly rated but its district is
@@ -52,7 +61,7 @@ class ShippingService
                 ->orderBy('sort_order')
                 ->first();
             if ($rate !== null) {
-                return (int) $rate->charge;
+                return $checkFree($rate) ? 0 : (int) $rate->charge;
             }
 
             // Also allow generic district match where upazila_id is not strictly null check (any district rate)
@@ -62,7 +71,7 @@ class ShippingService
                 ->orderBy('sort_order')
                 ->first();
             if ($rate !== null) {
-                return (int) $rate->charge;
+                return $checkFree($rate) ? 0 : (int) $rate->charge;
             }
         }
 
@@ -76,7 +85,7 @@ class ShippingService
                 ->orderBy('sort_order')
                 ->first();
             if ($rate !== null) {
-                return (int) $rate->charge;
+                return $checkFree($rate) ? 0 : (int) $rate->charge;
             }
         }
 
@@ -89,7 +98,7 @@ class ShippingService
             ->first();
 
         if ($fallback !== null) {
-            return (int) $fallback->charge;
+            return $checkFree($fallback) ? 0 : (int) $fallback->charge;
         }
 
         // Ultimate fallback to flat ShippingMethod
@@ -101,17 +110,12 @@ class ShippingService
     /**
      * Quote for a guest address array or Address model.
      */
-    public function quoteForGuest(array $guestAddress): int
+    public function quoteForGuest(array $guestAddress, ?int $subtotalAfterDiscount = null): int
     {
-        $upazilaId = isset($guestAddress['bd_upazila_id']) ? (int) $guestAddress['bd_upazila_id'] : null;
-        $districtId = isset($guestAddress['bd_district_id']) ? (int) $guestAddress['bd_district_id'] : null;
-        $divisionId = isset($guestAddress['bd_division_id']) ? (int) $guestAddress['bd_division_id'] : null;
+        $upazilaId = isset($guestAddress['bd_upazila_id']) && $guestAddress['bd_upazila_id'] !== '' ? (int) $guestAddress['bd_upazila_id'] : null;
+        $districtId = isset($guestAddress['bd_district_id']) && $guestAddress['bd_district_id'] !== '' ? (int) $guestAddress['bd_district_id'] : null;
+        $divisionId = isset($guestAddress['bd_division_id']) && $guestAddress['bd_division_id'] !== '' ? (int) $guestAddress['bd_division_id'] : null;
 
-        // Support legacy keys
-        if ($upazilaId === null && isset($guestAddress['bd_upazila_id'])) {
-            $upazilaId = (int) $guestAddress['bd_upazila_id'];
-        }
-
-        return $this->quote($upazilaId, $districtId, $divisionId);
+        return $this->quote($upazilaId, $districtId, $divisionId, null, $subtotalAfterDiscount);
     }
 }

@@ -18,6 +18,7 @@ class TenantShippingRate extends Model
         'bd_district_id',
         'bd_upazila_id',
         'charge',
+        'free_threshold',
         'is_active',
         'sort_order',
     ];
@@ -26,6 +27,7 @@ class TenantShippingRate extends Model
     {
         return [
             'charge' => 'integer',
+            'free_threshold' => 'integer',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];

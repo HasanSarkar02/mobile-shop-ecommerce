@@ -102,6 +102,15 @@ class TenantShippingRateResource extends Resource
                 ->formatStateUsing(fn (?int $state): ?float => $state !== null ? $state / 100 : null)
                 ->dehydrateStateUsing(fn (?float $state): int => (int) round(($state ?? 0) * 100)),
 
+            TextInput::make('free_threshold')
+                ->label('Free Delivery Threshold (BDT)')
+                ->numeric()
+                ->nullable()
+                ->prefix('৳')
+                ->helperText('Leave empty to never auto-free. E.g., 1000 means free shipping over 1000 TK')
+                ->formatStateUsing(fn (?int $state): ?float => $state !== null ? $state / 100 : null)
+                ->dehydrateStateUsing(fn (?float $state): ?int => $state !== null ? (int) round($state * 100) : null),
+
             Toggle::make('is_active')->label('Active')->default(true),
         ]);
     }

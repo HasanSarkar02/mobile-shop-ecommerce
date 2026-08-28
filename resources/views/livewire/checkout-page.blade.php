@@ -258,7 +258,7 @@
                         </div>
                     @endif
                     <div class="flex justify-between"><span
-                            class="text-gray-500">{{ __('Shipping') }}</span><span>{{ money((int) $shippingCost) }}</span>
+                            class="text-gray-500">{{ __('Shipping') }}</span><span>@if ((int) $shippingCost === 0)<span class="text-green-600 font-semibold">Free</span>@else{{ money((int) $shippingCost) }}@endif</span>
                     </div>
                     <div
                         class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200 dark:border-gray-800">
