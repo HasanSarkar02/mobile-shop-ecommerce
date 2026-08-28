@@ -259,6 +259,12 @@ parameters:
 			path: app/Filament/Store/Resources/StockItemResource.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Storefront/CartController.php
+
+		-
 			message: '#^Access to an undefined property App\\Models\\Product\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -607,6 +613,24 @@ parameters:
 			path: app/Livewire/ProductCatalog.php
 
 		-
+			message: '#^Method App\\Models\\Address\:\:district\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDistrict, App\\Models\\Address\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDistrict, \$this\(App\\Models\\Address\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Address.php
+
+		-
+			message: '#^Method App\\Models\\Address\:\:division\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDivision, App\\Models\\Address\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDivision, \$this\(App\\Models\\Address\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Address.php
+
+		-
+			message: '#^Method App\\Models\\Address\:\:upazila\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdUpazila, App\\Models\\Address\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdUpazila, \$this\(App\\Models\\Address\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/Address.php
+
+		-
 			message: '#^Cannot call method isFuture\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
@@ -641,6 +665,42 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: app/Models/Banner.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BdUpazila\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/BdDistrict.php
+
+		-
+			message: '#^Method App\\Models\\BdDistrict\:\:division\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDivision, App\\Models\\BdDistrict\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDivision, \$this\(App\\Models\\BdDistrict\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BdDistrict.php
+
+		-
+			message: '#^Method App\\Models\\BdDistrict\:\:upazilas\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BdUpazila\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BdUpazila, \$this\(App\\Models\\BdDistrict\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BdDistrict.php
+
+		-
+			message: '#^Generic type Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BdDistrict\> in PHPDoc tag @return does not specify all template types of class Illuminate\\Database\\Eloquent\\Relations\\HasMany\: TRelatedModel, TDeclaringModel$#'
+			identifier: generics.lessTypes
+			count: 1
+			path: app/Models/BdDivision.php
+
+		-
+			message: '#^Method App\\Models\\BdDivision\:\:districts\(\) should return Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BdDistrict\> but returns Illuminate\\Database\\Eloquent\\Relations\\HasMany\<App\\Models\\BdDistrict, \$this\(App\\Models\\BdDivision\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BdDivision.php
+
+		-
+			message: '#^Method App\\Models\\BdUpazila\:\:district\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDistrict, App\\Models\\BdUpazila\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDistrict, \$this\(App\\Models\\BdUpazila\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/BdUpazila.php
 
 		-
 			message: '#^Cannot call method isFuture\(\) on string\.$#'
@@ -781,6 +841,24 @@ parameters:
 			path: app/Models/ProductVariant.php
 
 		-
+			message: '#^Method App\\Models\\TenantShippingRate\:\:district\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDistrict, App\\Models\\TenantShippingRate\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDistrict, \$this\(App\\Models\\TenantShippingRate\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/TenantShippingRate.php
+
+		-
+			message: '#^Method App\\Models\\TenantShippingRate\:\:division\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDivision, App\\Models\\TenantShippingRate\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdDivision, \$this\(App\\Models\\TenantShippingRate\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/TenantShippingRate.php
+
+		-
+			message: '#^Method App\\Models\\TenantShippingRate\:\:upazila\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdUpazila, App\\Models\\TenantShippingRate\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsTo\<App\\Models\\BdUpazila, \$this\(App\\Models\\TenantShippingRate\)\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/TenantShippingRate.php
+
+		-
 			message: '#^Result of && is always false\.$#'
 			identifier: booleanAnd.alwaysFalse
 			count: 1
@@ -825,12 +903,6 @@ parameters:
 		-
 			message: '#^Parameter \#2 \$customer of method App\\Services\\CouponService\:\:computeForCart\(\) expects App\\Models\\Customer\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
 			identifier: argument.type
-			count: 1
-			path: app/Services/CartService.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>price" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/CartService.php
 
@@ -913,7 +985,7 @@ parameters:
 			path: app/Services/CouponService.php
 
 		-
-			message: '#^Method App\\Services\\InventoryService\:\:resolvePurchaseStates\(\) should return Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\>\.$#'
+			message: '#^Method App\\Services\\InventoryService\:\:resolvePurchaseStates\(\) should return Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, low_stock_threshold\: int\|null\}\> but returns Illuminate\\Support\\Collection\<int, array\{stock_status\: App\\Enums\\StockStatus, available_quantity\: int, available_quantity_decimal\: mixed, low_stock_threshold\: int\|null\}\>\.$#'
 			identifier: return.type
 			count: 1
 			path: app/Services/InventoryService.php

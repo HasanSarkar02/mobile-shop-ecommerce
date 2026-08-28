@@ -8,28 +8,31 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Address extends Model
+class TenantShippingRate extends Model
 {
     use BelongsToTenant;
 
     protected $fillable = [
-        'customer_id', 'label', 'type', 'recipient_name', 'phone',
-        'address_line_1', 'address_line_2', 'city', 'area', 'postal_code', 'country', 'is_default',
-        'bd_division_id', 'bd_district_id', 'bd_upazila_id',
+        'name',
+        'bd_division_id',
+        'bd_district_id',
+        'bd_upazila_id',
+        'charge',
+        'is_active',
+        'sort_order',
     ];
 
     protected function casts(): array
     {
-        return ['is_default' => 'boolean'];
-    }
-
-    public function customer(): BelongsTo
-    {
-        return $this->belongsTo(Customer::class);
+        return [
+            'charge' => 'integer',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer',
+        ];
     }
 
     /**
-     * @return BelongsTo<BdDivision, Address>
+     * @return BelongsTo<BdDivision, TenantShippingRate>
      */
     public function division(): BelongsTo
     {
@@ -37,7 +40,7 @@ class Address extends Model
     }
 
     /**
-     * @return BelongsTo<BdDistrict, Address>
+     * @return BelongsTo<BdDistrict, TenantShippingRate>
      */
     public function district(): BelongsTo
     {
@@ -45,7 +48,7 @@ class Address extends Model
     }
 
     /**
-     * @return BelongsTo<BdUpazila, Address>
+     * @return BelongsTo<BdUpazila, TenantShippingRate>
      */
     public function upazila(): BelongsTo
     {
