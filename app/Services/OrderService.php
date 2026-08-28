@@ -10,6 +10,7 @@ use App\Enums\OrderFulfillmentStatus;
 use App\Enums\OrderPaymentStatus;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
+use App\Enums\ShippingMethodType;
 use App\Events\OrderCancelled;
 use App\Events\OrderPaymentRecorded;
 use App\Events\OrderPlaced;
@@ -27,6 +28,7 @@ use App\Models\OrderItem;
 use App\Models\OrderPayment;
 use App\Models\PaymentMethod;
 use App\Models\ProductVariant;
+use App\Models\ShippingMethod;
 use App\Services\Pricing\CartPricingService;
 use App\Support\DatabaseLockRetry;
 use Carbon\CarbonInterface;
@@ -165,6 +167,15 @@ class OrderService
             }
 
             $shippingCost = $orderData['shipping_cost'] ?? 0;
+
+            // Unified priority: 1.Method Free/Pickup ->0 (hybrid with geo)
+            $methodForCheck = null;
+            if (! empty($orderData['shipping_method_id'])) {
+                $methodForCheck = ShippingMethod::query()->find($orderData['shipping_method_id']);
+                if ($methodForCheck !== null && ($methodForCheck->type === ShippingMethodType::Free || $methodForCheck->type === ShippingMethodType::Pickup)) {
+                    $shippingCost = 0;
+                }
+            }
 
             $couponResult = $this->coupons->lockAndComputeForCart($cart, $cart->customer);
             $discountTotal = $couponResult->valid ? $couponResult->discountAmount : 0;

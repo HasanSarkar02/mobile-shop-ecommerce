@@ -547,6 +547,12 @@ parameters:
 			path: app/Livewire/CheckoutPage.php
 
 		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Livewire/CheckoutPage.php
+
+		-
 			message: '#^If condition is always false\.$#'
 			identifier: if.alwaysFalse
 			count: 2
@@ -555,7 +561,7 @@ parameters:
 		-
 			message: '#^Result of && is always false\.$#'
 			identifier: booleanAnd.alwaysFalse
-			count: 2
+			count: 3
 			path: app/Livewire/CheckoutPage.php
 
 		-
@@ -577,6 +583,18 @@ parameters:
 			path: app/Livewire/CheckoutPage.php
 
 		-
+			message: '#^Strict comparison using \=\=\= between \*NEVER\* and App\\Enums\\ShippingMethodType\:\:Pickup will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Livewire/CheckoutPage.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between null and 0 will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Livewire/CheckoutPage.php
+
+		-
 			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ShippingMethodType\:\:Free will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 2
@@ -589,9 +607,27 @@ parameters:
 			path: app/Livewire/CheckoutPage.php
 
 		-
+			message: '#^Using nullsafe property access "\?\-\>charge" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Livewire/CheckoutPage.php
+
+		-
 			message: '#^Using nullsafe property access "\?\-\>cost" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Livewire/CheckoutPage.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name_en" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
 			count: 2
+			path: app/Livewire/CheckoutPage.php
+
+		-
+			message: '#^Variable \$originalShippingCost on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
 			path: app/Livewire/CheckoutPage.php
 
 		-
@@ -1135,7 +1171,31 @@ parameters:
 			path: app/Services/OrderService.php
 
 		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
 			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\OrderFulfillmentStatus\:\:Failed will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ShippingMethodType\:\:Free will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/OrderService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ShippingMethodType\:\:Pickup will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 1
 			path: app/Services/OrderService.php

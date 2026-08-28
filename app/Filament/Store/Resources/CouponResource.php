@@ -63,6 +63,7 @@ class CouponResource extends Resource
 
             TextInput::make('min_order_amount')
                 ->label('Minimum order amount (BDT, optional)')
+                ->helperText('Evaluates pre-discount cart total. For automatic location-based free delivery, use Shipping Rates → Free Threshold instead.')
                 ->numeric()
                 ->formatStateUsing(fn (?int $state) => $state !== null ? $state / 100 : null)
                 ->dehydrateStateUsing(fn (?float $state) => $state !== null ? (int) round($state * 100) : null),

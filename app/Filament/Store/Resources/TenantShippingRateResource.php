@@ -107,7 +107,7 @@ class TenantShippingRateResource extends Resource
                 ->numeric()
                 ->nullable()
                 ->prefix('৳')
-                ->helperText('Leave empty to never auto-free. E.g., 1000 means free shipping over 1000 TK')
+                ->helperText('Evaluates post-discount cart total to protect margins. Overrides standard charge if met. Leave empty to never auto-free. E.g., 1000 means free shipping over 1000 TK.')
                 ->formatStateUsing(fn (?int $state): ?float => $state !== null ? $state / 100 : null)
                 ->dehydrateStateUsing(fn (?float $state): ?int => $state !== null ? (int) round($state * 100) : null),
 

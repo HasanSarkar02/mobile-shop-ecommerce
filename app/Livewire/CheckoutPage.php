@@ -14,6 +14,7 @@ use App\Models\BdDivision;
 use App\Models\BdUpazila;
 use App\Models\PaymentMethod;
 use App\Models\ShippingMethod;
+use App\Models\TenantShippingRate;
 use App\Services\CartService;
 use App\Services\CouponService;
 use App\Services\OrderService;
@@ -146,19 +147,22 @@ class CheckoutPage extends Component
                 return;
             }
 
-            // Hybrid: if selected method is Free/Pickup, force 0; otherwise geo-based via TenantShippingRate
+            // Unified priority: 1.Method Free/Pickup ->0, 2.Coupon FreeShipping ->0, 3.Geo free_threshold (post-discount) ->0, 4.Geo charge
+            $cart->load('items');
+            $subtotalForPricing = $cart->items->sum(fn ($item) => $item->lineTotal());
+            $couponForShipping = app(CouponService::class)->computeForCart($cart, $customer);
+            $discountForShipping = $couponForShipping->valid ? $couponForShipping->discountAmount : 0;
+            $subtotalAfterDiscountForShipping = max(0, $subtotalForPricing - $discountForShipping);
+            $isCouponFree = $couponForShipping->valid && $couponForShipping->freeShipping;
+
             $shipping = ShippingMethod::query()->find($this->shippingMethodId);
             $isFreeOrPickup = $shipping !== null && ($shipping->type === ShippingMethodType::Free || $shipping->type === ShippingMethodType::Pickup);
             if ($isFreeOrPickup) {
                 $shippingCost = 0;
+            } elseif ($isCouponFree) {
+                $shippingCost = 0;
             } else {
-                // Need subtotal after discount for per-geo free_threshold check
-                $cart->load('items');
-                $subtotal = $cart->items->sum(fn ($item) => $item->lineTotal());
-                $couponRes = app(CouponService::class)->computeForCart($cart, $customer);
-                $discount = $couponRes->valid ? $couponRes->discountAmount : 0;
-                $subtotalAfterDiscount = max(0, $subtotal - $discount);
-                $dynamicShippingCost = $this->resolveDynamicShippingCost($shippingService, $customer, $subtotalAfterDiscount);
+                $dynamicShippingCost = $this->resolveDynamicShippingCost($shippingService, $customer, $subtotalAfterDiscountForShipping);
                 $shippingCost = $dynamicShippingCost ?? $shipping?->cost ?? 0;
             }
 
@@ -279,6 +283,26 @@ class CheckoutPage extends Component
         return null;
     }
 
+    private function resolveMatchedRate(ShippingService $shippingService): ?TenantShippingRate
+    {
+        if ($this->bd_upazila_id !== null || $this->bd_district_id !== null) {
+            return $shippingService->getMatchedRate($this->bd_upazila_id, $this->bd_district_id, $this->bd_division_id);
+        }
+
+        if ($this->selectedAddressId !== null) {
+            $address = Address::query()->find($this->selectedAddressId);
+            if ($address !== null) {
+                return $shippingService->getMatchedRate($address->bd_upazila_id, $address->bd_district_id, $address->bd_division_id, $address);
+            }
+        }
+
+        if (! empty($this->guestAddress['bd_upazila_id']) || ! empty($this->guestAddress['bd_district_id'])) {
+            return $shippingService->getMatchedRateForGuest($this->guestAddress);
+        }
+
+        return $shippingService->getMatchedRate($this->bd_upazila_id, $this->bd_district_id, $this->bd_division_id);
+    }
+
     public function render(CartService $carts, CouponService $coupons, ShippingService $shippingService)
     {
         $customer = Auth::guard('customer')->user();
@@ -290,13 +314,40 @@ class CheckoutPage extends Component
         $subtotalAfterDiscount = max(0, $subtotal - $discount);
         $shipping = ShippingMethod::query()->find($this->shippingMethodId);
 
-        // Hybrid: Pickup/Free type forces 0, otherwise geo-based with threshold
+        // Unified priority: 1.Method Free/Pickup ->0, 2.Coupon FreeShipping ->0, 3.Geo free_threshold (post-discount) ->0, 4.Geo charge
         $isFreeOrPickup = $shipping !== null && ($shipping->type === ShippingMethodType::Free || $shipping->type === ShippingMethodType::Pickup);
+        $isCouponFree = $couponResult->valid && $couponResult->freeShipping;
+        $freeReason = null;
+        $nextFreeThreshold = null;
+        $geoName = null;
+        $originalShippingCost = null;
         if ($isFreeOrPickup) {
             $shippingCost = 0;
+            $freeReason = $shipping->type === ShippingMethodType::Pickup ? 'Store Pickup' : 'Free Delivery Method';
+            $originalShippingCost = $shipping?->cost ?? 0;
+        } elseif ($isCouponFree) {
+            $shippingCost = 0;
+            $freeReason = 'Coupon Applied';
+            $matchedRateTmp = $this->resolveMatchedRate($shippingService);
+            $originalShippingCost = $matchedRateTmp?->charge ?? $shipping?->cost ?? 0;
         } else {
             $dynamicCost = $this->resolveDynamicShippingCost($shippingService, $customer, $subtotalAfterDiscount);
             $shippingCost = $dynamicCost ?? $shipping?->cost ?? 0;
+            // Determine why free or progress toward free
+            $matchedRate = $this->resolveMatchedRate($shippingService);
+            if ($matchedRate !== null) {
+                $originalShippingCost = (int) $matchedRate->charge;
+                if ($matchedRate->free_threshold !== null) {
+                    $geoName = $matchedRate->district?->name_en ?? $matchedRate->division?->name_en ?? 'your area';
+                    if ($shippingCost === 0 && $dynamicCost === 0) {
+                        $freeReason = 'Order over '.money((int) $matchedRate->free_threshold);
+                    } elseif ($shippingCost !== 0) {
+                        $nextFreeThreshold = (int) $matchedRate->free_threshold;
+                    }
+                }
+            } else {
+                $originalShippingCost = $shipping?->cost ?? 0;
+            }
         }
 
         $hasPreorder = $cart->items->contains(fn ($item) => $item->variant?->fulfillment_strategy?->value === 'preorder');
@@ -327,6 +378,11 @@ class CheckoutPage extends Component
             'subtotal' => $subtotal,
             'discount' => $couponResult->valid ? $couponResult->discountAmount : 0,
             'shippingCost' => $shippingCost,
+            'originalShippingCost' => $originalShippingCost ?? $shippingCost,
+            'freeReason' => $freeReason,
+            'nextFreeThreshold' => $nextFreeThreshold,
+            'geoName' => $geoName,
+            'subtotalAfterDiscount' => $subtotalAfterDiscount,
             'hasPreorder' => $hasPreorder,
             'isMixed' => $isMixed,
             'preorderEta' => $preorderEta,

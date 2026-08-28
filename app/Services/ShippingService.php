@@ -108,6 +108,54 @@ class ShippingService
     }
 
     /**
+     * Get the matched rate object (for UI threshold progress), without applying free check.
+     */
+    public function getMatchedRate(?int $upazilaId = null, ?int $districtId = null, ?int $divisionId = null, ?Address $address = null): ?TenantShippingRate
+    {
+        if ($address !== null) {
+            $upazilaId = $address->bd_upazila_id ?? $upazilaId;
+            $districtId = $address->bd_district_id ?? $districtId;
+            $divisionId = $address->bd_division_id ?? $divisionId;
+        }
+
+        if ($upazilaId !== null) {
+            $rate = TenantShippingRate::query()->where('is_active', true)->where('bd_upazila_id', $upazilaId)->orderBy('sort_order')->first();
+            if ($rate !== null) {
+                return $rate;
+            }
+            $upazila = BdUpazila::query()->find($upazilaId);
+            if ($upazila !== null) {
+                $districtId = $upazila->district_id;
+            }
+        }
+
+        if ($districtId !== null) {
+            $rate = TenantShippingRate::query()->where('is_active', true)->where('bd_district_id', $districtId)->whereNull('bd_upazila_id')->orderBy('sort_order')->first();
+            if ($rate !== null) {
+                return $rate;
+            }
+            $rate = TenantShippingRate::query()->where('is_active', true)->where('bd_district_id', $districtId)->orderBy('sort_order')->first();
+            if ($rate !== null) {
+                return $rate;
+            }
+        }
+
+        if ($divisionId !== null) {
+            $rate = TenantShippingRate::query()->where('is_active', true)->where('bd_division_id', $divisionId)->whereNull('bd_district_id')->whereNull('bd_upazila_id')->orderBy('sort_order')->first();
+            if ($rate !== null) {
+                return $rate;
+            }
+        }
+
+        $fallback = TenantShippingRate::query()->where('is_active', true)->whereNull('bd_district_id')->whereNull('bd_upazila_id')->orderBy('sort_order')->first();
+        if ($fallback !== null) {
+            return $fallback;
+        }
+
+        return null;
+    }
+
+    /**
      * Quote for a guest address array or Address model.
      */
     public function quoteForGuest(array $guestAddress, ?int $subtotalAfterDiscount = null): int
@@ -117,5 +165,14 @@ class ShippingService
         $divisionId = isset($guestAddress['bd_division_id']) && $guestAddress['bd_division_id'] !== '' ? (int) $guestAddress['bd_division_id'] : null;
 
         return $this->quote($upazilaId, $districtId, $divisionId, null, $subtotalAfterDiscount);
+    }
+
+    public function getMatchedRateForGuest(array $guestAddress): ?TenantShippingRate
+    {
+        $upazilaId = isset($guestAddress['bd_upazila_id']) && $guestAddress['bd_upazila_id'] !== '' ? (int) $guestAddress['bd_upazila_id'] : null;
+        $districtId = isset($guestAddress['bd_district_id']) && $guestAddress['bd_district_id'] !== '' ? (int) $guestAddress['bd_district_id'] : null;
+        $divisionId = isset($guestAddress['bd_division_id']) && $guestAddress['bd_division_id'] !== '' ? (int) $guestAddress['bd_division_id'] : null;
+
+        return $this->getMatchedRate($upazilaId, $districtId, $divisionId);
     }
 }

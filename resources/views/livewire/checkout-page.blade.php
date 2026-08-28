@@ -112,8 +112,12 @@
                                 <input type="radio" wire:model.live="shippingMethodId" value="{{ $method->id }}"
                                     class="text-[var(--brand)] focus:ring-[var(--brand)]">
                                 <span class="text-sm font-medium">{{ $method->name }}</span>
+                                @if ($method->type === \App\Enums\ShippingMethodType::Free)
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Free</span>
+                                @elseif($method->type === \App\Enums\ShippingMethodType::Pickup)
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Pickup</span>
+                                @endif
                             </span>
-                            <span class="text-sm text-gray-500">{{ money((int) $method->cost) }}</span>
                         </label>
                     @endforeach
                 </div>
@@ -258,8 +262,22 @@
                         </div>
                     @endif
                     <div class="flex justify-between"><span
-                            class="text-gray-500">{{ __('Shipping') }}</span><span>@if ((int) $shippingCost === 0)<span class="text-green-600 font-semibold">Free</span>@else{{ money((int) $shippingCost) }}@endif</span>
+                            class="text-gray-500">{{ __('Shipping') }}</span><span>
+                            @if ((int) $shippingCost === 0)
+                                <span class="text-green-600 font-semibold">Free @if(!empty($freeReason)) — {{ $freeReason }}@endif</span>
+                                @if(($originalShippingCost ?? 0) > 0)
+                                    <span class="ml-1 text-xs text-gray-400 line-through">{{ money((int) $originalShippingCost) }}</span>
+                                @endif
+                            @else
+                                {{ money((int) $shippingCost) }}
+                            @endif
+                        </span>
                     </div>
+                    @if (!empty($nextFreeThreshold) && !empty($geoName) && (int) $shippingCost !== 0)
+                        <p class="text-xs text-amber-700 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-lg p-2">
+                            Add {{ money(max(0, (int)$nextFreeThreshold - (int)($subtotalAfterDiscount ?? 0))) }} more for free delivery to {{ $geoName }}!
+                        </p>
+                    @endif
                     <div
                         class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200 dark:border-gray-800">
                         <span>{{ __('Total') }}</span><span>{{ money((int) ($subtotal - $discount + $shippingCost)) }}</span>
