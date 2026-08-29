@@ -118,6 +118,8 @@ class ProductListingService
     private function applyAttributeFilters(Builder $query, ProductFilterState $filters, ?string $skipCode = null): void
     {
         foreach ($filters->attributes as $code => $values) {
+            $values = is_array($values) ? $values : (array) $values;
+            $values = array_values(array_filter($values, static fn (mixed $v): bool => is_string($v) && $v !== ''));
             if ($values === [] || $code === $skipCode) {
                 continue;
             }

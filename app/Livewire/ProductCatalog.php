@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\Collection;
 use App\Models\Product;
 use App\Models\SearchQuery;
+use App\Services\GlobalSearchService;
 use App\Services\Storefront\ProductCardData;
 use App\Services\Storefront\ProductListingService;
 use App\Services\WishlistService;
@@ -87,7 +88,7 @@ class ProductCatalog extends Component
             SearchQuery::query()->create([
                 'tenant_id' => tenant()->id,
                 'term' => $this->term,
-                'results_count' => Product::search($this->term)->keys()->count(),
+                'results_count' => app(GlobalSearchService::class)->searchIds($this->term)->count(),
                 'searched_at' => now(),
             ]);
         }
@@ -126,7 +127,10 @@ class ProductCatalog extends Component
             || $this->onSaleOnly
             || $this->newArrivalOnly
             || $this->officialOnly
-            || array_filter($this->attr) !== [];
+            || array_filter(array_map(
+                static fn (mixed $v): array => is_array($v) ? array_values(array_filter($v, static fn (mixed $x): bool => is_string($x) && $x !== '')) : [],
+                $this->attr,
+            ), static fn (array $v): bool => $v !== []) !== [];
     }
 
     /**
@@ -210,7 +214,7 @@ class ProductCatalog extends Component
         $query = Product::query()->published();
 
         if ($this->term !== '' && $this->term !== null) {
-            $ids = Product::search($this->term)->keys();
+            $ids = app(GlobalSearchService::class)->searchIds($this->term);
             $query->whereIn('id', $ids);
         }
 
@@ -229,7 +233,10 @@ class ProductCatalog extends Component
             onSaleOnly: $this->onSaleOnly,
             newArrivalOnly: $this->newArrivalOnly,
             officialOnly: $this->officialOnly,
-            attributes: array_filter($this->attr),
+            attributes: array_filter(array_map(
+                static fn (mixed $v): array => is_array($v) ? array_values(array_filter($v, static fn (mixed $x): bool => is_string($x) && $x !== '')) : [],
+                $this->attr,
+            ), static fn (array $v): bool => $v !== []),
             sort: $this->sort,
             page: $this->getPage(),
             searchTerm: $this->term,

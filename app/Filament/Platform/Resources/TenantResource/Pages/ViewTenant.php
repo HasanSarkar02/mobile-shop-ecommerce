@@ -13,12 +13,14 @@ use App\Models\User;
 use App\Notifications\TenantOwnerInvitationNotification;
 use App\Services\OwnerInvitationService;
 use App\Services\TenantApprovalService;
+use App\Support\Tenancy\TenantUrlGenerator;
 use Carbon\CarbonInterface;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification as FilamentNotification;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -131,7 +133,7 @@ class ViewTenant extends ViewRecord
 
                     $uuid = (string) Str::uuid();
 
-                    session()->put(ResolveSupportSession::SESSION_KEY, [
+                    $payload = [
                         'id' => $uuid,
                         'tenant_id' => (int) $record->getKey(),
                         'started_at' => now()->toDateTimeString(),
@@ -139,7 +141,9 @@ class ViewTenant extends ViewRecord
                         'entered_by_user_id' => (int) $admin->getKey(),
                         'reason' => $data['reason'],
                         'is_write_enabled' => $data['is_write_enabled'],
-                    ]);
+                    ];
+
+                    Cache::put('support_magic:'.$uuid, $payload, now()->addMinutes(ResolveSupportSession::IDLE_TTL_MINUTES));
 
                     activity('support')
                         ->performedOn($record)
@@ -154,7 +158,9 @@ class ViewTenant extends ViewRecord
                         ])
                         ->log('support.mode_started');
 
-                    $this->redirect(url('/support/'.$record->getKey().'/admin'));
+                    $magicUrl = app(TenantUrlGenerator::class)->canonicalPath($record, '/support/magic?token='.$uuid);
+
+                    $this->redirect($magicUrl);
                 }),
         ];
     }

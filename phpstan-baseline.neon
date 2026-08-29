@@ -313,12 +313,6 @@ parameters:
 			path: app/Http/Controllers/Storefront/CartController.php
 
 		-
-			message: '#^Access to an undefined property App\\Models\\Product\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/CompareController.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -395,18 +389,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/Storefront/ProductController.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Product\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Storefront/SearchSuggestController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Product\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Storefront/SearchSuggestController.php
 
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: \(Illuminate\\Database\\Eloquent\\Model\|null\), Closure\(App\\Models\\WishlistItem\)\: \(Illuminate\\Database\\Eloquent\\Model\|null\) given\.$#'
@@ -711,6 +693,18 @@ parameters:
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:published\(\)\.$#'
 			identifier: method.notFound
+			count: 2
+			path: app/Livewire/ProductCatalog.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: app/Livewire/ProductCatalog.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
 			count: 2
 			path: app/Livewire/ProductCatalog.php
 
@@ -1103,12 +1097,6 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: app/Services/InventoryService.php
-
-		-
-			message: '#^Access to an undefined property App\\Models\\Product\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Services/OrderService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -1557,6 +1545,18 @@ parameters:
 		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:inStock\(\)\.$#'
 			identifier: method.notFound
+			count: 1
+			path: app/Services/Storefront/ProductListingService.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Storefront/ProductListingService.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
 			count: 1
 			path: app/Services/Storefront/ProductListingService.php
 

@@ -24,6 +24,10 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
+/**
+ * @property string|null $name
+ * @property string|null $model_number
+ */
 class Product extends Model implements HasMedia
 {
     use BelongsToTenant;
@@ -178,15 +182,72 @@ class Product extends Model implements HasMedia
         // now, Meilisearch later) matches either language. Keep `name` as
         // combined for backward compat, plus per-locale fields for future
         // locale-scoped ranking.
-        $names = $this->translations->pluck('name')->filter()->implode(' ');
-        $descriptions = $this->translations->pluck('description')->filter()->implode(' ');
+        $names = $this->relationLoaded('translations')
+            ? $this->translations->pluck('name')->filter()->implode(' ')
+            : '';
+        $descriptions = $this->relationLoaded('translations')
+            ? $this->translations->pluck('description')->filter()->implode(' ')
+            : '';
+        $slugs = $this->relationLoaded('translations')
+            ? $this->translations->pluck('slug')->filter()->implode(' ')
+            : '';
 
-        // Fallback to current-locale translation when relation not yet loaded
-        // (e.g. during factory creation before translations exist).
-        if ($names === '') {
-            $t = $this->translation() ?? $this->translation('en');
-            $names = $t !== null ? $t->name : '';
-            $descriptions = $t !== null ? $t->description : '';
+        // Fallback when relation not yet loaded (e.g. during factory creation before translations exist).
+        if ($names === '' && $slugs === '') {
+            if ($this->relationLoaded('translations') && $this->translations->isNotEmpty()) {
+                // already handled
+            } else {
+                $t = $this->translation() ?? $this->translation('en');
+                $names = $t !== null ? (string) $t->name : '';
+                $descriptions = $t !== null ? (string) ($t->description ?? '') : '';
+                $slugs = $t !== null ? (string) ($t->slug ?? '') : '';
+                // Also merge all translations if not loaded but exist in DB
+                if ($this->exists && ! $this->relationLoaded('translations')) {
+                    $all = $this->translations()->pluck('name')->filter()->implode(' ');
+                    if ($all !== '') {
+                        $names = $all;
+                    }
+                    $descAll = $this->translations()->pluck('description')->filter()->implode(' ');
+                    if ($descAll !== '') {
+                        $descriptions = $descAll;
+                    }
+                    $slugAll = $this->translations()->pluck('slug')->filter()->implode(' ');
+                    if ($slugAll !== '') {
+                        $slugs = $slugAll;
+                    }
+                }
+            }
+        }
+
+        // Tags — imploded names for deep search
+        $tags = $this->relationLoaded('tags')
+            ? $this->tags->pluck('name')->filter()->implode(' ')
+            : ($this->exists ? $this->tags()->pluck('name')->filter()->implode(' ') : '');
+
+        // Variants — SKU and barcode are critical for merchant/CS SKU search
+        $variantSkus = '';
+        $variantBarcodes = '';
+        if ($this->relationLoaded('variants')) {
+            $variantSkus = $this->variants->pluck('sku')->filter()->implode(' ');
+            $variantBarcodes = $this->variants->pluck('barcode')->filter()->implode(' ');
+        } elseif ($this->exists) {
+            $variantSkus = $this->variants()->pluck('sku')->filter()->implode(' ');
+            $variantBarcodes = $this->variants()->pluck('barcode')->filter()->implode(' ');
+        }
+
+        // Brand / Category names — denormalized for cross-entity matching
+        $brandName = '';
+        if ($this->relationLoaded('brand') && $this->brand !== null) {
+            $brandName = (string) ($this->brand->getAttribute('name') ?? '');
+        } elseif ($this->exists && $this->brand_id !== null) {
+            $brandName = (string) ($this->brand()->value('name') ?? '');
+        }
+
+        $categoryName = '';
+        if ($this->relationLoaded('category') && $this->category !== null) {
+            $categoryName = (string) ($this->category->getAttribute('name') ?? '');
+        } elseif ($this->exists && $this->category_id !== null) {
+            $categoryName = (string) ($this->category()->value('name') ?? '');
         }
 
         return [
@@ -196,6 +257,13 @@ class Product extends Model implements HasMedia
             'description' => $descriptions,
             'name_en' => $this->translation('en')?->name,
             'name_bn' => $this->translation('bn')?->name,
+            'slug' => $slugs,
+            'model_number' => $this->model_number,
+            'brand' => $brandName,
+            'category' => $categoryName,
+            'tags' => $tags,
+            'sku' => $variantSkus,
+            'barcode' => $variantBarcodes,
         ];
     }
 

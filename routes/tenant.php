@@ -30,13 +30,44 @@ use App\Http\Controllers\Storefront\SearchSuggestController;
 use App\Http\Controllers\Storefront\SitemapController;
 use App\Http\Controllers\Storefront\StaticPageController;
 use App\Http\Controllers\Storefront\WishlistController;
+use App\Http\Controllers\Support\MagicLoginController;
 use App\Http\Middleware\EnsureTenant;
 use App\Http\Middleware\ResolveSupportSession;
 use App\Livewire\CheckoutPage;
 use App\Models\Order;
+use App\Models\Tenant;
+use App\Models\User;
+use App\Support\Tenancy\TenantUrlGenerator;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 $registerTenantRoutes = function (): void {
+    Route::get('/support/magic', MagicLoginController::class)->name('support.magic');
+    Route::post('/support/exit', function (Request $request, TenantUrlGenerator $urls): RedirectResponse {
+        $payload = session(ResolveSupportSession::SESSION_KEY);
+        if (is_array($payload)) {
+            $tenant = Tenant::query()->find((int) ($payload['tenant_id'] ?? 0));
+            if ($tenant instanceof Tenant) {
+                $actor = auth('platform')->user();
+                activity('support')
+                    ->performedOn($tenant)
+                    ->causedBy($actor instanceof User ? $actor : null)
+                    ->event('support.mode_ended')
+                    ->withProperties([
+                        'support_session_id' => (string) ($payload['id'] ?? ''),
+                        'tenant_id' => (int) ($payload['tenant_id'] ?? 0),
+                        'entered_by_user_id' => (int) ($payload['entered_by_user_id'] ?? 0),
+                        'exit_type' => 'manual',
+                    ])
+                    ->log('support.mode_ended');
+            }
+        }
+        session()->forget(ResolveSupportSession::SESSION_KEY);
+
+        return redirect($urls->platform('/platform'));
+    })->name('support.exit.tenant');
+
     Route::get('/', HomeController::class)->name('storefront.home');
     Route::get('/category', [CategoryController::class, 'index'])->name('storefront.categories.index');
     Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('storefront.category');
