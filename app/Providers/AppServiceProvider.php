@@ -8,6 +8,7 @@ use App\Events\OrderPaymentRecorded;
 use App\Events\OrderPlaced;
 use App\Events\OrderStatusChanged;
 use App\Listeners\SendOrderCancelledNotifications;
+use App\Listeners\SendOrderConfirmationEmail;
 use App\Listeners\SendOrderPlacedNotifications;
 use App\Listeners\SendOrderStatusChangedNotifications;
 use App\Listeners\SendPaymentRecordedNotifications;
@@ -93,6 +94,7 @@ class AppServiceProvider extends ServiceProvider
         Plan::observe(PlanObserver::class);
 
         Event::listen(OrderPlaced::class, SendOrderPlacedNotifications::class);
+        Event::listen(OrderPlaced::class, SendOrderConfirmationEmail::class);
         Event::listen(OrderStatusChanged::class, SendOrderStatusChangedNotifications::class);
         Event::listen(OrderCancelled::class, SendOrderCancelledNotifications::class);
         Event::listen(OrderPaymentRecorded::class, SendPaymentRecordedNotifications::class);

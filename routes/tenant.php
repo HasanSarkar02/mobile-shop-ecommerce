@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OrderInvoiceController;
 use App\Http\Controllers\OrderReceiptController;
 use App\Http\Controllers\Storefront\Account\AccountAddressController;
 use App\Http\Controllers\Storefront\Account\AccountOrderController;
@@ -79,6 +80,10 @@ $registerTenantRoutes = function (): void {
         ->middleware([ResolveSupportSession::class, EnsureTenant::class])
         ->name('store.orders.receipt');
 
+    Route::get('/admin/orders/{order}/invoice', OrderInvoiceController::class)
+        ->middleware([ResolveSupportSession::class, EnsureTenant::class])
+        ->name('store.orders.invoice');
+
     Route::get('/track-order', [OrderTrackingController::class, 'form'])->name('storefront.track-order.form');
     Route::post('/track-order', [OrderTrackingController::class, 'show'])->name('storefront.track-order.show');
 
@@ -106,6 +111,7 @@ $registerTenantRoutes = function (): void {
         Route::get('/', fn () => view('storefront.account.dashboard'))->name('dashboard');
         Route::get('/orders', [AccountOrderController::class, 'index'])->name('orders');
         Route::get('/orders/{order}', [AccountOrderController::class, 'show'])->name('orders.show');
+        Route::get('/orders/{order}/invoice', OrderInvoiceController::class)->name('orders.invoice');
         Route::get('/addresses', [AccountAddressController::class, 'index'])->name('addresses');
         Route::post('/addresses', [AccountAddressController::class, 'store'])->name('addresses.store');
         Route::put('/addresses/{address}', [AccountAddressController::class, 'update'])->name('addresses.update');

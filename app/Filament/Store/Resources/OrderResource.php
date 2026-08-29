@@ -61,7 +61,15 @@ class OrderResource extends Resource
                 TextColumn::make('placed_at')->dateTime(),
             ])
             ->defaultSort('placed_at', 'desc')
-            ->recordActions([ViewAction::make()])
+            ->recordActions([
+                ViewAction::make(),
+                Action::make('download_invoice')
+                    ->label('Invoice')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->url(fn (Order $record): string => route('store.orders.invoice', ['order' => $record]))
+                    ->openUrlInNewTab(),
+            ])
             ->bulkActions([
                 BulkAction::make('bulkSendToCourier')
                     ->label('Send to Courier (bulk)')

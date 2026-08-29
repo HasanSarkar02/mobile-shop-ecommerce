@@ -56,6 +56,12 @@
                 <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold {{ $fulfillTone }}">Shipping: {{ $latestFulfillment?->status?->label() ?? '—' }}</span>
             </div>
         </div>
+        <div class="mt-4 flex flex-wrap gap-2">
+            <a href="{{ route('storefront.account.orders.invoice', ['order' => $order]) }}" class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 12l3 3m0 0l3-3m-3 3V2.25"/></svg>
+                Download Invoice
+            </a>
+        </div>
     </div>
 
     <div class="mt-6 gap-6 lg:grid lg:grid-cols-3 lg:items-start">

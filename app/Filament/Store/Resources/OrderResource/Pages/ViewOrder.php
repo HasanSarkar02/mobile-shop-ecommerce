@@ -35,6 +35,13 @@ class ViewOrder extends ViewRecord
                 ->url(fn (): string => route('store.orders.receipt', ['order' => $this->record]))
                 ->openUrlInNewTab(),
 
+            Action::make('downloadInvoice')
+                ->label('Download Invoice')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('primary')
+                ->url(fn (): string => route('store.orders.invoice', ['order' => $this->record]))
+                ->openUrlInNewTab(),
+
             Action::make('updateStatus')
                 ->label('Update Status')
                 ->schema([
