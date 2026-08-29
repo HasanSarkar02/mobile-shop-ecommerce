@@ -8,6 +8,7 @@ use App\Filament\Store\Widgets\FinancialOverviewWidget;
 use App\Filament\Store\Widgets\LowStockWidget;
 use App\Filament\Store\Widgets\ProfitTrendChartWidget;
 use App\Filament\Store\Widgets\RecentOrdersWidget;
+use App\Filament\Store\Widgets\StockValuationWidget;
 use App\Filament\Store\Widgets\StoreStatsOverview;
 use App\Http\Middleware\EnsureTenant;
 use App\Http\Middleware\ResolveSupportSession;
@@ -43,6 +44,7 @@ class StorePanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Store/Widgets'), for: 'App\\Filament\\Store\\Widgets')
             ->widgets([
                 FinancialOverviewWidget::class,
+                StockValuationWidget::class,
                 ProfitTrendChartWidget::class,
                 StoreStatsOverview::class,
                 RecentOrdersWidget::class,

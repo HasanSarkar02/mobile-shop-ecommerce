@@ -7,7 +7,9 @@ namespace App\Filament\Store\Resources;
 use App\Enums\InventoryType;
 use App\Enums\StockAdjustmentReason;
 use App\Filament\Store\Resources\StockItemResource\Pages;
+use App\Models\ProductVariant;
 use App\Models\StockItem;
+use App\Services\Inventory\StockValuationService;
 use App\Services\InventoryService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -18,6 +20,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Tables\Columns\Summarizers\Summarizer;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -57,6 +60,37 @@ class StockItemResource extends Resource
                 TextColumn::make('available')
                     ->label('Available')
                     ->state(fn (StockItem $record): int => $record->availableQuantity()),
+                TextColumn::make('unit_cost')
+                    ->label('Unit Cost')
+                    ->state(function (StockItem $record): string {
+                        $variant = $record->variant;
+                        $cost = $variant instanceof ProductVariant ? $variant->cost_price : null;
+
+                        return $cost !== null ? money((int) $cost) : '—';
+                    })
+                    ->color(function (StockItem $record): ?string {
+                        $variant = $record->variant;
+
+                        return ($variant instanceof ProductVariant ? $variant->cost_price : null) === null ? 'gray' : null;
+                    }),
+                TextColumn::make('total_value')
+                    ->label('Total Value')
+                    ->state(function (StockItem $record): string {
+                        $service = app(StockValuationService::class);
+                        $value = $service->valueOnHand($record);
+
+                        return $value !== null ? money($value) : '—';
+                    })
+                    ->color(fn (StockItem $record): string => app(StockValuationService::class)->valueOnHand($record) === null ? 'gray' : 'success')
+                    ->summarize(Summarizer::make()->label('Page Total')->using(function (Builder $query): string {
+                        $total = (clone $query)
+                            ->join('product_variants', 'product_variants.id', '=', 'stock_items.product_variant_id')
+                            ->whereNotNull('product_variants.cost_price')
+                            ->selectRaw('COALESCE(SUM(stock_items.quantity * product_variants.cost_price), 0) as total')
+                            ->value('total');
+
+                        return money((int) round((float) ($total ?? 0)));
+                    })),
                 TextColumn::make('status')
                     ->label('Status')
                     ->state(function (StockItem $record): string {

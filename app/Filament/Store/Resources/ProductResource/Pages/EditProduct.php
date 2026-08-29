@@ -22,6 +22,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Facades\DB;
 
 class EditProduct extends EditRecord
@@ -66,15 +68,15 @@ class EditProduct extends EditRecord
                     ];
                 }
 
-                // Preload stock map for default location
-                $stockMap = $variants->flatMap(function (ProductVariant $variant) use ($defaultLocation) {
-                    $item = $variant->stockItems->firstWhere('location_id', $defaultLocation->id);
+                // Preload stock map for default location — direct query is tenant-safe and not dependent on eager collection
+                $stockItems = StockItem::query()
+                    ->whereIn('product_variant_id', $variants->pluck('id'))
+                    ->where('location_id', $defaultLocation->id)
+                    ->get()
+                    ->keyBy('product_variant_id');
 
-                    return [$variant->id => $item];
-                });
-
-                $defaultStocks = $variants->map(function (ProductVariant $variant) use ($stockMap) {
-                    $item = $stockMap[$variant->id] ?? null;
+                $defaultStocks = $variants->map(function (ProductVariant $variant) use ($stockItems) {
+                    $item = $stockItems->get($variant->id);
                     $available = $item instanceof StockItem ? $item->availableQuantityDecimal() : '0.000';
                     $isSerialized = $variant->inventory_type === InventoryType::Serialized;
 
@@ -94,7 +96,36 @@ class EditProduct extends EditRecord
                         ->options(fn () => Location::query()->where('tenant_id', tenant()?->id)->pluck('name', 'id')->all())
                         ->default($defaultLocation->id)
                         ->required()
-                        ->helperText('Stock will be updated at this location.')
+                        ->live()
+                        ->afterStateUpdated(function ($state, Get $get, Set $set): void {
+                            $locationId = $state ?: app(InventoryService::class)->defaultLocation()->id;
+                            $location = Location::query()->find($locationId);
+                            if (! $location) {
+                                return;
+                            }
+                            $stocks = $get('stocks') ?? [];
+                            if (! is_array($stocks) || $stocks === []) {
+                                return;
+                            }
+                            $variantIds = collect($stocks)->pluck('variant_id')->filter()->values();
+                            if ($variantIds->isEmpty()) {
+                                return;
+                            }
+                            $items = StockItem::query()
+                                ->whereIn('product_variant_id', $variantIds)
+                                ->where('location_id', $location->id)
+                                ->get()
+                                ->keyBy('product_variant_id');
+                            $newStocks = collect($stocks)->map(function ($row) use ($items) {
+                                $vid = $row['variant_id'] ?? null;
+                                $item = $vid ? $items->get($vid) : null;
+                                $row['current_stock'] = $item instanceof StockItem ? $item->availableQuantityDecimal() : '0.000';
+
+                                return $row;
+                            })->all();
+                            $set('stocks', $newStocks);
+                        })
+                        ->helperText('Stock will be updated at this location. Changing location refreshes Current available.')
                         ->columnSpanFull(),
 
                     Select::make('mode')
@@ -127,11 +158,9 @@ class EditProduct extends EditRecord
                             Hidden::make('variant_id'),
                             Hidden::make('is_serialized'),
                             Placeholder::make('variant_label')
-                                ->label('Variant')
-                                ->content(fn ($get) => $get('variant_label') ?? $get('sku')),
+                                ->label('Variant'),
                             Placeholder::make('current_stock')
-                                ->label('Current available')
-                                ->content(fn ($get) => $get('current_stock') ?? '0.000'),
+                                ->label('Current available'),
                             TextInput::make('quantity_change')
                                 ->label('Qty to add')
                                 ->numeric()
