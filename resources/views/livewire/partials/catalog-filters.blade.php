@@ -83,8 +83,9 @@
                 @foreach ($facet['options'] as $option)
                     <label class="flex items-center justify-between gap-2 text-sm cursor-pointer select-none py-1.5">
                         <span class="flex items-center gap-2">
-                            <input type="checkbox" wire:model.live="attr.{{ $code }}"
-                                value="{{ $option['value'] }}"
+                            <input type="checkbox"
+                                wire:click="toggleAttr('{{ $code }}', '{{ $option['value'] }}')"
+                                @checked(in_array($option['value'], $attr[$code] ?? []))
                                 class="rounded border-gray-300 dark:border-gray-700 text-[var(--brand)] focus:ring-[var(--brand)]">
                             {{ $option['value'] }}
                         </span>

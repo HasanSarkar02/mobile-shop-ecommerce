@@ -1,6 +1,6 @@
 {{-- resources/views/livewire/product-catalog.blade.php --}}
 <div wire:loading.class="opacity-60"
-    wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,attr,clearFilters,gotoPage">
+    wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,toggleAttr,clearFilters,gotoPage">
     {{-- Alpine filter state must NOT live on the Livewire root element.
          Putting x-data on the same element as wire:loading causes Livewire's
          morph to destroy the Alpine tree — re-rendered product cards lose their
@@ -107,14 +107,14 @@
                 @endif
             @else
                 <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6" wire:loading.remove
-                    wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,attr,clearFilters">
+                    wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,toggleAttr,clearFilters">
                     @foreach ($cards as $card)
                         <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                     @endforeach
                 </div>
 
                 <div wire:loading
-                    wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,attr,clearFilters"
+                    wire:target="sort,inStockOnly,emiOnly,warrantyOnly,onSaleOnly,newArrivalOnly,officialOnly,priceMin,priceMax,brandIds,toggleAttr,clearFilters"
                     class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6">
                     @for ($i = 0; $i < 6; $i++)
                         <div>

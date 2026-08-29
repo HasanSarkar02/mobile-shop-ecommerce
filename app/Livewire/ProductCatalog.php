@@ -67,8 +67,15 @@ class ProductCatalog extends Component
     public bool $officialOnly = false;
 
     /** @var array<string, array<string>> attribute code => selected values */
-    #[Url]
     public array $attr = [];
+
+    /**
+     * Flat string representation of attribute filters for clean URL serialization.
+     * Format: "weight:200,1;color:Red" — avoids Livewire #[Url] nested-array
+     * serialization bugs that produce malformed query strings like attr[weight[]=true.
+     */
+    #[Url(as: 'filter')]
+    public string $attrFilter = '';
 
     #[Url]
     public string $sort = 'featured';
@@ -78,6 +85,7 @@ class ProductCatalog extends Component
         $this->mode = $mode;
         $this->slug = $slug;
         $this->term = $term;
+        $this->parseAttrFilter();
 
         // Logged here, not in render(): mount() runs exactly once per actual
         // search (the initial full page load), whereas render() re-runs on
@@ -104,7 +112,8 @@ class ProductCatalog extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['brandIds', 'priceMin', 'priceMax', 'inStockOnly', 'emiOnly', 'warrantyOnly', 'onSaleOnly', 'newArrivalOnly', 'officialOnly', 'attr']);
+        $this->reset(['brandIds', 'priceMin', 'priceMax', 'inStockOnly', 'emiOnly', 'warrantyOnly', 'onSaleOnly', 'newArrivalOnly', 'officialOnly', 'attr', 'attrFilter']);
+        $this->attr = [];
         $this->resetPage();
     }
 
@@ -127,10 +136,7 @@ class ProductCatalog extends Component
             || $this->onSaleOnly
             || $this->newArrivalOnly
             || $this->officialOnly
-            || array_filter(array_map(
-                static fn (mixed $v): array => is_array($v) ? array_values(array_filter($v, static fn (mixed $x): bool => is_string($x) && $x !== '')) : [],
-                $this->attr,
-            ), static fn (array $v): bool => $v !== []) !== [];
+            || $this->attrFilter !== '';
     }
 
     /**
@@ -149,6 +155,71 @@ class ProductCatalog extends Component
             ->whereIn('id', $this->brandIds)
             ->pluck('name', 'id')
             ->all();
+    }
+
+    /**
+     * Parse the flat URL filter string into the $attr nested array.
+     * Format: "weight:200,1;color:Red" → ['weight' => ['200','1'], 'color' => ['Red']]
+     */
+    private function parseAttrFilter(): void
+    {
+        if ($this->attrFilter === '') {
+            $this->attr = [];
+
+            return;
+        }
+
+        $parsed = [];
+        foreach (explode(';', $this->attrFilter) as $segment) {
+            $segment = trim($segment);
+            if ($segment === '' || ! str_contains($segment, ':')) {
+                continue;
+            }
+            [$code, $values] = explode(':', $segment, 2);
+            $parsed[trim($code)] = array_values(array_filter(
+                array_map('trim', explode(',', $values)),
+                static fn (string $v): bool => $v !== '',
+            ));
+        }
+        $this->attr = $parsed;
+    }
+
+    /**
+     * Serialize the $attr nested array back to the flat URL filter string.
+     */
+    private function syncAttrFilter(): void
+    {
+        $parts = [];
+        foreach ($this->attr as $code => $values) {
+            if ($values !== []) {
+                $parts[] = $code.':'.implode(',', $values);
+            }
+        }
+        $this->attrFilter = implode(';', $parts);
+    }
+
+    /**
+     * Toggle an attribute value in the filter. Called by Blade checkboxes via wire:click.
+     */
+    public function toggleAttr(string $code, string $value): void
+    {
+        $current = $this->attr[$code] ?? [];
+        $index = array_search($value, $current, true);
+
+        if ($index !== false) {
+            array_splice($current, $index, 1);
+        } else {
+            $current[] = $value;
+        }
+
+        if ($current === []) {
+            unset($this->attr[$code]);
+        } else {
+            $this->attr[$code] = array_values($current);
+        }
+
+        $this->syncAttrFilter();
+        $this->resetPage();
     }
 
     public function render(ProductListingService $listing, ProductCardData $cards, WishlistService $wishlists)
