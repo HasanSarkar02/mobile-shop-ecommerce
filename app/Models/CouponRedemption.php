@@ -14,7 +14,7 @@ class CouponRedemption extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['coupon_id', 'order_id', 'customer_id', 'discount_amount', 'redeemed_at'];
+    protected $fillable = ['tenant_id', 'coupon_id', 'order_id', 'customer_id', 'discount_amount', 'redeemed_at'];
 
     protected function casts(): array
     {

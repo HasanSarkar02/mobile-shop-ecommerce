@@ -21,7 +21,7 @@ class Coupon extends Model
     use HasSchedule;
 
     protected $fillable = [
-        'campaign_id', 'code', 'name', 'description', 'type', 'value', 'max_discount_amount',
+        'tenant_id', 'campaign_id', 'code', 'name', 'description', 'type', 'value', 'max_discount_amount',
         'min_order_amount', 'min_quantity', 'eligibility_scope', 'scope_mode', 'customer_eligibility',
         'usage_limit_total', 'usage_limit_per_customer', 'is_active', 'starts_at', 'ends_at',
     ];

@@ -32,7 +32,7 @@ class CouponService
 {
     public function applyToCart(Cart $cart, string $code, ?Customer $customer): CouponValidationResult
     {
-        $coupon = Coupon::query()->where('code', strtoupper(trim($code)))->first();
+        $coupon = Coupon::query()->where('tenant_id', $cart->tenant_id)->where('code', strtoupper(trim($code)))->first();
 
         if (! $coupon) {
             return CouponValidationResult::invalid('Invalid coupon code.');
@@ -56,7 +56,7 @@ class CouponService
     {
         // Explicit code-gated coupon takes absolute priority
         if ($cart->coupon_id) {
-            $coupon = Coupon::query()->find($cart->coupon_id);
+            $coupon = Coupon::query()->where('tenant_id', $cart->tenant_id)->find($cart->coupon_id);
 
             if (! $coupon) {
                 return CouponValidationResult::none();
@@ -89,7 +89,7 @@ class CouponService
     public function lockAndComputeForCart(Cart $cart, ?Customer $customer): CouponValidationResult
     {
         if ($cart->coupon_id) {
-            $coupon = Coupon::query()->whereKey($cart->coupon_id)->lockForUpdate()->first();
+            $coupon = Coupon::query()->where('tenant_id', $cart->tenant_id)->whereKey($cart->coupon_id)->lockForUpdate()->first();
 
             if (! $coupon) {
                 return CouponValidationResult::none();
@@ -212,7 +212,9 @@ class CouponService
     private function findValidAutomaticResult(Cart $cart, ?Customer $customer, bool $lock): ?CouponValidationResult
     {
         $candidates = Coupon::query()
+            ->where('tenant_id', $cart->tenant_id)
             ->whereNull('code')
+            ->currentlyActive()
             ->orderBy('id')
             ->get();
 
@@ -248,7 +250,7 @@ class CouponService
         }
 
         if ($lock) {
-            $locked = Coupon::query()->whereKey($bestCoupon->id)->lockForUpdate()->first();
+            $locked = Coupon::query()->where('tenant_id', $cart->tenant_id)->whereKey($bestCoupon->id)->lockForUpdate()->first();
             if (! $locked) {
                 return null;
             }
@@ -291,6 +293,7 @@ class CouponService
         return match ($coupon->customer_eligibility) {
             CouponCustomerEligibility::All => true,
             CouponCustomerEligibility::FirstOrderOnly => ! $customer || ! Order::query()
+                ->where('tenant_id', $coupon->tenant_id)
                 ->where('customer_id', $customer->id)
                 ->whereIn('status', [OrderStatus::Confirmed, OrderStatus::Processing, OrderStatus::Shipped, OrderStatus::Delivered])
                 ->exists(),
@@ -302,12 +305,12 @@ class CouponService
     private function withinUsageLimits(Coupon $coupon, ?Customer $customer): bool
     {
         if ($coupon->usage_limit_total !== null
-            && CouponRedemption::query()->where('coupon_id', $coupon->id)->count() >= $coupon->usage_limit_total) {
+            && CouponRedemption::query()->where('tenant_id', $coupon->tenant_id)->where('coupon_id', $coupon->id)->count() >= $coupon->usage_limit_total) {
             return false;
         }
 
         if ($coupon->usage_limit_per_customer !== null && $customer
-            && CouponRedemption::query()->where('coupon_id', $coupon->id)->where('customer_id', $customer->id)->count() >= $coupon->usage_limit_per_customer) {
+            && CouponRedemption::query()->where('tenant_id', $coupon->tenant_id)->where('coupon_id', $coupon->id)->where('customer_id', $customer->id)->count() >= $coupon->usage_limit_per_customer) {
             return false;
         }
 
