@@ -11,6 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * @property string $name
+ * @property StoreSetting|null $settings
+ * @property StoreThemeSetting|null $themeSettings
+ */
 class Tenant extends Model
 {
     use HasFactory;

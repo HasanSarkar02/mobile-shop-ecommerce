@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Services\Storefront\FilterQueryParser;
+use App\Support\Seo\SeoData;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -29,7 +30,9 @@ class CategoryController extends Controller
 
         $isFiltered = $parser->fromRequest($request)->isFiltered();
 
-        return view('storefront.categories.show', compact('category', 'isFiltered'));
+        $seo = SeoData::fromCategory($category, $isFiltered);
+
+        return view('storefront.categories.show', compact('category', 'isFiltered', 'seo'));
 
     }
 }

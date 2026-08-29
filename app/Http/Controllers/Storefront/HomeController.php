@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\HomepageSection;
+use App\Support\Seo\SeoData;
 
 class HomeController extends Controller
 {
@@ -16,6 +17,8 @@ class HomeController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return view('storefront.home', compact('sections'));
+        $seo = SeoData::default();
+
+        return view('storefront.home', compact('sections', 'seo'));
     }
 }

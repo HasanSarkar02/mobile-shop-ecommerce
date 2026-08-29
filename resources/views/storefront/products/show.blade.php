@@ -1,10 +1,6 @@
 ﻿@extends('storefront.layout')
 
-@php
-    $productName = optional($product->translation() ?? $product->translation('en'))->name ?? 'Product';
-@endphp
-
-@section('title', $productName . ' - ' . tenant()->name)
+@section('title', $seo->title)
 
 @section('content')
     @php
@@ -46,10 +42,7 @@
         $emiHasZero = $product->emiPlans->contains(fn($plan) => (float) $plan->interest_rate === 0.0);
     @endphp
 
-    @include('storefront.partials.seo-meta', [
-        'description' => ($product->translation() ?? $product->translation('en'))?->meta_description,
-        'canonical' => $canonicalProductUrl,
-    ])
+    <x-seo.meta :seo="$seo" />
 
     @push('meta')
         <script type="application/ld+json">{!! json_encode($productJsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>

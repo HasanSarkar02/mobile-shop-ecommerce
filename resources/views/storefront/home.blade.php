@@ -1,11 +1,9 @@
 @extends('storefront.layout')
 
-@section('title', tenant()->name)
+@section('title', $seo->title)
 
 @section('content')
-    @include('storefront.partials.seo-meta', [
-        'canonical' => app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalPath(tenant(), '/'),
-    ])
+    <x-seo.meta :seo="$seo" />
     <div class="{{ \App\Support\IndustryConfig::currentGet('ui.container_class', 'max-w-7xl mx-auto') }} px-4 sm:px-6 lg:px-8 pt-4 pb-10 sm:pt-6 sm:pb-14 space-y-14 sm:space-y-16">
         @foreach ($sections as $section)
             <div class="{{ [

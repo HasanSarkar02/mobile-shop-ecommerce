@@ -19,6 +19,7 @@ use App\Services\InventoryService;
 use App\Services\RecentlyViewedService;
 use App\Services\Storefront\ProductCardData;
 use App\Services\WishlistService;
+use App\Support\Seo\SeoData;
 use App\Support\Tenancy\TenantUrlGenerator;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
@@ -338,10 +339,12 @@ class ProductController extends Controller
         $compatibleAccessoryCards = $cards->forMany($compatibleAccessories, $wishlistedProductIds);
         $recentlyViewedCards = $cards->forMany($recentlyViewedProducts, $wishlistedProductIds);
 
+        $seo = SeoData::fromProduct($product, $urls);
+
         return view('storefront.products.show', compact(
             'product', 'variantsData', 'dimensions', 'productImages', 'specificationGroups', 'productJsonLd', 'faqJsonLd', 'isWishlisted', 'isComparing',
             'relatedCards', 'crossSellCards', 'upsellCards', 'frequentlyBoughtCards', 'compatibleAccessoryCards', 'recentlyViewedCards', 'policyLinks', 'emiData', 'shippingMethods', 'paymentMethods',
-            'requiresSelection', 'initialVariantId',
+            'requiresSelection', 'initialVariantId', 'seo',
         ));
     }
 
