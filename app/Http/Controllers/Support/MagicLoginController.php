@@ -67,9 +67,6 @@ class MagicLoginController extends Controller
             abort(403, 'Support token expired.');
         }
 
-        // Boot fresh session on target tenant domain and regenerate CSRF token
-        $request->session()->regenerate();
-
         session()->put(ResolveSupportSession::SESSION_KEY, [
             'id' => $payload['id'] ?? (string) Str::uuid(),
             'tenant_id' => (int) $tenant->getKey(),

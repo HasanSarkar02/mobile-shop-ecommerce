@@ -50,6 +50,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetLocale::class,
             AssignStorefrontTokens::class,
+        ]);
+
+        $middleware->web(prepend: [
             ResolveSupportSession::class,
         ]);
 
