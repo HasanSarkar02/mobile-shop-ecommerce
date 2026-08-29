@@ -82,7 +82,7 @@ class StockItemResource extends Resource
                         return $value !== null ? money($value) : '—';
                     })
                     ->color(fn (StockItem $record): string => app(StockValuationService::class)->valueOnHand($record) === null ? 'gray' : 'success')
-                    ->summarize(Summarizer::make()->label('Page Total')->using(function (Builder $query): string {
+                    ->summarize(Summarizer::make()->label('Page Total')->using(function (\Illuminate\Database\Query\Builder $query): string {
                         $total = (clone $query)
                             ->join('product_variants', 'product_variants.id', '=', 'stock_items.product_variant_id')
                             ->whereNotNull('product_variants.cost_price')
