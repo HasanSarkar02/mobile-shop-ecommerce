@@ -40,6 +40,7 @@
                 ->min()
             : null;
         $emiHasZero = $product->emiPlans->contains(fn($plan) => (float) $plan->interest_rate === 0.0);
+        $productName = optional($translation)->name ?? 'Product';
     @endphp
 
     <x-seo.meta :seo="$seo" />
