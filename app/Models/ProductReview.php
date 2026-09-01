@@ -13,7 +13,7 @@ class ProductReview extends Model
 {
     use BelongsToTenant;
 
-    protected $fillable = ['product_id', 'customer_id', 'rating', 'title', 'body', 'status', 'is_verified_purchase'];
+    protected $fillable = ['product_id', 'customer_id', 'rating', 'title', 'body', 'status', 'is_verified_purchase', 'reply_text', 'replied_at'];
 
     protected function casts(): array
     {
@@ -21,7 +21,17 @@ class ProductReview extends Model
             'status' => ReviewStatus::class,
             'rating' => 'integer',
             'is_verified_purchase' => 'boolean',
+            'replied_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $review): void {
+            if ($review->isDirty('reply_text')) {
+                $review->replied_at = filled($review->reply_text) ? now()->toDateTimeString() : null;
+            }
+        });
     }
 
     public function product(): BelongsTo

@@ -1,4 +1,4 @@
-﻿@php
+@php
     $variant = $card['variant'] ?? null;
     $cta = $card['cta'] ?? null;
     $discount = $card['discount_percentage'] ?? null;
@@ -92,7 +92,15 @@
                 <span x-show="variantId && $store.cart.pending[variantId]" x-cloak class="whitespace-nowrap">{{ __('Adding…') }}</span>
             </button>
         @elseif ($cta && $cta['type'] === 'select_options')
-            <x-storefront.variant-modal :card="$card" />
+            <x-storefront.variant-modal :card="$card">
+                <x-slot:trigger>
+                    <button type="button" @click="open = true"
+                        class="flex h-8 w-full cursor-pointer items-center justify-center gap-1 rounded-full bg-green-600 px-1 py-1.5 text-[11px] sm:text-xs font-semibold text-white whitespace-nowrap transition hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-600">
+                        <svg class="hidden h-4 w-4 shrink-0 sm:inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        <span class="whitespace-nowrap">{{ __('Add to Cart') }}</span>
+                    </button>
+                </x-slot:trigger>
+            </x-storefront.variant-modal>
         @elseif ($cta && $cta['type'] === 'disabled')
             <button type="button" disabled class="flex h-8 w-full cursor-not-allowed items-center justify-center rounded-full bg-gray-100 px-3 text-xs font-semibold text-gray-400 dark:bg-gray-800 dark:text-gray-500">
                 {{ $cta['label'] }}

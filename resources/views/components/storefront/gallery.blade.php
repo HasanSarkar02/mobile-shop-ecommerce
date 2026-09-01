@@ -1,3 +1,4 @@
+@props(['aspect' => 'aspect-square'])
 {{-- Shared PDP gallery primitive (F.4). Extracted verbatim from
      resources/views/storefront/products/show.blade.php. Reads the surrounding
      productDetail(...) Alpine scope through the DOM hierarchy (Blade
@@ -5,9 +6,22 @@
      currentImages(), resolvedActiveImage(), markLoaded(), markErrored(),
      isLoaded(), hasUsableImage(), activeImage, lightboxOpen,
      loadedImages, erroredImages. --}}
-<div>
+<div class="flex flex-col-reverse lg:flex-row gap-4">
+    <div class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto lg:w-20 shrink-0 lg:max-h-[520px] pb-1 lg:pb-0 -mx-1 px-1 lg:mx-0 lg:px-0 scrollbar-thin">
+        <template x-for="image in currentImages()" :key="'thumb-' + image.src">
+            <button @click="activeImage = image.src"
+                class="w-16 h-16 lg:w-20 lg:h-20 rounded-xl overflow-hidden border-2 flex-shrink-0 transition bg-white dark:bg-gray-900 flex items-center justify-center p-1"
+                :class="resolvedActiveImage() === image.src ? 'border-[var(--brand)]' : 'border-gray-100 dark:border-gray-800'">
+                <img :src="image.src" :alt="image.alt" width="64" height="64" loading="lazy"
+                    class="max-w-full max-h-full w-auto h-auto object-contain object-center">
+            </button>
+        </template>
+    </div>
     <button type="button" @click="lightboxOpen = true" :disabled="!hasUsableImage()"
-        class="block w-full aspect-square rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-900 relative group cursor-zoom-in disabled:cursor-default"
+        @touchstart.passive="onGalleryTouchStart($event)"
+        @touchmove.passive="onGalleryTouchMove($event)"
+        @touchend="onGalleryTouchEnd($event)"
+        class="flex-1 {{ $aspect }} bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 lg:p-6 flex items-center justify-center relative group cursor-zoom-in disabled:cursor-default select-none touch-pan-y max-h-[520px] mx-auto w-full overflow-hidden"
         aria-label="Open full-size image">
         {{-- Driven purely by currentImages().length, never by activeImage — so this
              can never go blank even if activeImage momentarily desyncs. --}}
@@ -23,7 +37,7 @@
                 x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" :src="image.src"
                 :alt="image.alt" width="600" height="600" loading="eager" x-init="$el.complete && $el.naturalWidth > 0 && markLoaded(image.src)"
                 x-on:load="markLoaded(image.src)" x-on:error="markErrored(image.src)"
-                class="w-full h-full object-cover">
+                class="max-w-full max-h-full w-auto h-auto object-contain object-center">
         </template>
 
         <div x-show="currentImages().length > 0 && !isLoaded(resolvedActiveImage()) && !erroredImages[resolvedActiveImage()]"
@@ -43,16 +57,6 @@
             <x-ui.icon name="search" class="w-4 h-4" />
         </span>
     </button>
-    <div class="flex gap-2 mt-4 overflow-x-auto pb-1">
-        <template x-for="image in currentImages()" :key="'thumb-' + image.src">
-            <button @click="activeImage = image.src"
-                class="w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition"
-                :class="resolvedActiveImage() === image.src ? 'border-[var(--brand)]' : 'border-transparent'">
-                <img :src="image.src" :alt="image.alt" width="64" height="64" loading="lazy"
-                    class="w-full h-full object-cover">
-            </button>
-        </template>
-    </div>
 </div>
 
 {{-- Lightbox --}}

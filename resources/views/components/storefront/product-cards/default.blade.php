@@ -1,4 +1,4 @@
-﻿
+
 @php
     $variant = $card['variant'] ?? null;
     $cta = $card['cta'] ?? null;
@@ -83,7 +83,14 @@
                 </span>
             </button>
         @elseif ($cta && $cta['type'] === 'select_options')
-            <x-storefront.variant-modal :card="$card" />
+            <x-storefront.variant-modal :card="$card">
+                <x-slot:trigger>
+                    <button type="button" @click="open = true"
+                        class="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--brand)] px-3 text-xs font-semibold text-white transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--brand)] disabled:cursor-not-allowed disabled:opacity-60 dark:focus-visible:ring-offset-gray-900 sm:text-sm">
+                        <span>{{ __('Add to Cart') }}</span>
+                    </button>
+                </x-slot:trigger>
+            </x-storefront.variant-modal>
         @elseif ($cta && $cta['type'] === 'disabled')
             <button type="button" disabled
                 class="flex h-9 w-full cursor-not-allowed items-center justify-center rounded-xl bg-gray-100 px-3 text-xs font-semibold text-gray-400 dark:bg-gray-800 dark:text-gray-500 sm:text-sm">

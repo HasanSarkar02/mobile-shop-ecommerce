@@ -21,6 +21,13 @@
             ->filter()
             ->keys()
             ->values();
+        // Industry-specific information priority (IndustryConfig::pdp.information_priority)
+        // Reorders navSections according to vertical preset, unknown industries fall back to standard.
+        $informationPriority = \App\Support\IndustryConfig::currentGet('pdp.information_priority', ['specifications','description','warranty','reviews','faq']);
+        if (is_array($informationPriority) && $informationPriority !== []) {
+            $priorityIndex = array_flip($informationPriority);
+            $navSections = $navSections->sortBy(fn ($section) => $priorityIndex[$section] ?? 999)->values();
+        }
         $navLabels = [
             'specifications' => 'Specifications',
             'description' => 'Description',
@@ -71,7 +78,7 @@
         </style>
     @endpush
 
-    <div class="{{ \App\Support\IndustryConfig::currentGet('ui.container_class', 'max-w-7xl mx-auto') }} px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8" x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), @js($initialVariantId), @js($isWishlisted), @js($isComparing), @js($emiData), @js($requiresSelection), @js($product->sell_by_unit ?? '1.000'))" x-init="init()">
+    <div class="{{ \App\Support\IndustryConfig::currentGet('ui.container_class', 'max-w-7xl mx-auto') }} px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8" x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), @js($initialVariantId), @js($isWishlisted), @js($isComparing), @js($emiData), @js($requiresSelection), @js($product->sell_by_unit ?? '1.000'), @js(tenant()->currency ?? 'BDT'))" x-init="init()">
         <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
             <a href="{{ app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.home') }}" class="hover:text-[var(--brand)]">Home</a>
             @if ($product->category)
@@ -83,558 +90,33 @@
             <span class="text-gray-700 dark:text-gray-300">{{ ($product->translation() ?? $product->translation('en'))?->name }}</span>
         </nav>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {{-- Gallery --}}
-            <x-storefront.gallery />
-
-            {{-- Details --}}
-            <div x-ref="buyBox">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                            @if ($product->brand)
-                                <p class="text-sm text-gray-500">{{ $product->brand->name }}</p>
-                            @endif
-                            @if ($product->is_official_import)
-                                <x-ui.badge variant="neutral">Official Product</x-ui.badge>
-                            @endif
-                        </div>
-                        <h1 class="text-2xl font-bold mt-1">{{ ($product->translation() ?? $product->translation('en'))?->name }}</h1>
-                        @if ($product->reviews_count > 0)
-                            <div class="mt-2">
-                                <x-ui.rating-stars :rating="$product->average_rating" :count="$product->reviews_count" />
-                            </div>
-                        @endif
-                    </div>
-                    <div class="flex gap-2 flex-shrink-0">
-                        <button
-                            type="button"
-                            x-data="{}"
-                            x-init="$store.wishlist.seed({{ $product->id }}, {{ ($isWishlisted ?? false) ? 'true' : 'false' }})"
-                            @click.prevent.stop="$store.wishlist.toggle({{ $product->id }})"
-                            :disabled="$store.wishlist.pending[{{ $product->id }}] || false"
-                            :aria-busy="$store.wishlist.pending[{{ $product->id }}] ? 'true' : 'false'"
-                            class="p-2.5 rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-                            :class="$store.wishlist.isWishlisted({{ $product->id }})
-                                ? 'border-red-300 bg-red-50 dark:bg-red-950 text-red-600'
-                                : 'border-gray-300 dark:border-gray-700'"
-                            :aria-pressed="$store.wishlist.isWishlisted({{ $product->id }}) ? 'true' : 'false'"
-                            :aria-label="$store.wishlist.isWishlisted({{ $product->id }})
-                                ? 'Remove {{ $productName }} from wishlist'
-                                : 'Add {{ $productName }} to wishlist'"
-                        >
-                            <span x-show="!$store.wishlist.isWishlisted({{ $product->id }})">
-                                <x-ui.icon name="heart" class="w-5 h-5" />
-                            </span>
-                            <span x-show="$store.wishlist.isWishlisted({{ $product->id }})" x-cloak>
-                                <x-ui.icon name="heart" :solid="true" class="w-5 h-5 text-red-600" />
-                            </span>
-                        </button>
-                        <button @click="toggleCompare()" :disabled="compareLoading"
-                            class="p-2.5 rounded-xl border transition text-sm"
-                            :class="comparing ? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]' :
-                                'border-gray-300 dark:border-gray-700'"
-                            aria-label="Toggle compare" :aria-pressed="comparing">
-                            <x-ui.icon name="grid" class="w-5 h-5" />
-                        </button>
-                        <button @click="share()" :disabled="shareLoading"
-                            class="p-2.5 rounded-xl border transition text-sm border-gray-300 dark:border-gray-700"
-                            aria-label="Share product">
-                            <x-ui.icon name="share" class="w-5 h-5" x-show="!shareLoading" />
-                            <svg x-show="shareLoading" class="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg"
-                                fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <template x-if="selectionIssueType()">
-                    <div class="mt-4 rounded-xl border p-3 text-sm"
-                        :class="selectionIssueType() === 'invalid' ?
-                            'border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300' :
-                            'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300'">
-                        <span x-text="selectionMessage()"></span>
-                    </div>
-                </template>
-
-                <template x-if="current()">
-                    <div>
-                        <div class="mt-4 flex items-baseline gap-2 flex-wrap">
-                            <span class="font-bold text-3xl" x-text="formatPrice(current().price)"></span>
-                            <template x-if="current().compare_at_price && current().compare_at_price > current().price">
-                                <span class="text-gray-400 line-through text-sm"
-                                    x-text="formatPrice(current().compare_at_price)"></span>
-                            </template>
-                            <template x-if="discountPercent()">
-                                <x-ui.badge variant="danger"><span
-                                        x-text="discountPercent() + '% OFF'"></span></x-ui.badge>
-                            </template>
-                        </div>
-
-                        <p class="text-sm mt-2 font-medium" :class="availabilityTone()" x-text="availabilityLabel()"></p>
-                        <template x-if="current().purchase_state === 'low_stock' && current().available_quantity > 0">
-                            <p class="text-sm mt-0.5 text-amber-600 font-medium"
-                                x-text="'Only ' + current().available_quantity + ' left in stock'"></p>
-                        </template>
-                        <template x-if="restockMessage()">
-                            <p class="text-sm mt-0.5 text-gray-500" x-text="restockMessage()"></p>
-                        </template>
-                    </div>
-                </template>
-
-                <x-storefront.variant-selector />
-
-                @if ($product->emiPlans->isNotEmpty())
-                    <div
-                        class="mt-6 flex items-center justify-between gap-4 rounded-xl border border-gray-200 dark:border-gray-800 p-3">
-                        <div class="min-w-0">
-                            <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
-                                <span class="text-gray-900 dark:text-gray-100">EMI from</span>
-                                <span class="font-bold text-gray-900 dark:text-gray-100 tabular-nums"
-                                    x-text="emiHeadline()">{{ money((int) ($emiFromMonthly ?? 0)) }}/month</span>
-                            </p>
-                            @if ($emiHasZero)
-                                <p class="mt-1 text-xs text-green-600 dark:text-green-400 font-medium">0% EMI available</p>
-                            @endif
-                        </div>
-                        <button type="button" @click="openEmi()" aria-haspopup="dialog"
-                            class="flex-shrink-0 text-sm font-medium text-[var(--brand)] hover:underline underline-offset-4">
-                            View plans
-                        </button>
-                    </div>
-
-                    {{-- EMI modal --}}
-                    <template x-teleport="body">
-                        <div x-show="emiOpen" x-cloak
-                            class="fixed inset-0 z-[80] bg-black/60 flex items-center justify-center p-4 sm:p-6"
-                            role="dialog" aria-modal="true" aria-labelledby="emi-modal-title"
-                            @keydown.escape.window="closeEmi()" @click="closeEmi()">
-                            <div class="relative w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden"
-                                x-ref="emiPanel" @click.stop>
-                                <header
-                                    class="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-gray-800 p-5">
-                                    <div>
-                                        <h2 id="emi-modal-title"
-                                            class="text-lg font-bold text-gray-900 dark:text-gray-100">EMI Plans</h2>
-                                        <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-                                            <span
-                                                x-text="emiHeadline()">{{ money((int) ($emiFromMonthly ?? 0)) }}/month</span>
-                                        </p>
-                                    </div>
-                                    <button type="button" x-ref="emiClose" @click="closeEmi()"
-                                        class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-                                        aria-label="Close EMI plans">
-                                        <x-ui.icon name="close" class="w-5 h-5" />
-                                    </button>
-                                </header>
-
-                                <div class="overflow-y-auto p-5 space-y-3">
-                                    @foreach ($product->emiPlans as $plan)
-                                        @php $planRate = (float) $plan->interest_rate; @endphp
-                                        <div
-                                            class="flex items-center justify-between gap-4 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
-                                            <div class="min-w-0">
-                                                <p
-                                                    class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium text-gray-900 dark:text-gray-100">
-                                                    {{ $plan->bank_name }}
-                                                    @if ($planRate === 0.0)
-                                                        <x-ui.badge variant="success">0% EMI</x-ui.badge>
-                                                    @endif
-                                                </p>
-                                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                                    <span class="tabular-nums"
-                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}))">{{ money((int) round(($emiBasePrice * (1 + $planRate / 100)) / $plan->tenure_months)) }}</span>/month
-                                                    for {{ $plan->tenure_months }} months
-                                                </p>
-                                            </div>
-                                            <div class="text-right flex-shrink-0">
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $planRate }}% interest</p>
-                                                <p
-                                                    class="text-sm font-medium text-gray-900 dark:text-gray-100 tabular-nums">
-                                                    <span
-                                                        x-text="formatPrice(emiMonthly((current()?.price ?? 0), {{ $planRate }}, {{ $plan->tenure_months }}) * {{ $plan->tenure_months }})">{{ money((int) (round(($emiBasePrice * (1 + $planRate / 100)) / $plan->tenure_months) * $plan->tenure_months)) }}</span>
-                                                    total
-                                                </p>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                @endif
-
-                <div class="flex items-center gap-3 mt-6">
-                    <div class="flex items-center border border-gray-300 dark:border-gray-700 rounded-xl">
-                        <button @click="quantity = Math.max(sellByUnit, parseFloat((quantity - sellByUnit).toFixed(3)))"
-                            class="w-10 h-11 flex items-center justify-center text-lg"
-                            aria-label="Decrease quantity">âˆ’</button>
-                        <input type="number" x-model.number="quantity" :step="sellByUnit" :min="sellByUnit" step="{{ $product->sell_by_unit ?? 1 }}"
-                            class="w-16 text-center bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-<button @click="quantity = Math.min(parseFloat((quantity + sellByUnit).toFixed(3)), (current()?.available_quantity ?? 0) > 0 && current().purchase_state !== 'preorder' && current().purchase_state !== 'dropship' ? current().available_quantity : 99)" class="w-10 h-11 flex items-center justify-center text-lg"
-                                aria-label="Increase quantity">+</button>
-                    </div>
-                    <x-storefront.add-to-cart-button type="buy-now" />
-                </div>
-                <div class="mt-3">
-                    <x-storefront.add-to-cart-button type="cart" />
-                </div>
-            </div>
-        </div>
-
-        {{-- Sticky mobile purchase bar â€” sits above the persistent mobile bottom nav
-             (bottom-16 â‰ˆ its height) so it never overlaps it; the bottom nav keeps
-             the --safe-bottom padding as the bottommost fixed element. It appears
-             only after the main buy box leaves the viewport (IntersectionObserver,
-             see setupStickyCta in productDetail) and retracts near the end of the
-             page so it never covers the footer. Motion respects reduced-motion via
-             the .pdp-sticky-cta transition rule. --}}
-        <template x-if="showSticky()">
-            <div class="pdp-sticky-cta lg:hidden fixed bottom-16 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 px-4 py-3"
-                :class="stickyCtaVisible ? 'translate-y-0 opacity-100 shadow-soft' :
-                    'translate-y-full opacity-0 pointer-events-none'"
-                :aria-hidden="stickyCtaVisible ? 'false' : 'true'">
-                <div class="flex items-center gap-3">
-                    <div class="min-w-0 flex-shrink-0">
-                        <template x-if="current()">
-                            <div>
-                                <p class="font-bold text-lg leading-none" x-text="formatPrice(current().price)"></p>
-                                <template
-                                    x-if="current().compare_at_price && current().compare_at_price > current().price">
-                                    <p class="text-xs text-gray-400 line-through leading-none mt-1"
-                                        x-text="formatPrice(current().compare_at_price)"></p>
-                                </template>
-                            </div>
-                        </template>
-                    </div>
-                    <x-storefront.add-to-cart-button type="buy-now" />
-                </div>
-                <div class="mt-2">
-                    <x-storefront.add-to-cart-button type="cart" />
-                </div>
-                <template x-if="!current()">
-                    <p class="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium" x-text="selectionMessage()">
-                    </p>
-                </template>
-            </div>
-        </template>
-
-        @if ($policyLinks->isNotEmpty())
-            <div class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
-                <ul aria-label="Store policies" class="flex flex-wrap gap-x-5 gap-y-2">
-                    @foreach ($policyLinks as $link)
-                        <li>
-                            <a href="{{ route('storefront.page', $link['slug']) }}"
-                                class="text-xs text-gray-500 dark:text-gray-400 hover:text-[var(--brand)]">{{ $link['label'] }}</a>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        @php
-            $waNumber = tenant()?->themeSettings?->social_links['whatsapp'] ?? null;
-            $waTranslation = $product->translation() ?? $product->translation('en');
-            $waProductName = $waTranslation?->name ?? $product->name ?? '';
-            $waUrl = \App\Support\WhatsApp::url(is_string($waNumber) ? $waNumber : null, 'Hi, I am interested in '.$waProductName.' ('.url()->current().')');
-        @endphp
-        @if ($waUrl)
-            <div class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800">
-                <a href="{{ $waUrl }}" target="_blank" rel="noopener"
-                    class="inline-flex items-center gap-2 rounded-xl border border-[#25D366] px-4 py-2 text-sm font-medium text-[#128C7E] transition hover:bg-[#25D366]/5">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="h-5 w-5" aria-hidden="true">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                    </svg>
-                    Ask about this product on WhatsApp
-                </a>
-            </div>
-        @endif
-
-        @if ($shippingMethods->isNotEmpty() || $paymentMethods->isNotEmpty())
-            <div class="mt-5 pt-5 border-t border-gray-100 dark:border-gray-800"
-                aria-label="Delivery and payment information">
-                <ul class="space-y-2.5">
-                    @if ($shippingMethods->isNotEmpty())
-                        <li class="flex items-start gap-3">
-                            <span class="mt-0.5 flex-shrink-0 text-gray-400">
-                                <x-ui.icon name="truck" class="w-5 h-5" />
-                            </span>
-                            <div class="min-w-0 text-sm">
-                                <p class="font-medium">Delivery</p>
-                                <ul class="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 dark:text-gray-400">
-                                    @foreach ($shippingMethods as $method)
-                                        <li class="flex items-center gap-1.5">
-                                            {{ $method->name }}
-                                            @if ($method->type === \App\Enums\ShippingMethodType::Free || $method->cost === 0)
-                                                <span class="text-green-600 dark:text-green-400 font-medium">Free</span>
-                                            @else
-                                                <span
-                                                    class="tabular-nums">{{ money((int) $method->cost) }}</span>
-                                            @endif
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </li>
-                    @endif
-                    @if ($paymentMethods->isNotEmpty())
-                        <li class="flex items-start gap-3">
-                            <span class="mt-0.5 flex-shrink-0 text-gray-400">
-                                <x-ui.icon name="card" class="w-5 h-5" />
-                            </span>
-                            <div class="min-w-0 text-sm">
-                                <p class="font-medium">Payment</p>
-                                <ul class="flex flex-wrap gap-x-4 gap-y-1 text-gray-500 dark:text-gray-400">
-                                    @foreach ($paymentMethods as $method)
-                                        <li class="flex items-center gap-1.5">{{ $method->name }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </li>
-                    @endif
-                </ul>
-            </div>
-        @endif
-
-        @if ($navSections->isNotEmpty())
-            <nav x-data="productSections(@js($navSections))" x-init="init()" aria-label="Product sections"
-                class="sticky top-16 lg:top-28 z-30 -mx-4 sm:mx-0 mt-8 lg:mt-12 border-y border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur">
-                <div class="flex items-center gap-1 overflow-x-auto px-4 sm:px-0 py-2">
-                    @foreach ($navSections as $sectionId)
-                        <a href="#{{ $sectionId }}"
-                            class="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition text-gray-600 dark:text-gray-300 hover:text-[var(--brand)] hover:bg-[var(--brand)]/10"
-                            :class="isActive('{{ $sectionId }}') ?
-                                'text-[var(--brand)] bg-[var(--brand)]/10 font-semibold' : ''"
-                            :aria-current="isActive('{{ $sectionId }}') ? 'location' : null">
-                            {{ $navLabels[$sectionId] ?? ucfirst($sectionId) }}
-                        </a>
-                    @endforeach
-                </div>
-            </nav>
-        @endif
-
-        {{-- Specifications --}}
-        <section id="specifications" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-            aria-labelledby="specifications-heading">
-            <h2 id="specifications-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Specifications</h2>
-            <div class="mt-5">
-                @forelse($specificationGroups as $group)
-                    <div class="mb-8 last:mb-0">
-                        <h3 class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
-                            {{ $group['group'] }}
-                        </h3>
-                        <dl
-                            class="divide-y divide-gray-100 dark:divide-gray-800 rounded-xl border border-gray-100 dark:border-gray-800">
-                            @foreach ($group['items'] as $value)
-                                <div class="flex py-2.5 text-sm gap-4 px-4">
-                                    <dt class="w-1/3 flex-shrink-0 text-gray-500">{{ $value->attributeDefinition->label }}
-                                    </dt>
-                                    <dd class="text-gray-800 dark:text-gray-200">{{ $value->displayValue() }}
-                                        @if ($value->attributeDefinition->unit)
-                                            <span class="text-gray-500">{{ $value->attributeDefinition->unit }}</span>
-                                        @endif
-                                    </dd>
-                                </div>
-                            @endforeach
-                        </dl>
-                    </div>
-                @empty
-                    <p class="text-sm text-gray-400">No specifications listed yet.</p>
-                @endforelse
-            </div>
-        </section>
-
-        {{-- Description --}}
-        @if ($showDescription)
-            <section id="description" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-                aria-labelledby="description-heading">
-                <h2 id="description-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Description</h2>
-                <div class="prose dark:prose-invert max-w-none mt-5">
-                    {!! $productDescription !!}
-                </div>
-            </section>
-        @endif
-
-        {{-- Warranty --}}
-        @if ($showWarranty)
-            <section id="warranty" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-                aria-labelledby="warranty-heading">
-                <h2 id="warranty-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Warranty</h2>
-                <div class="prose dark:prose-invert max-w-none mt-5">
-                    {!! nl2br(e(($product->translation() ?? $product->translation('en'))->warranty_info)) !!}
-                </div>
-                @if ($warrantyPolicyLink)
-                    <div class="mt-5">
-                        <a href="{{ route('storefront.page', $warrantyPolicyLink['slug']) }}"
-                            class="text-sm font-medium text-[var(--brand)] hover:underline">
-                            View Warranty Policy &rarr;
-                        </a>
-                    </div>
-                @endif
-            </section>
-        @endif
-
-        {{-- Reviews --}}
-        <section id="reviews" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-            aria-labelledby="reviews-heading">
-            <h2 id="reviews-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Reviews
-                ({{ $product->reviews_count }})</h2>
-
-            @if ($product->reviews_count > 0)
-                <div class="mb-6 mt-5"><x-ui.rating-stars :rating="$product->average_rating" :count="$product->reviews_count" /></div>
-            @endif
-
-            <div class="space-y-4 mt-5">
-                @forelse($product->approvedReviews as $review)
-                    <div class="border border-gray-100 dark:border-gray-800 rounded-xl p-4">
-                        <div class="flex justify-between items-start">
-                            <p class="font-medium">{{ $review->customer->name }}</p>
-                            @if ($review->is_verified_purchase)
-                                <x-ui.badge variant="success">Verified Purchase</x-ui.badge>
-                            @endif
-                        </div>
-                        <x-ui.rating-stars :rating="$review->rating" />
-                        @if ($review->title)
-                            <p class="font-medium mt-2">{{ $review->title }}</p>
-                        @endif
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ $review->body }}</p>
-                    </div>
-                @empty
-                    <p class="text-sm text-gray-400">No reviews yet â€” be the first to review this product.</p>
-                @endforelse
-            </div>
-
-            @auth('customer')
-                <form method="POST" action="{{ route('storefront.product.reviews.store', $product) }}"
-                    class="mt-6 space-y-3 max-w-lg">
-                    @csrf
-                    <x-ui.select name="rating" label="Rating" required>
-                        <option value="">Select a rating</option>
-                        @for ($i = 5; $i >= 1; $i--)
-                            <option value="{{ $i }}">{{ $i }} Stars</option>
-                        @endfor
-                    </x-ui.select>
-                    <x-ui.input name="title" label="Title (optional)" />
-                    <x-ui.textarea name="body" label="Your review" required />
-                    <x-ui.button type="submit" variant="primary">Submit Review</x-ui.button>
-                </form>
-            @else
-                <p class="text-sm text-gray-500 mt-6"><a href="{{ route('storefront.login') }}"
-                        class="text-[var(--brand)] font-medium">Log in</a> to write a review.</p>
-            @endauth
-        </section>
-
-        {{-- FAQ --}}
-        @if ($showFaqs)
-            <section id="faq" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-                aria-labelledby="faq-heading">
-                <h2 id="faq-heading" class="text-xl lg:text-2xl font-bold tracking-tight">FAQ</h2>
-                <div class="mt-5 space-y-3">
-                    @foreach ($product->faqs as $faq)
-                        <div x-data="{ expanded: false }" class="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-                            <button @click="expanded = !expanded"
-                                class="w-full text-left font-medium flex justify-between items-center">
-                                {{ $faq->question }}
-                                <span x-text="expanded ? 'âˆ’' : '+'" class="text-gray-400"></span>
-                            </button>
-                            <div x-show="expanded" x-collapse class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                {{ $faq->answer }}</div>
-                        </div>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        {{-- Related --}}
-        @if ($relatedCards->isNotEmpty())
-            <section id="related" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-                aria-labelledby="related-heading">
-                <h2 id="related-heading" class="text-xl lg:text-2xl font-bold tracking-tight">You May Also Like</h2>
-                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
-                    @foreach ($relatedCards as $card)
-                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        {{-- Merchandising rails: cross-sell, upsell, frequently-bought and
-             compatible-accessory relations, each only when populated. --}}
-        @if ($crossSellCards->isNotEmpty())
-            <section id="cross-sells" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-                aria-labelledby="cross-sells-heading">
-                <h2 id="cross-sells-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Complete Your Setup</h2>
-                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
-                    @foreach ($crossSellCards as $card)
-                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        @if ($upsellCards->isNotEmpty())
-            <section id="upsells" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-                aria-labelledby="upsells-heading">
-                <h2 id="upsells-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Upgrade Your Choice</h2>
-                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
-                    @foreach ($upsellCards as $card)
-                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        @if ($frequentlyBoughtCards->isNotEmpty())
-            <section id="frequently-bought-together" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-                aria-labelledby="frequently-bought-heading">
-                <h2 id="frequently-bought-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Frequently Bought
-                    Together</h2>
-                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
-                    @foreach ($frequentlyBoughtCards as $card)
-                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        @if ($compatibleAccessoryCards->isNotEmpty())
-            <section id="compatible-accessories" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-                aria-labelledby="compatible-accessories-heading">
-                <h2 id="compatible-accessories-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Compatible
-                    Accessories</h2>
-                <div class="grid {{ \App\Support\IndustryConfig::currentGet('ui.grid_class', 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4') }} gap-x-4 gap-y-8 sm:gap-x-6 mt-5">
-                    @foreach ($compatibleAccessoryCards as $card)
-                        <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        {{-- Recently viewed (reuses the existing RecentlyViewedService pipeline;
-             ordering is the service's most-recent-first, preserved after fetch). --}}
-        @if ($recentlyViewedCards->isNotEmpty())
-            <section id="recently-viewed" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16"
-                aria-labelledby="recently-viewed-heading">
-                <h2 id="recently-viewed-heading" class="text-xl lg:text-2xl font-bold tracking-tight">Recently Viewed</h2>
-                <div class="mt-5 -mx-4 sm:mx-0">
-                    <div class="flex gap-4 overflow-x-auto px-4 sm:px-0 pb-2 snap-x">
-                        @foreach ($recentlyViewedCards as $card)
-                            <div class="w-44 flex-shrink-0 snap-start">
-                                <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </section>
-        @endif
-
-        {{-- Sentinel for the sticky CTA: once the end of the product content
-             scrolls into view, the bar retracts so it never covers the footer. --}}
-        <div x-ref="pdpEnd" class="h-px" aria-hidden="true"></div>
+        <x-dynamic-component
+            :component="\App\Support\IndustryConfig::currentGet('ui.pdp_component', 'storefront.products.pdp-default')"
+            :product="$product"
+            :translation="$translation"
+            :productDescription="$productDescription"
+            :specificationGroups="$specificationGroups"
+            :navSections="$navSections"
+            :navLabels="$navLabels"
+            :policyLinks="$policyLinks"
+            :shippingMethods="$shippingMethods"
+            :paymentMethods="$paymentMethods"
+            :relatedCards="$relatedCards"
+            :crossSellCards="$crossSellCards"
+            :upsellCards="$upsellCards"
+            :frequentlyBoughtCards="$frequentlyBoughtCards"
+            :compatibleAccessoryCards="$compatibleAccessoryCards"
+            :recentlyViewedCards="$recentlyViewedCards"
+            :isWishlisted="$isWishlisted ?? false"
+            :isComparing="$isComparing ?? false"
+            :emiData="$emiData ?? []"
+            :emiFromMonthly="$emiFromMonthly ?? null"
+            :emiHasZero="$emiHasZero ?? false"
+            :emiBasePrice="$emiBasePrice ?? 0"
+            :showDescription="$showDescription ?? false"
+            :showWarranty="$showWarranty ?? false"
+            :showFaqs="$showFaqs ?? false"
+        />
     </div>
 @endsection
 
@@ -676,12 +158,12 @@
         }
 
         function productDetail(variants, productImages, dimensions, initialId, initialWishlisted, initialComparing,
-            emiPlans, requiresSelection, sellByUnit) {
+            emiPlans, requiresSelection, sellByUnit, currency) {
             return {
-                variants,
+                ...variantSelectionState(variants, dimensions, requiresSelection, initialId),
                 productImages,
                 dimensions,
-                requiresSelection,
+                currency: currency || 'BDT',
                 selected: {},
                 activeImage: null,
                 loadedImages: {},
@@ -701,15 +183,29 @@
                 emiPlans,
                 emiOpen: false,
                 emiTrigger: null,
+                galleryTouchStartX: 0,
+                galleryTouchStartY: 0,
+                galleryTouchDeltaX: 0,
+                galleryDragging: false,
 
                 init() {
                     this.$store.wishlist.seed({{ $product->id }}, initialWishlisted);
 
                     if (this.requiresSelection) {
-                        // Multi-option product: never auto-select a variant. The
-                        // shopper must explicitly pick every dimension before any
-                        // purchase action resolves.
-                        this.currentVariantId = null;
+                        // Auto-select first purchasable active variant so PDP shows exact
+                        // price/image/availability immediately (shared engine).
+                        const firstValid = this.activeVariants().find(v => v.purchasable) ?? this.activeVariants()[0] ?? null;
+                        if (firstValid) {
+                            this.currentVariantId = firstValid.id;
+                            this.dimensions.forEach(d => {
+                                if (firstValid.dims[d.code] !== undefined && firstValid.dims[d.code] !== null) {
+                                    this.selected[d.code] = firstValid.dims[d.code];
+                                }
+                            });
+                            this.unavailable = false;
+                        } else {
+                            this.currentVariantId = null;
+                        }
                     } else {
                         const first = this.current();
 
@@ -763,56 +259,8 @@
                     this.buyBoxObserver?.disconnect();
                     this.endObserver?.disconnect();
                 },
-                activeVariants() {
-                    return this.variants.filter(v => v.is_active);
-                },
-                missingDimensions() {
-                    if (!this.requiresSelection) return [];
-                    return this.dimensions.filter(d => this.selected[d.code] === undefined || this.selected[d.code] ===
-                        null);
-                },
-                selectionComplete() {
-                    return this.missingDimensions().length === 0;
-                },
-                // 'incomplete': shopper hasn't finished picking every dimension yet â€” a
-                //   normal, expected mid-flow state (neutral tone).
-                // 'invalid': every dimension is picked but no active variant matches
-                //   that exact combination â€” a real dead end (warning tone).
-                // null: either a concrete variant resolved, or this product doesn't
-                //   require selection at all.
-                selectionIssueType() {
-                    if (!this.requiresSelection) return null;
-                    if (!this.selectionComplete()) return 'incomplete';
-                    if (!this.current()) return 'invalid';
-                    return null;
-                },
-                selectionMessage() {
-                    if (this.requiresSelection && !this.selectionComplete()) {
-                        const missing = this.missingDimensions().map(d => d.label);
-                        if (missing.length === 0) return 'Please select all product options';
-                        return 'Please select ' + missing.join(' and ');
-                    }
-                    return 'This combination of options is not available.';
-                },
                 showSticky() {
                     return this.current() !== null || (this.requiresSelection && !this.selectionComplete());
-                },
-                current() {
-                    if (this.unavailable) {
-                        return null;
-                    }
-
-                    if (this.requiresSelection) {
-                        if (!this.selectionComplete()) return null;
-
-                        const matches = this.activeVariants().filter(v =>
-                            this.dimensions.every(d => v.dims[d.code] === this.selected[d.code])
-                        );
-
-                        return matches.length === 1 ? matches[0] : null;
-                    }
-
-                    return this.activeVariants().find(v => v.id === this.currentVariantId) ?? null;
                 },
                 updateVariant() {
                     const match = this.current();
@@ -835,10 +283,6 @@
                     // currentImages(); just point activeImage at its first
                     // result here rather than duplicating the fallback logic.
                     this.activeImage = this.currentImages()[0]?.src ?? null;
-                },
-                dimensionOptions(code) {
-                    return [...new Set(this.activeVariants().map(v => v.dims[code]).filter(v => v !== undefined && v !==
-                        null))];
                 },
                 currentImages() {
                     const variant = this.current();
@@ -901,6 +345,21 @@
                     if (!v.compare_at_price || v.compare_at_price <= v.price) return null;
                     return Math.round(((v.compare_at_price - v.price) / v.compare_at_price) * 100);
                 },
+                priceRange() {
+                    const variants = this.activeVariants();
+                    if (!variants.length) return null;
+                    const prices = variants.map(v => v.price);
+                    const min = Math.min(...prices);
+                    const max = Math.max(...prices);
+                    if (min === max) return { min, max, isRange: false };
+                    return { min, max, isRange: true };
+                },
+                priceRangeLabel() {
+                    const range = this.priceRange();
+                    if (!range) return '';
+                    if (!range.isRange) return this.formatPrice(range.min);
+                    return this.formatPrice(range.min) + ' – ' + this.formatPrice(range.max);
+                },
                 availabilityLabel() {
                     const v = this.current();
                     if (!v) return '';
@@ -940,7 +399,7 @@
                     return 'Add to Cart';
                 },
                 formatPrice(cents) {
-                    return window.money(cents, 'BDT', document.documentElement.lang || 'en', true);
+                    return window.money(cents, this.currency || 'BDT', document.documentElement.lang || 'en', true);
                 },
                 // Mirrors the original PDP formula exactly:
                 // round(price * (1 + rate/100) / tenure) in cents.
@@ -977,6 +436,36 @@
                             type
                         }
                     }));
+                },
+                onGalleryTouchStart(e) {
+                    if (this.currentImages().length <= 1) return;
+                    this.galleryTouchStartX = e.touches[0].clientX;
+                    this.galleryTouchStartY = e.touches[0].clientY;
+                    this.galleryDragging = true;
+                    this.galleryTouchDeltaX = 0;
+                },
+                onGalleryTouchMove(e) {
+                    if (!this.galleryDragging || this.currentImages().length <= 1) return;
+                    const dx = e.touches[0].clientX - this.galleryTouchStartX;
+                    const dy = e.touches[0].clientY - this.galleryTouchStartY;
+                    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+                        this.galleryDragging = false;
+                        return;
+                    }
+                    this.galleryTouchDeltaX = dx;
+                },
+                onGalleryTouchEnd(e) {
+                    if (!this.galleryDragging || this.currentImages().length <= 1) return;
+                    this.galleryDragging = false;
+                    const threshold = 40;
+                    const images = this.currentImages();
+                    const idx = images.findIndex(img => img.src === this.resolvedActiveImage());
+                    if (this.galleryTouchDeltaX < -threshold && idx < images.length - 1) {
+                        this.activeImage = images[idx + 1].src;
+                    } else if (this.galleryTouchDeltaX > threshold && idx > 0) {
+                        this.activeImage = images[idx - 1].src;
+                    }
+                    this.galleryTouchDeltaX = 0;
                 },
                 csrfToken() {
                     return document.querySelector('meta[name="csrf-token"]').content;

@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\InventoryService;
 use App\Services\PurchasabilityPolicy;
+use App\Support\ColorHelper;
 use App\Support\IndustryConfig;
 use App\Support\Tenancy\TenantUrlGenerator;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -57,6 +58,13 @@ class ProductCardData
         if (! $products->first()->relationLoaded('uom')) {
             foreach ($products as $product) {
                 $product->loadMissing('uom');
+            }
+        }
+
+        // Brand for electronics premium header — avoid N+1 in card grid.
+        if (! $products->first()->relationLoaded('brand')) {
+            foreach ($products as $product) {
+                $product->loadMissing('brand');
             }
         }
 
@@ -152,10 +160,21 @@ class ProductCardData
             $hasFreeDelivery = true;
         }
 
+        $swatchPayload = $this->extractSwatches($product);
+
+        $brandName = null;
+        if ($product->relationLoaded('brand') && $product->brand !== null) {
+            $brandName = (string) $product->brand->getAttribute('name');
+        } elseif ($product->brand_id !== null) {
+            $product->loadMissing('brand');
+            $brandName = $product->brand !== null ? (string) $product->brand->getAttribute('name') : null;
+        }
+
         return [
             'id' => $product->id,
             'url' => $this->urls->canonicalRoute(tenant(), 'storefront.product', [$translation?->slug ?? $product->id]),
             'name' => $translation?->name,
+            'brand_name' => $brandName,
             'image' => $image ?: null,
             'image_alt' => $firstMedia !== null
                 ? media_alt($firstMedia, $translation?->name ?? '')
@@ -175,6 +194,9 @@ class ProductCardData
             'cta' => $this->ctaView($product, $states, $facts),
             'modal_variants' => $modalVariants,
             'modal_dimensions' => $modalDimensions,
+            'swatches' => $swatchPayload['visible'],
+            'swatches_overflow' => $swatchPayload['overflow'],
+            'swatches_total' => $swatchPayload['total'],
             'product' => $product,
         ];
     }
@@ -403,6 +425,77 @@ class ProductCardData
             'url' => $url,
             'disabled' => false,
         ];
+    }
+
+    /**
+     * Additive swatch extraction for fashion cards (Step 3). Derives unique
+     * color values from active variants — native `color` column + any
+     * variant-defining EAV attribute whose code contains "color". Distinct by
+     * lower-cased value, preserves first-seen order, max 5 visible with
+     * overflow count. Existing cards safely ignore these keys.
+     *
+     * @return array{visible: array<int, array{name: string, value: string, hex: string}>, overflow: int, total: int}
+     */
+    private function extractSwatches(Product $product): array
+    {
+        $product->loadMissing('variants.attributeValues.attributeDefinition', 'variants.attributeValues.attributeOption');
+
+        $seen = [];
+        $ordered = [];
+
+        foreach ($product->variants->where('is_active', true)->values() as $variant) {
+            $colors = [];
+
+            if ($variant->color !== null && trim((string) $variant->color) !== '') {
+                $colors[] = trim((string) $variant->color);
+            }
+
+            foreach ($variant->attributeValues as $value) {
+                if ($value->product_variant_id === null) {
+                    continue;
+                }
+                if ($value->attributeDefinition === null || ! $value->attributeDefinition->is_variant_defining) {
+                    continue;
+                }
+                $code = strtolower((string) $value->attributeDefinition->code);
+                if (! str_contains($code, 'color')) {
+                    continue;
+                }
+                $display = $value->displayValue();
+                if ($display === null || $display === '') {
+                    $display = $value->attributeOption !== null ? (string) $value->attributeOption->value : '';
+                }
+                $display = trim((string) $display);
+                if ($display === '') {
+                    continue;
+                }
+                $colors[] = $display;
+            }
+
+            foreach ($colors as $colorName) {
+                $key = strtolower($colorName);
+                if (isset($seen[$key])) {
+                    continue;
+                }
+                $seen[$key] = true;
+                $ordered[] = [
+                    'name' => $colorName,
+                    'value' => $key,
+                    'hex' => $this->resolveColorHex($colorName),
+                ];
+            }
+        }
+
+        $total = count($ordered);
+        $visible = array_slice($ordered, 0, 5);
+        $overflow = max(0, $total - count($visible));
+
+        return ['visible' => $visible, 'overflow' => $overflow, 'total' => $total];
+    }
+
+    private function resolveColorHex(string $name): string
+    {
+        return ColorHelper::resolveColorHex($name);
     }
 
     private function emiAvailable(Product $product): bool

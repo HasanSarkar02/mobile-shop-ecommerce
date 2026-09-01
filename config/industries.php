@@ -38,6 +38,7 @@
  *                             (e.g. 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5').
  * - ui.image_aspect           Tailwind aspect ratio for card images.
  * - ui.card_component         Blade component path for the product card.
+ * - ui.pdp_component          Blade component path for the PDP layout.
  */
 return [
 
@@ -66,6 +67,7 @@ return [
                 'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
                 'image_aspect' => 'aspect-square',
                 'card_component' => 'storefront.product-cards.default',
+                'pdp_component' => 'storefront.products.pdp-default',
             ],
         ],
 
@@ -85,12 +87,14 @@ return [
                 'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
                 'image_aspect' => 'aspect-square',
                 'card_component' => 'storefront.product-cards.electronics',
+                'pdp_component' => 'storefront.products.pdp-electronics',
             ],
         ],
 
         'electronics' => [
             'label' => 'Electronics',
             'card' => [
+                'hover_gallery_enabled' => true,
                 'hover_gallery_recommended' => true,
             ],
             'pdp' => [
@@ -104,12 +108,14 @@ return [
                 'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
                 'image_aspect' => 'aspect-square',
                 'card_component' => 'storefront.product-cards.electronics',
+                'pdp_component' => 'storefront.products.pdp-electronics',
             ],
         ],
 
         'fashion' => [
             'label' => 'Fashion',
             'card' => [
+                'hover_gallery_enabled' => true,
                 'hover_gallery_recommended' => true,
             ],
             'pdp' => [
@@ -124,6 +130,7 @@ return [
                 'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
                 'image_aspect' => 'aspect-[3/4]',
                 'card_component' => 'storefront.product-cards.fashion',
+                'pdp_component' => 'storefront.products.pdp-fashion',
             ],
         ],
 
@@ -147,6 +154,7 @@ return [
                 'grid_class' => 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6',
                 'image_aspect' => 'aspect-square',
                 'card_component' => 'storefront.product-cards.grocery',
+                'pdp_component' => 'storefront.products.pdp-default',
             ],
         ],
 
@@ -163,6 +171,7 @@ return [
                 'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
                 'image_aspect' => 'aspect-square',
                 'card_component' => 'storefront.product-cards.default',
+                'pdp_component' => 'storefront.products.pdp-default',
             ],
         ],
 
@@ -182,6 +191,7 @@ return [
                 'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
                 'image_aspect' => 'aspect-square',
                 'card_component' => 'storefront.product-cards.default',
+                'pdp_component' => 'storefront.products.pdp-fashion',
             ],
         ],
     ],
