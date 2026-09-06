@@ -185,7 +185,7 @@ it('renders select_options via variant modal for multi-variant fashion products'
     expect($html)->toContain('role="dialog"');
 });
 
-it('keeps unavailable products disabled for fashion card', function (): void {
+it('keeps unavailable products add-to-cart enabled for fashion card (server validates)', function (): void {
     $tenant = actingAsTenant(['status' => 'active', 'industry' => 'fashion']);
     $product = Product::factory()->create(['status' => ProductStatus::Published]);
     ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
@@ -195,10 +195,11 @@ it('keeps unavailable products disabled for fashion card', function (): void {
         'backorder_policy' => 'deny',
     ]);
     $card = fashionCard($product);
-    expect($card['cta']['type'])->toBe('disabled');
+    expect($card['cta']['type'])->toBe('add_to_cart');
+    expect($card['cta']['disabled'])->toBeFalse();
+    expect($card['variant']['is_out_of_stock'])->toBeTrue();
     $html = view('components.storefront.product-cards.fashion', ['card' => $card])->render();
-    expect($html)->toContain('Out of stock');
-    expect($html)->toContain('disabled');
+    expect($html)->toContain('Add to Cart');
 });
 
 it('extracts color swatches from native variant color data', function (): void {

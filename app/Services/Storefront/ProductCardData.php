@@ -400,15 +400,13 @@ class ProductCardData
             ];
         }
 
-        if (! $this->isPurchasable($variant, $states, $facts)) {
-            return [
-                'type' => 'disabled',
-                'label' => __('Out of Stock'),
-                'variant_id' => null,
-                'url' => $url,
-                'disabled' => true,
-            ];
-        }
+        // Single-variant: always expose Add to Cart — stock is validated at cart/order time
+        // (Bangladeshi grocery UX). This restores the professional behaviour where
+        // 1-variant and multi-variant (>1 → select_options) are symmetrically
+        // clickable; the out-of-stock badge (variantView is_out_of_stock overlay)
+        // still communicates unavailability, but the CTA never becomes disabled
+        // on the card itself. Server-side OrderService::isPurchasable remains the
+        // source of truth and will toast InsufficientStockException if needed.
 
         $stockStatus = $states->get($variant->id)['stock_status'] ?? StockStatus::OutOfStock;
 

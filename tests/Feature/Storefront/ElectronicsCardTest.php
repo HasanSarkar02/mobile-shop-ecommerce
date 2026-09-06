@@ -338,17 +338,17 @@ it('renders Select Options via variant modal for multi-variant products with Sto
     expect($html)->toContain('mt-auto');
 });
 
-it('keeps unavailable products disabled', function (): void {
+it('keeps unavailable products add-to-cart enabled (badge shows stock, server validates)', function (): void {
     $tenant = actingAsTenant(['status' => 'active', 'industry' => 'electronics']);
     $product = Product::factory()->create(['status' => ProductStatus::Published, 'brand_id' => electronicsBrand()->id]);
     ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
-    ProductVariant::factory()->for($product)->create(['inventory_type' => 'tracked', 'fulfillment_strategy' => 'stock', 'backorder_policy' => 'deny']);
+    $variant = ProductVariant::factory()->for($product)->create(['inventory_type' => 'tracked', 'fulfillment_strategy' => 'stock', 'backorder_policy' => 'deny']);
     $card = electronicsCard($product);
-    expect($card['cta']['type'])->toBe('disabled');
+    expect($card['cta']['type'])->toBe('add_to_cart');
+    expect($card['cta']['disabled'])->toBeFalse();
+    expect($card['variant']['is_out_of_stock'])->toBeTrue();
     $html = view('components.storefront.product-cards.electronics', ['card' => $card])->render();
-    expect($html)->toContain('Out of Stock');
-    expect($html)->toContain('disabled');
-    expect($html)->toContain('h-10');
+    expect($html)->toContain('Add to Cart');
 });
 
 it('has CTA aligned to card bottom with mt-auto and price min-height', function (): void {

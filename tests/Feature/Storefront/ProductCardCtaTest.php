@@ -75,21 +75,22 @@ it('resolves Backorder for an out-of-stock variant with notify backorder', funct
     expect($card['cta']['label'])->toBe('Backorder');
 });
 
-it('disables the CTA when the only active variant is out of stock', function (): void {
+it('keeps Add to Cart for a single out-of-stock variant (server validates at cart time)', function (): void {
     $tenant = actingAsTenant(['status' => 'active']);
     $product = Product::factory()->create(['status' => ProductStatus::Published]);
     ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
-    ProductVariant::factory()->for($product)->create([
+    $variant = ProductVariant::factory()->for($product)->create([
         'fulfillment_strategy' => FulfillmentStrategy::Stock,
         'backorder_policy' => 'deny',
     ]);
 
     $card = ctaView($product);
 
-    expect($card['cta']['type'])->toBe('disabled');
-    expect($card['cta']['label'])->toBe('Out of Stock');
-    expect($card['cta']['disabled'])->toBeTrue();
-    expect($card['cta']['variant_id'])->toBeNull();
+    // Bangladeshi grocery UX: card never disables single-variant; badge shows Out of Stock
+    expect($card['cta']['type'])->toBe('add_to_cart');
+    expect($card['cta']['disabled'])->toBeFalse();
+    expect($card['cta']['variant_id'])->toBe($variant->id);
+    expect($card['variant']['is_out_of_stock'])->toBeTrue();
 });
 
 it('renders no CTA for a discontinued variant', function (): void {
@@ -165,7 +166,7 @@ it('renders the Select Options link for a multi-active-variant product', functio
     expect($html)->toContain('variantSelectionState');
 });
 
-it('renders a disabled CTA for an out-of-stock product', function (): void {
+it('renders Add to Cart even for an out-of-stock single variant (badge shows stock)', function (): void {
     $tenant = actingAsTenant(['status' => 'active']);
     $product = Product::factory()->create(['status' => ProductStatus::Published]);
     ProductTranslation::factory()->for($product)->create(['locale' => 'en']);
@@ -174,10 +175,11 @@ it('renders a disabled CTA for an out-of-stock product', function (): void {
         'backorder_policy' => 'deny',
     ]);
 
-    $html = view('storefront.partials.product-card', ['card' => ctaView($product)])->render();
+    $card = ctaView($product);
+    $html = view('storefront.partials.product-card', ['card' => $card])->render();
 
-    expect($html)->toContain('Out of Stock');
-    expect($html)->toContain('disabled');
+    expect($html)->toContain('Add to Cart');
+    expect($card['variant']['is_out_of_stock'])->toBeTrue();
 });
 
 it('exposes the cart-store endpoint on the storefront layout body', function (): void {
