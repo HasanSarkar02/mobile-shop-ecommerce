@@ -66,6 +66,7 @@
 
         <h1 class="text-2xl lg:text-3xl font-bold tracking-tight mt-2 leading-tight">{{ ($product->translation() ?? $product->translation('en'))?->name }}</h1>
 
+        @php $soldQty = (float) ($product->sold_quantity ?? 0); @endphp
         <div class="mt-2 flex items-center gap-3 text-sm">
             @if ($product->reviews_count > 0 && $product->average_rating !== null)
                 <span class="flex items-center gap-1.5">
@@ -73,14 +74,14 @@
                     <span class="font-semibold text-gray-700 dark:text-gray-300">{{ number_format((float) $product->average_rating, 1) }}</span>
                     <span class="text-gray-500">({{ $product->reviews_count }})</span>
                 </span>
-                @if (($product->sold_count ?? 0) > 0)
+                @if ($soldQty > 0)
                     <span class="text-gray-300">•</span>
-                    <span class="text-gray-500">{{ number_format((int) $product->sold_count) }} sold</span>
+                    <span class="text-gray-500">{{ rtrim(rtrim(number_format($soldQty, 3, '.', ','), '0'), '.') }} sold</span>
                 @endif
             @else
                 <span class="text-xs text-gray-400">No reviews yet — be first</span>
-                @if (($product->sold_count ?? 0) > 0)
-                    <span class="text-gray-500">{{ number_format((int) $product->sold_count) }} sold</span>
+                @if ($soldQty > 0)
+                    <span class="text-gray-500">{{ rtrim(rtrim(number_format($soldQty, 3, '.', ','), '0'), '.') }} sold</span>
                 @endif
             @endif
             <div class="ml-auto flex gap-1.5">
@@ -117,7 +118,10 @@
                     <span class="ml-auto text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-full px-2 py-1" x-text="availabilityLabel()"></span>
                 </div>
                 <p class="mt-1 text-xs text-gray-500">
-                    <span x-text="current().available_quantity > 0 ? current().available_quantity + ' ' + (document.documentElement.lang==='bn' ? 'স্টকে আছে' : 'in stock') : ''"></span>
+                    {{-- Decision 13/14: In Stock shows only via availabilityLabel(); exact count only when low_stock (≤5) --}}
+                    <template x-if="current() && current().purchase_state === 'low_stock' && parseFloat(current().available_quantity_decimal ?? current().available_quantity) > 0">
+                        <span x-text="'Only ' + parseFloat(current().available_quantity_decimal ?? current().available_quantity) + ' ' + (document.documentElement.lang==='bn' ? 'স্টকে আছে' : 'left in stock')" class="text-amber-600"></span>
+                    </template>
                     <span x-show="restockMessage()" class="ml-2" x-text="restockMessage()"></span>
                 </p>
                 {{-- Per-kg / per-unit clarifier for grocery --}}

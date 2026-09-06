@@ -330,7 +330,7 @@ final class ElectronicsIndustrySeeder
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Apple')?->id,
                 'base_price' => 14900000, 'compare_at_price' => 15900000,
-                'is_featured' => true, 'is_best_selling' => true, 'sold_count' => 152,
+                'is_featured' => true, 'is_best_selling' => true, 'sold_quantity' => 152,
                 'en' => ['name' => 'iPhone 16 128GB', 'slug' => 'iphone-16-128gb', 'description' => 'A18 chip, Super Retina XDR, advanced dual-camera system. Official PTA approved.'],
                 'asset' => 'electronics/products/iphone-16',
                 'variants' => [
@@ -343,7 +343,7 @@ final class ElectronicsIndustrySeeder
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Apple')?->id,
                 'base_price' => 18500000, 'compare_at_price' => 19500000,
-                'is_featured' => true, 'is_best_selling' => true, 'sold_count' => 98,
+                'is_featured' => true, 'is_best_selling' => true, 'sold_quantity' => 98,
                 'en' => ['name' => 'iPhone 16 Pro 256GB', 'slug' => 'iphone-16-pro-256gb', 'description' => 'Titanium design, A18 Pro chip, pro camera system with 5x zoom.'],
                 'asset' => 'electronics/products/iphone-16-pro',
                 'variants' => [
@@ -355,7 +355,7 @@ final class ElectronicsIndustrySeeder
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Samsung')?->id,
                 'base_price' => 13200000, 'compare_at_price' => 14200000,
-                'is_featured' => true, 'is_best_selling' => true, 'sold_count' => 210,
+                'is_featured' => true, 'is_best_selling' => true, 'sold_quantity' => 210,
                 'en' => ['name' => 'Samsung Galaxy S25 256GB', 'slug' => 'samsung-galaxy-s25-256gb', 'description' => 'Snapdragon 8 Elite, 200MP camera, Galaxy AI, 5000mAh battery.'],
                 'asset' => 'electronics/products/galaxy-s25',
                 'variants' => [
@@ -367,7 +367,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-A56-128',
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Samsung')?->id,
-                'base_price' => 4550000, 'is_featured' => false, 'sold_count' => 75,
+                'base_price' => 4550000, 'is_featured' => false, 'sold_quantity' => 75,
                 'en' => ['name' => 'Samsung Galaxy A56 128GB', 'slug' => 'samsung-galaxy-a56-128gb', 'description' => 'Awesome camera, 6.6" Super AMOLED, IP67 water resistant.'],
                 'asset' => 'electronics/products/galaxy-a56',
                 'variants' => [
@@ -378,7 +378,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-PIXEL9-128',
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Google')?->id,
-                'base_price' => 10500000, 'is_featured' => true, 'sold_count' => 44,
+                'base_price' => 10500000, 'is_featured' => true, 'sold_quantity' => 44,
                 'en' => ['name' => 'Google Pixel 9 128GB', 'slug' => 'google-pixel-9-128gb', 'description' => 'Google Tensor G4, best-in-class AI photography, 7 years updates.'],
                 'asset' => 'electronics/products/pixel-9',
                 'variants' => [
@@ -390,7 +390,7 @@ final class ElectronicsIndustrySeeder
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('OnePlus')?->id,
                 'base_price' => 9800000, 'compare_at_price' => 10800000,
-                'is_featured' => true, 'sold_count' => 62,
+                'is_featured' => true, 'sold_quantity' => 62,
                 'en' => ['name' => 'OnePlus 13 256GB', 'slug' => 'oneplus-13-256gb', 'description' => 'Snapdragon 8 Elite, 100W SUPERVOOC, Hasselblad cameras.'],
                 'asset' => 'electronics/products/oneplus-13',
                 'variants' => [
@@ -401,7 +401,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-MI15-256',
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Xiaomi')?->id,
-                'base_price' => 8900000, 'is_featured' => true, 'sold_count' => 88,
+                'base_price' => 8900000, 'is_featured' => true, 'sold_quantity' => 88,
                 'en' => ['name' => 'Xiaomi 15 256GB', 'slug' => 'xiaomi-15-256gb', 'description' => 'Leica optics, Snapdragon 8 Elite, 90W HyperCharge.'],
                 'asset' => 'electronics/products/xiaomi-15',
                 'variants' => [
@@ -412,7 +412,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-RN14-128',
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Xiaomi')?->id,
-                'base_price' => 2850000, 'is_featured' => false, 'is_best_selling' => true, 'sold_count' => 180,
+                'base_price' => 2850000, 'is_featured' => false, 'is_best_selling' => true, 'sold_quantity' => 180,
                 'en' => ['name' => 'Redmi Note 14 128GB', 'slug' => 'redmi-note-14-128gb', 'description' => '120Hz AMOLED, 108MP camera, 33W fast charging. Budget king.'],
                 'asset' => 'electronics/products/redmi-note-14',
                 'variants' => [
@@ -423,7 +423,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-VV50-256',
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Vivo')?->id,
-                'base_price' => 4250000, 'is_featured' => false, 'sold_count' => 52,
+                'base_price' => 4250000, 'is_featured' => false, 'sold_quantity' => 52,
                 'en' => ['name' => 'vivo V50 256GB', 'slug' => 'vivo-v50-256gb', 'description' => 'ZEISS portrait, 6000mAh battery, 90W charging.'],
                 'asset' => 'electronics/products/vivo-v50',
                 'variants' => [
@@ -434,7 +434,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-OPR13-256',
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('OPPO')?->id,
-                'base_price' => 4850000, 'is_featured' => false, 'sold_count' => 41,
+                'base_price' => 4850000, 'is_featured' => false, 'sold_quantity' => 41,
                 'en' => ['name' => 'OPPO Reno 13 256GB', 'slug' => 'oppo-reno-13-256gb', 'description' => 'AI portrait, 80W SUPERVOOC, ultra-slim design.'],
                 'asset' => 'electronics/products/oppo-reno-13',
                 'variants' => [
@@ -446,7 +446,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-NK105',
                 'category_id' => $featurePhones?->id,
                 'brand_id' => $brand('Nokia')?->id,
-                'base_price' => 280000, 'is_featured' => false, 'sold_count' => 95,
+                'base_price' => 280000, 'is_featured' => false, 'sold_quantity' => 95,
                 'en' => ['name' => 'Nokia 105 (2024)', 'slug' => 'nokia-105-2024', 'description' => 'Classic bar phone, long battery, wireless FM radio.'],
                 'asset' => 'electronics/products/nokia-105',
                 'variants' => [
@@ -457,7 +457,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-NK2660',
                 'category_id' => $featurePhones?->id,
                 'brand_id' => $brand('Nokia')?->id,
-                'base_price' => 850000, 'is_featured' => false, 'sold_count' => 33,
+                'base_price' => 850000, 'is_featured' => false, 'sold_quantity' => 33,
                 'en' => ['name' => 'Nokia 2660 Flip', 'slug' => 'nokia-2660-flip', 'description' => 'Flip phone with big buttons, emergency SOS, 4G support.'],
                 'asset' => 'electronics/products/nokia-2660-flip',
                 'variants' => [
@@ -469,7 +469,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-GTAB-A9',
                 'category_id' => $tablets?->id,
                 'brand_id' => $brand('Samsung')?->id,
-                'base_price' => 6500000, 'is_featured' => true, 'sold_count' => 27,
+                'base_price' => 6500000, 'is_featured' => true, 'sold_quantity' => 27,
                 'en' => ['name' => 'Samsung Galaxy Tab A9 64GB', 'slug' => 'samsung-galaxy-tab-a9-64gb', 'description' => '8.7" display, dual speakers, 5100mAh battery.'],
                 'asset' => 'electronics/products/galaxy-tab',
                 'variants' => [
@@ -480,7 +480,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-XPAD-6',
                 'category_id' => $tablets?->id,
                 'brand_id' => $brand('Xiaomi')?->id,
-                'base_price' => 3850000, 'is_featured' => false, 'sold_count' => 19,
+                'base_price' => 3850000, 'is_featured' => false, 'sold_quantity' => 19,
                 'en' => ['name' => 'Xiaomi Pad 6 128GB', 'slug' => 'xiaomi-pad-6-128gb', 'description' => '11" 144Hz display, Snapdragon 870, quad speakers.'],
                 'asset' => 'electronics/products/xiaomi-pad',
                 'variants' => [
@@ -493,7 +493,7 @@ final class ElectronicsIndustrySeeder
                 'category_id' => $audio?->id,
                 'brand_id' => $brand('Apple')?->id,
                 'base_price' => 350000, 'compare_at_price' => 450000,
-                'is_featured' => true, 'is_best_selling' => true, 'sold_count' => 240,
+                'is_featured' => true, 'is_best_selling' => true, 'sold_quantity' => 240,
                 'en' => ['name' => 'AirPods-style TWS Earbuds', 'slug' => 'airpods-style-tws-earbuds', 'description' => 'True wireless, ANC, 30h battery case.'],
                 'asset' => 'electronics/products/tws-airpods-style',
                 'variants' => [
@@ -504,7 +504,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-TWS-GBUDS',
                 'category_id' => $audio?->id,
                 'brand_id' => $brand('Samsung')?->id,
-                'base_price' => 450000, 'is_featured' => false, 'sold_count' => 110,
+                'base_price' => 450000, 'is_featured' => false, 'sold_quantity' => 110,
                 'en' => ['name' => 'Galaxy Buds-style TWS', 'slug' => 'galaxy-buds-style-tws', 'description' => 'Hi-Fi sound, bass boost, touch control.'],
                 'asset' => 'electronics/products/galaxy-buds-style',
                 'variants' => [
@@ -515,7 +515,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-NECK-01',
                 'category_id' => $audio?->id,
                 'brand_id' => $brand('Realme')?->id,
-                'base_price' => 180000, 'is_featured' => false, 'sold_count' => 78,
+                'base_price' => 180000, 'is_featured' => false, 'sold_quantity' => 78,
                 'en' => ['name' => 'Bluetooth Neckband Earphone', 'slug' => 'bluetooth-neckband-earphone', 'description' => '20h playtime, magnetic earbuds, fast charge.'],
                 'asset' => 'electronics/products/neckband-bluetooth',
                 'variants' => [
@@ -527,7 +527,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-CHG25W',
                 'category_id' => $power?->id ?? $mobileAcc?->id,
                 'brand_id' => $brand('Samsung')?->id,
-                'base_price' => 150000, 'is_featured' => false, 'sold_count' => 165,
+                'base_price' => 150000, 'is_featured' => false, 'sold_quantity' => 165,
                 'en' => ['name' => '25W Fast Charger (Type-C)', 'slug' => '25w-fast-charger-type-c', 'description' => 'USB-C PD fast charging, compact design, safety protection.'],
                 'asset' => 'electronics/products/charger-25w',
                 'variants' => [
@@ -538,7 +538,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-CHG45W',
                 'category_id' => $power?->id ?? $mobileAcc?->id,
                 'brand_id' => $brand('Samsung')?->id,
-                'base_price' => 220000, 'is_featured' => false, 'sold_count' => 92,
+                'base_price' => 220000, 'is_featured' => false, 'sold_quantity' => 92,
                 'en' => ['name' => '45W Super Fast Charger', 'slug' => '45w-super-fast-charger', 'description' => 'Super fast charging 2.0 for Galaxy flagships.'],
                 'asset' => 'electronics/products/charger-45w',
                 'variants' => [
@@ -549,7 +549,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-CABLE-C1M',
                 'category_id' => $mobileAcc?->id,
                 'brand_id' => $brand('Realme')?->id,
-                'base_price' => 55000, 'is_featured' => false, 'sold_count' => 310,
+                'base_price' => 55000, 'is_featured' => false, 'sold_quantity' => 310,
                 'en' => ['name' => 'USB-C Cable 1M (Fast Charge)', 'slug' => 'usb-c-cable-1m-fast-charge', 'description' => 'Braided 60W PD, 480Mbps data, tangle-free.'],
                 'asset' => 'electronics/products/cable-usb-c',
                 'variants' => [
@@ -562,7 +562,7 @@ final class ElectronicsIndustrySeeder
                 'category_id' => $power?->id,
                 'brand_id' => $brand('Xiaomi')?->id,
                 'base_price' => 185000, 'compare_at_price' => 220000,
-                'is_featured' => true, 'sold_count' => 142,
+                'is_featured' => true, 'sold_quantity' => 142,
                 'en' => ['name' => '10000mAh Power Bank', 'slug' => '10000mah-power-bank', 'description' => '22.5W fast charge, dual output, compact.'],
                 'asset' => 'electronics/products/powerbank-10000',
                 'variants' => [
@@ -573,7 +573,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-PB20K',
                 'category_id' => $power?->id,
                 'brand_id' => $brand('Xiaomi')?->id,
-                'base_price' => 285000, 'is_featured' => false, 'sold_count' => 108,
+                'base_price' => 285000, 'is_featured' => false, 'sold_quantity' => 108,
                 'en' => ['name' => '20000mAh Power Bank', 'slug' => '20000mah-power-bank', 'description' => '33W fast charge, LED display, triple output.'],
                 'asset' => 'electronics/products/powerbank-20000',
                 'variants' => [
@@ -586,7 +586,7 @@ final class ElectronicsIndustrySeeder
                 'category_id' => $watches?->id,
                 'brand_id' => $brand('Realme')?->id,
                 'base_price' => 550000, 'compare_at_price' => 650000,
-                'is_featured' => true, 'is_best_selling' => true, 'sold_count' => 195,
+                'is_featured' => true, 'is_best_selling' => true, 'sold_quantity' => 195,
                 'en' => ['name' => 'AMOLED Smart Watch', 'slug' => 'amoled-smart-watch', 'description' => '1.43" AMOLED, BT calling, SpO2, 7-day battery.'],
                 'asset' => 'electronics/products/smartwatch-amoled',
                 'variants' => [
@@ -597,7 +597,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-SW-BAND8',
                 'category_id' => $watches?->id,
                 'brand_id' => $brand('Xiaomi')?->id,
-                'base_price' => 250000, 'is_featured' => false, 'sold_count' => 88,
+                'base_price' => 250000, 'is_featured' => false, 'sold_quantity' => 88,
                 'en' => ['name' => 'Fitness Smart Band', 'slug' => 'fitness-smart-band', 'description' => '1.62" AMOLED, 14-day battery, 150+ sports modes.'],
                 'asset' => 'electronics/products/fitness-band',
                 'variants' => [
@@ -609,7 +609,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-CASE-PREM',
                 'category_id' => $mobileAcc?->id ?? $gadgets?->id,
                 'brand_id' => $brand('Nothing')?->id,
-                'base_price' => 85000, 'is_featured' => false, 'sold_count' => 205,
+                'base_price' => 85000, 'is_featured' => false, 'sold_quantity' => 205,
                 'en' => ['name' => 'Premium Phone Case (Shockproof)', 'slug' => 'premium-phone-case-shockproof', 'description' => 'Military-grade drop protection, clear back, raised edges.'],
                 'asset' => 'electronics/products/phone-case-premium',
                 'variants' => [
@@ -620,7 +620,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-GLASS-TG',
                 'category_id' => $mobileAcc?->id,
                 'brand_id' => $brand('Nothing')?->id,
-                'base_price' => 45000, 'is_featured' => false, 'sold_count' => 280,
+                'base_price' => 45000, 'is_featured' => false, 'sold_quantity' => 280,
                 'en' => ['name' => 'Tempered Glass Screen Protector', 'slug' => 'tempered-glass-screen-protector', 'description' => '9H hardness, HD clear, full glue, easy install.'],
                 'asset' => 'electronics/products/tempered-glass',
                 'variants' => [
@@ -635,7 +635,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-IP15-128',
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Apple')?->id,
-                'base_price' => 13500000, 'is_featured' => true, 'sold_count' => 64,
+                'base_price' => 13500000, 'is_featured' => true, 'sold_quantity' => 64,
                 'en' => ['name' => 'iPhone 15 Pro 128GB', 'slug' => 'iphone-15-pro-128gb', 'description' => 'Titanium design, A17 Pro chip, pro camera system.'],
                 'asset' => 'electronics/product-1',
                 'variants' => [
@@ -647,7 +647,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-S24-256',
                 'category_id' => $smartphones?->id,
                 'brand_id' => $brand('Samsung')?->id,
-                'base_price' => 12200000, 'is_featured' => true, 'sold_count' => 57,
+                'base_price' => 12200000, 'is_featured' => true, 'sold_quantity' => 57,
                 'en' => ['name' => 'Samsung Galaxy S24 Ultra 256GB', 'slug' => 'samsung-galaxy-s24-ultra-256gb', 'description' => '200MP camera, S Pen, Snapdragon 8 Gen 3.'],
                 'asset' => 'electronics/product-2',
                 'variants' => [
@@ -658,7 +658,7 @@ final class ElectronicsIndustrySeeder
                 'model_number' => 'ELEC-MBA-M2',
                 'category_id' => $cat('Laptops')?->id ?? $cat('Laptop & Computer Accessories')?->id,
                 'brand_id' => $brand('Apple')?->id,
-                'base_price' => 18500000, 'is_featured' => true, 'sold_count' => 22,
+                'base_price' => 18500000, 'is_featured' => true, 'sold_quantity' => 22,
                 'en' => ['name' => 'MacBook Air M2 256GB', 'slug' => 'macbook-air-m2-256gb', 'description' => 'Supercharged by M2, 13.6-inch Liquid Retina display.'],
                 'asset' => 'electronics/product-3',
                 'variants' => [
@@ -681,7 +681,7 @@ final class ElectronicsIndustrySeeder
                 'brand_id' => $def['brand_id'],
                 'base_price' => $def['base_price'],
                 'is_featured' => (bool) ($def['is_featured'] ?? false),
-                'sold_count' => (int) ($def['sold_count'] ?? 0),
+                'sold_quantity' => number_format((float) ($def['sold_quantity'] ?? 0), 3, '.', ''),
                 'is_official_import' => true,
             ], [
                 'en' => $def['en'],
@@ -1119,10 +1119,10 @@ final class ElectronicsIndustrySeeder
             ], $attrs)
         );
 
-        // For existing products, ensure sold_count / is_featured updated if empty (preserve merchant edits otherwise)
+        // For existing products, ensure sold_quantity / is_featured updated if empty (preserve merchant edits otherwise)
         $patch = [];
-        if (isset($attrs['sold_count']) && (int) ($product->sold_count ?? 0) === 0) {
-            $patch['sold_count'] = $attrs['sold_count'];
+        if (isset($attrs['sold_quantity']) && (float) ($product->sold_quantity ?? '0.000') === 0.0) {
+            $patch['sold_quantity'] = number_format((float) $attrs['sold_quantity'], 3, '.', '');
         }
         if (isset($attrs['is_featured']) && ! $product->is_featured && $attrs['is_featured']) {
             $patch['is_featured'] = true;

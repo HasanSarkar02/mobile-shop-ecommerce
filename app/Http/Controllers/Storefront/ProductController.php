@@ -204,6 +204,7 @@ class ProductController extends Controller
                 'fulfillment_strategy' => $variant->fulfillment_strategy->value,
                 'purchase_state' => $state['stock_status']->value,
                 'available_quantity' => $state['available_quantity'],
+                'available_quantity_decimal' => $state['available_quantity_decimal'] ?? number_format((float) $state['available_quantity'], 3, '.', ''),
                 'backorder_policy' => $variant->backorder_policy?->value,
                 'expected_available_at' => $variant->expected_available_at?->format('M j, Y'),
                 'purchasable' => $purchasable,

@@ -90,6 +90,7 @@
                 </div>
                 <h1 class="text-2xl lg:text-[1.75rem] font-bold mt-2 leading-tight">{{ ($product->translation() ?? $product->translation('en'))?->name }}</h1>
                 {{-- Social Proof — real data only --}}
+                @php $soldQty = (float) ($product->sold_quantity ?? 0); @endphp
                 <div class="mt-2 flex items-center gap-2 text-sm flex-wrap">
                     @if ($product->reviews_count > 0 && $product->average_rating !== null)
                         <span class="flex items-center gap-1">
@@ -100,9 +101,9 @@
                     @else
                         <span class="text-gray-400 text-xs">{{ __('No reviews yet') }}</span>
                     @endif
-                    @if (($product->sold_count ?? 0) > 0)
+                    @if ($soldQty > 0)
                         <span class="text-gray-300">|</span>
-                        <span class="text-gray-500 dark:text-gray-400">{{ number_format((int) $product->sold_count) }} sold</span>
+                        <span class="text-gray-500 dark:text-gray-400">{{ rtrim(rtrim(number_format($soldQty, 3, '.', ','), '0'), '.') }} sold</span>
                     @endif
                 </div>
             </div>
@@ -173,8 +174,9 @@
             </div>
             <div class="flex-1 text-sm">
                 <p class="text-sm font-medium" :class="availabilityTone()" x-text="availabilityLabel()"></p>
-                <template x-if="current()">
-                    <p class="text-xs mt-0.5" :class="availabilityTone()" x-text="current().available_quantity > 0 ? (Number.isInteger(current().available_quantity) ? current().available_quantity + ' in stock' : current().available_quantity + ' available') : ''"></p>
+                {{-- Decision 13/14: show exact count only when low_stock (≤5), otherwise only "In Stock" via availabilityLabel() --}}
+                <template x-if="current() && current().purchase_state === 'low_stock' && parseFloat(current().available_quantity_decimal ?? current().available_quantity) > 0">
+                    <p class="text-xs mt-0.5 text-amber-600" x-text="'Only ' + parseFloat(current().available_quantity_decimal ?? current().available_quantity) + ' left in stock'"></p>
                 </template>
                 <template x-if="restockMessage()">
                     <p class="text-xs text-gray-500" x-text="restockMessage()"></p>

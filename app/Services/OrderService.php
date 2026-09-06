@@ -523,7 +523,9 @@ class OrderService
         ]);
 
         if ($newStatus === OrderStatus::Confirmed) {
-            $this->inventory->lockStockItemsForVariants($order->items->pluck('variant')->filter());
+            $variants = $order->items->pluck('variant')->filter();
+            $this->inventory->lockStockItemsForVariants($variants);
+            $this->inventory->lockProductsForVariants($variants);
 
             foreach ($order->items as $item) {
                 if ($item->variant) {
@@ -543,7 +545,9 @@ class OrderService
         }
 
         if ($newStatus === OrderStatus::Cancelled && in_array($from, [OrderStatus::Confirmed, OrderStatus::Processing, OrderStatus::Shipped], true)) {
-            $this->inventory->lockStockItemsForVariants($order->items->pluck('variant')->filter());
+            $variants = $order->items->pluck('variant')->filter();
+            $this->inventory->lockStockItemsForVariants($variants);
+            $this->inventory->lockProductsForVariants($variants);
 
             foreach ($order->items as $item) {
                 if ($item->variant) {
@@ -824,9 +828,12 @@ class OrderService
     {
         $returnedSerials = [];
 
-        // Ascending variant order, the same as every other inventory path, so a
-        // refund can never deadlock against a cancellation or a commit.
-        $this->inventory->lockStockItemsForVariants($order->items->pluck('variant')->filter());
+        // Ascending variant + product order, the same as every other inventory path, so a
+        // refund can never deadlock against a cancellation or a commit. Product rows
+        // locked deterministically (asc product_id) before stock rows for decision 9/10.
+        $variants = $order->items->pluck('variant')->filter();
+        $this->inventory->lockProductsForVariants($variants);
+        $this->inventory->lockStockItemsForVariants($variants);
 
         foreach ($order->items as $item) {
             if (! $item->variant) {

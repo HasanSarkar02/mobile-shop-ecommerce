@@ -49,18 +49,19 @@
                     @endif
                 </div>
                 <h1 class="text-2xl font-bold mt-1">{{ ($product->translation() ?? $product->translation('en'))?->name }}</h1>
+                @php $soldQty = (float) ($product->sold_quantity ?? 0); @endphp
                 @if ($product->reviews_count > 0 && $product->average_rating !== null)
                     <div class="mt-2 flex items-center gap-2 text-sm">
                         <x-ui.rating-stars :rating="$product->average_rating" :count="$product->reviews_count" />
                         <span class="font-medium text-gray-700 dark:text-gray-300">{{ number_format((float) $product->average_rating, 1) }}</span>
                         <span class="text-gray-500">({{ $product->reviews_count }})</span>
-                        @if (($product->sold_count ?? 0) > 0)
+                        @if ($soldQty > 0)
                             <span class="text-gray-300">|</span>
-                            <span class="text-gray-500">{{ number_format((int) $product->sold_count) }} sold</span>
+                            <span class="text-gray-500">{{ rtrim(rtrim(number_format($soldQty, 3, '.', ','), '0'), '.') }} sold</span>
                         @endif
                     </div>
-                @elseif (($product->sold_count ?? 0) > 0)
-                    <div class="mt-2 text-sm text-gray-500">{{ number_format((int) $product->sold_count) }} sold</div>
+                @elseif ($soldQty > 0)
+                    <div class="mt-2 text-sm text-gray-500">{{ rtrim(rtrim(number_format($soldQty, 3, '.', ','), '0'), '.') }} sold</div>
                 @else
                     <div class="mt-2 text-xs text-gray-400">No reviews yet</div>
                 @endif
@@ -104,8 +105,8 @@
                     </template>
                 </div>
                 <p class="text-sm mt-2 font-medium" :class="availabilityTone()" x-text="availabilityLabel()"></p>
-                <template x-if="current().purchase_state === 'low_stock' && current().available_quantity > 0">
-                    <p class="text-sm mt-0.5 text-amber-600 font-medium" x-text="'Only ' + current().available_quantity + ' left in stock'"></p>
+                <template x-if="current().purchase_state === 'low_stock' && parseFloat(current().available_quantity_decimal ?? current().available_quantity) > 0">
+                    <p class="text-sm mt-0.5 text-amber-600 font-medium" x-text="'Only ' + parseFloat(current().available_quantity_decimal ?? current().available_quantity) + ' left in stock'"></p>
                 </template>
                 <template x-if="restockMessage()">
                     <p class="text-sm mt-0.5 text-gray-500" x-text="restockMessage()"></p>
@@ -188,9 +189,7 @@
                 <input type="number" x-model.number="quantity" :step="sellByUnit" :min="sellByUnit" step="{{ $product->sell_by_unit ?? 1 }}" class="w-16 text-center bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                 <button @click="quantity = Math.min(parseFloat((quantity + sellByUnit).toFixed(3)), (current()?.available_quantity ?? 0) > 0 && current().purchase_state !== 'preorder' && current().purchase_state !== 'dropship' ? current().available_quantity : 99)" class="w-10 h-11 flex items-center justify-center text-lg" aria-label="Increase quantity">+</button>
             </div>
-            <div class="flex-1 text-sm text-gray-500 dark:text-gray-400">
-                <span x-show="current() && current().available_quantity > 0" x-text="current().available_quantity + ' in stock'"></span>
-            </div>
+            {{-- Decision 13/14: normal In Stock hidden, Only X left when low_stock (≤5) via availabilityLabel + gated template above --}}
         </div>
 
         <div class="grid grid-cols-2 gap-4 mt-6">
