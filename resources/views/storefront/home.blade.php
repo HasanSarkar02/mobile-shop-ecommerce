@@ -35,6 +35,10 @@
                 @case('custom_html')
                     @include('storefront.partials.sections.custom-html', ['section' => $section])
                 @break
+
+                @case('blog_grid')
+                    @include('storefront.partials.sections.blog-grid', ['section' => $section])
+                @break
             @endswitch
             </div>
         @endforeach

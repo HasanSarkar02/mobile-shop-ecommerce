@@ -27,7 +27,7 @@
                 :aria-expanded="open.toString()"
                 aria-controls="global-search-dropdown"
                 aria-autocomplete="list"
-                class="w-full pl-12 pr-16 py-2.5 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition shadow-sm"
+                class="w-full pl-12 pr-16 py-2 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition shadow-sm"
             />
 
             {{-- Loading spinner --}}
@@ -118,7 +118,7 @@
             @else
                 {{-- Results state --}}
                 <div wire:loading.remove wire:target="searchQuery">
-                    @if ($products->isEmpty() && $categories->isEmpty() && $brands->isEmpty())
+                    @if ($products->isEmpty() && $categories->isEmpty() && $brands->isEmpty() && (!isset($posts) || $posts->isEmpty()))
                         <div class="px-6 py-10 text-center">
                             <div class="mx-auto w-12 h-12 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-3">
                                 <x-ui.icon name="search" class="w-6 h-6 text-gray-300" />
@@ -169,7 +169,21 @@
                                     </ul>
                                 @endif
 
-                                @if ($categories->isEmpty() && $brands->isEmpty())
+                                @if (isset($posts) && $posts->isNotEmpty())
+                                    <p class="px-2 pt-3 pb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-400">{{ __('Blog') }}</p>
+                                    <ul class="space-y-1" role="listbox" aria-label="{{ __('Blog') }}">
+                                        @foreach ($posts as $post)
+                                            <li>
+                                                <a href="{{ $post['url'] }}" data-search-link role="option" class="search-link flex items-center gap-2 px-2.5 py-2 rounded-xl text-sm text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-900 hover:shadow-sm border border-transparent hover:border-gray-100 dark:hover:border-gray-700 transition">
+                                                    <span class="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0"><x-ui.icon name="newspaper" class="w-3.5 h-3.5 text-gray-400" /></span>
+                                                    <span class="truncate font-medium">{{ $post['title'] }}</span>
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+
+                                @if ($categories->isEmpty() && $brands->isEmpty() && (!isset($posts) || $posts->isEmpty()))
                                     <p class="px-2 py-6 text-sm text-gray-400 text-center">{{ __('No categories or brands found.') }}</p>
                                 @endif
 

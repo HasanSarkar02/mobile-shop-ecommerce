@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Storefront;
 
+use App\Models\BlogPost;
 use App\Models\Brand;
 use App\Models\Campaign;
 use App\Models\Category;
@@ -79,11 +80,57 @@ class HomepageSectionRenderer
                 ->values();
         }
 
-        return Category::query()
-            ->whereNull('parent_id')
-            ->withCount(['products' => fn ($q) => $q->published()])
-            ->having('products_count', '>', 0)
-            ->orderByDesc('products_count')
+        $candidates = Category::query()->whereNull('parent_id')->get();
+
+        if ($candidates->isEmpty()) {
+            return $candidates;
+        }
+
+        $allIds = $candidates->pluck('id')->all();
+        /** @var array<int, int> $pending */
+        $pending = $allIds;
+        while ($pending !== []) {
+            $children = Category::query()->whereIn('parent_id', $pending)->pluck('id')->all();
+            if ($children === []) {
+                break;
+            }
+            $allIds = array_merge($allIds, $children);
+            $pending = $children;
+        }
+        $allIds = array_values(array_unique($allIds));
+
+        $counts = Product::published()
+            ->whereIn('category_id', $allIds)
+            ->selectRaw('category_id, COUNT(*) as cnt')
+            ->groupBy('category_id')
+            ->pluck('cnt', 'category_id')
+            ->map(fn ($v) => (int) $v);
+
+        $withCounts = $candidates->map(function (Category $cat) use ($counts) {
+            $ids = $cat->descendantIds();
+            $total = 0;
+            foreach ($ids as $id) {
+                $total += (int) ($counts[$id] ?? 0);
+            }
+            $cat->setAttribute('products_count', $total);
+
+            return $cat;
+        })->filter(fn (Category $cat) => $cat->products_count > 0)
+            ->sortByDesc('products_count')
+            ->values();
+
+        return $withCounts->take($limit);
+    }
+
+    public function resolveBlogPosts(HomepageSection $section): EloquentCollection
+    {
+        $config = $section->config ?? [];
+        $limit = (int) ($config['limit'] ?? 3);
+
+        return BlogPost::query()
+            ->where('status', 'published')
+            ->where('published_at', '<=', now())
+            ->latest('published_at')
             ->limit($limit)
             ->get();
     }

@@ -61,6 +61,9 @@ class AccountAddressController extends Controller
             'area' => ['nullable', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'is_default' => ['boolean'],
+            'bd_division_id' => ['required', 'integer', 'exists:bd_divisions,id'],
+            'bd_district_id' => ['required', 'integer', 'exists:bd_districts,id'],
+            'bd_upazila_id' => ['nullable', 'integer', 'exists:bd_upazilas,id'],
         ]);
     }
 }

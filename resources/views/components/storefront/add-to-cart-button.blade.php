@@ -8,7 +8,7 @@
         <input type="hidden" name="quantity" :value="quantity">
         <x-ui.button variant="primary" size="lg" class="w-full" type="submit"
             x-bind:disabled="pending || cartLoading || !current() || !current().purchasable">
-            <span x-text="current() && current().purchase_state === 'preorder' ? 'Pre-Order Now' : 'Buy Now'"></span>
+            <span x-text="current() && current().purchase_state === 'preorder' ? (i18n.preOrderNow || 'Pre-Order Now') : (i18n.buyNow || 'Buy Now')"></span>
         </x-ui.button>
     </form>
 @else

@@ -12,6 +12,9 @@ return [
     ],
     'trial_days' => env('TENANT_TRIAL_DAYS', 14),
     'pending_approval_expiry_days' => env('PENDING_APPROVAL_EXPIRY_DAYS', 7),
+    'deletion_grace_days' => env('TENANT_DELETION_GRACE_DAYS', 7),
+    'quarantine_days_active' => env('TENANT_QUARANTINE_DAYS_ACTIVE', 30),
+    'inactivity_suspend_days' => env('TENANT_INACTIVITY_SUSPEND_DAYS', 60),
     'domain_verification_ttl_hours' => env('DOMAIN_VERIFICATION_TTL_HOURS', 72),
     'domain_verification_record_prefix' => env('DOMAIN_VERIFICATION_RECORD_PREFIX', '_mobile-shop-verification'),
 ];

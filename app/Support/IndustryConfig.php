@@ -43,7 +43,16 @@ final class IndustryConfig
         $base = (array) config('industries.presets.general', []);
 
         // Deltas win; everything else inherits from general.
-        return array_replace_recursive($base, $preset);
+        $merged = array_replace_recursive($base, $preset);
+
+        // Indexed lists must replace wholesale — array_replace_recursive merges by numeric index and leaks tail entries.
+        foreach (['trust_badges.items', 'pdp.information_priority', 'facets.priority'] as $listPath) {
+            if (Arr::has($preset, $listPath)) {
+                Arr::set($merged, $listPath, Arr::get($preset, $listPath));
+            }
+        }
+
+        return $merged;
     }
 
     /**

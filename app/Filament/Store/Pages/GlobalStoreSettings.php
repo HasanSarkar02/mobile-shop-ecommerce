@@ -20,7 +20,9 @@ class GlobalStoreSettings extends Page implements HasForms
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-magnifying-glass';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Settings';
+    protected static string|UnitEnum|null $navigationGroup = 'System';
+
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $navigationLabel = 'SEO & Defaults';
 

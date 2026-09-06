@@ -19,7 +19,7 @@ it('merges preset deltas over the general baseline', function (): void {
     $preset = IndustryConfig::resolve('fashion');
 
     expect($preset['pdp']['layout'])->toBe('imagery-led')
-        ->and($preset['card']['hover_gallery_enabled'])->toBeFalse()
+        ->and($preset['card']['hover_gallery_enabled'])->toBeTrue()
         ->and($preset['card']['hover_gallery_recommended'])->toBeTrue()
         ->and($preset['facets']['priority'])->toBe([]);
 });

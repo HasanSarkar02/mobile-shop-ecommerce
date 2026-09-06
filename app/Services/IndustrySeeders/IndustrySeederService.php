@@ -9,6 +9,7 @@ use App\Models\StoreThemeSetting;
 use App\Models\Tenant;
 use App\Models\UnitOfMeasure;
 use App\Support\ThemePresets;
+use Database\Seeders\TrustContentSeeder;
 
 final class IndustrySeederService
 {
@@ -61,6 +62,15 @@ final class IndustrySeederService
 
         $this->ensureThemeSettings($tenant, $code);
         $this->seedUoms($tenant, $code);
+
+        // Ensure trust content (policies + FAQs) for every new tenant so the shop looks complete.
+        // Idempotent via updateOrCreate inside TrustContentSeeder - safe to run even if the
+        // industry seeder already seeded it (electronics does).
+        try {
+            app(TrustContentSeeder::class)->run($tenant);
+        } catch (\Throwable $e) {
+            // Do not fail tenant bootstrap if trust seeding fails (e.g. missing Purifier config)
+        }
     }
 
     /**

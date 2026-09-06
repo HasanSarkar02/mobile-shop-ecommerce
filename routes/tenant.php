@@ -15,6 +15,7 @@ use App\Http\Controllers\Storefront\CollectionController;
 use App\Http\Controllers\Storefront\CompareController;
 use App\Http\Controllers\Storefront\FaqController;
 use App\Http\Controllers\Storefront\HomeController;
+use App\Http\Controllers\Storefront\LocaleController;
 use App\Http\Controllers\Storefront\NewsletterController;
 use App\Http\Controllers\Storefront\OfferController;
 use App\Http\Controllers\Storefront\OrderTrackingController;
@@ -34,6 +35,8 @@ use App\Http\Controllers\Support\MagicLoginController;
 use App\Http\Middleware\EnsureTenant;
 use App\Http\Middleware\ResolveSupportSession;
 use App\Livewire\CheckoutPage;
+use App\Models\BdDistrict;
+use App\Models\BdUpazila;
 use App\Models\Order;
 use App\Models\Tenant;
 use App\Models\User;
@@ -43,6 +46,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 $registerTenantRoutes = function (): void {
+    Route::match(['get', 'post'], '/locale/{locale}', LocaleController::class)->name('storefront.locale.switch');
     Route::get('/support/magic', MagicLoginController::class)->name('support.magic');
     Route::post('/support/exit', function (Request $request, TenantUrlGenerator $urls): RedirectResponse {
         $payload = session(ResolveSupportSession::SESSION_KEY);
@@ -137,6 +141,23 @@ $registerTenantRoutes = function (): void {
         ->name('storefront.product.reviews.store');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('storefront.sitemap');
     Route::get('/robots.txt', [RobotsController::class, 'index'])->name('storefront.robots');
+
+    Route::get('/api/bd/districts', function (Request $request) {
+        $divisionId = $request->query('division_id');
+        if (! $divisionId) {
+            return response()->json([]);
+        }
+
+        return BdDistrict::where('division_id', $divisionId)->orderBy('name_en')->get(['id', 'name_en', 'name_bn']);
+    })->name('storefront.bd.districts');
+    Route::get('/api/bd/upazilas', function (Request $request) {
+        $districtId = $request->query('district_id');
+        if (! $districtId) {
+            return response()->json([]);
+        }
+
+        return BdUpazila::where('district_id', $districtId)->orderBy('name_en')->get(['id', 'name_en', 'name_bn']);
+    })->name('storefront.bd.upazilas');
 
     Route::middleware('auth:customer')->prefix('account')->name('storefront.account.')->group(function (): void {
         Route::get('/', fn () => view('storefront.account.dashboard'))->name('dashboard');

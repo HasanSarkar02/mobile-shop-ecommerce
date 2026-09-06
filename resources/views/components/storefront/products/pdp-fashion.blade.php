@@ -49,41 +49,24 @@
                     @endif
                 </div>
                 <h1 class="text-2xl font-bold mt-1">{{ ($product->translation() ?? $product->translation('en'))?->name }}</h1>
-                <div class="mt-2 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                    <span class="flex items-center gap-1">
-                        <span class="text-amber-500">★</span>
-                        <span class="font-medium text-gray-700 dark:text-gray-300">4.6</span>
-                        <span>(128 reviews)</span>
-                    </span>
-                    <span class="text-gray-300">|</span>
-                    <span>1.2K+ sold</span>
-                </div>
-                @if ($product->reviews_count > 0)
-                    <div class="mt-2">
+                @if ($product->reviews_count > 0 && $product->average_rating !== null)
+                    <div class="mt-2 flex items-center gap-2 text-sm">
                         <x-ui.rating-stars :rating="$product->average_rating" :count="$product->reviews_count" />
+                        <span class="font-medium text-gray-700 dark:text-gray-300">{{ number_format((float) $product->average_rating, 1) }}</span>
+                        <span class="text-gray-500">({{ $product->reviews_count }})</span>
+                        @if (($product->sold_count ?? 0) > 0)
+                            <span class="text-gray-300">|</span>
+                            <span class="text-gray-500">{{ number_format((int) $product->sold_count) }} sold</span>
+                        @endif
                     </div>
+                @elseif (($product->sold_count ?? 0) > 0)
+                    <div class="mt-2 text-sm text-gray-500">{{ number_format((int) $product->sold_count) }} sold</div>
+                @else
+                    <div class="mt-2 text-xs text-gray-400">No reviews yet</div>
                 @endif
             </div>
             <div class="flex gap-2 flex-shrink-0">
-                <button
-                    type="button"
-                    x-data="{}"
-                    x-init="$store.wishlist.seed({{ $product->id }}, {{ ($isWishlisted ?? false) ? 'true' : 'false' }})"
-                    @click.prevent.stop="$store.wishlist.toggle({{ $product->id }})"
-                    :disabled="$store.wishlist.pending[{{ $product->id }}] || false"
-                    :aria-busy="$store.wishlist.pending[{{ $product->id }}] ? 'true' : 'false'"
-                    class="p-2.5 rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-                    :class="$store.wishlist.isWishlisted({{ $product->id }}) ? 'border-red-300 bg-red-50 dark:bg-red-950 text-red-600' : 'border-gray-300 dark:border-gray-700'"
-                    :aria-pressed="$store.wishlist.isWishlisted({{ $product->id }}) ? 'true' : 'false'"
-                    :aria-label="$store.wishlist.isWishlisted({{ $product->id }}) ? 'Remove from wishlist' : 'Add to wishlist'"
-                >
-                    <span x-show="!$store.wishlist.isWishlisted({{ $product->id }})">
-                        <x-ui.icon name="heart" class="w-5 h-5" />
-                    </span>
-                    <span x-show="$store.wishlist.isWishlisted({{ $product->id }})" x-cloak>
-                        <x-ui.icon name="heart" :solid="true" class="w-5 h-5 text-red-600" />
-                    </span>
-                </button>
+                <x-storefront.wishlist-button :id="$product->id" :wishlisted="$isWishlisted ?? false" variant="pdp" />
                 <button @click="toggleCompare()" :disabled="compareLoading"
                     class="p-2.5 rounded-xl border transition text-sm"
                     :class="comparing ? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]' : 'border-gray-300 dark:border-gray-700'"
@@ -356,18 +339,22 @@
             @if ($showFaqs)
                 <section id="faq" class="scroll-mt-32 lg:scroll-mt-[176px] mt-10 lg:mt-16" aria-labelledby="faq-heading">
                     <h2 id="faq-heading" class="text-xl lg:text-2xl font-bold tracking-tight">FAQ</h2>
-                    <div class="mt-5 space-y-3">
-                        @foreach ($product->faqs as $faq)
-                            <div x-data="{ expanded: false }" class="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
-                                <button @click="expanded = !expanded" class="w-full text-left font-medium flex justify-between items-center">
-                                    {{ $faq->question }}
-                                    <span x-text="expanded ? '−' : '+'" class="text-gray-400"></span>
-                                </button>
-                                <div x-show="expanded" x-collapse class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                    {{ $faq->answer }}</div>
-                            </div>
-                        @endforeach
-                    </div>
+                    @if ($product->faqs->isNotEmpty())
+                        <div class="mt-5 space-y-3">
+                            @foreach ($product->faqs as $faq)
+                                <div x-data="{ expanded: false }" class="border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+                                    <button @click="expanded = !expanded" class="w-full text-left font-medium flex justify-between items-center">
+                                        {{ $faq->question }}
+                                        <span x-text="expanded ? '−' : '+'" class="text-gray-400"></span>
+                                    </button>
+                                    <div x-show="expanded" x-collapse class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                        {{ $faq->answer }}</div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-400 mt-5">No FAQs available for this product yet.</p>
+                    @endif
                 </section>
             @endif
             @break

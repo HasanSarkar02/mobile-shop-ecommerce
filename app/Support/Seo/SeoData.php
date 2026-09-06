@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\Seo;
 
+use App\Models\BlogPost;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Tenant;
@@ -186,6 +187,97 @@ final readonly class SeoData
             type: 'website',
             siteName: $siteName,
             robots: $isFiltered ? 'noindex,follow' : null,
+            locale: $locale,
+        );
+    }
+
+    public static function fromBlogPost(BlogPost $post, ?TenantUrlGenerator $urls = null): self
+    {
+        $urls ??= app(TenantUrlGenerator::class);
+        $tenant = $post->tenant ?? tenant();
+        if (! $tenant instanceof Tenant && $post->getAttribute('tenant_id')) {
+            $tenant = Tenant::withoutGlobalScope('tenant')->find($post->getAttribute('tenant_id'));
+        }
+        $siteName = $tenant instanceof Tenant ? $tenant->name : (string) config('app.name', 'Store');
+        $baseTitle = $post->meta_title ?: $post->title;
+        $title = $baseTitle ? $baseTitle.' - '.$siteName : $siteName;
+
+        $description = $post->meta_description ?: $post->excerpt;
+        if (! filled($description) && filled($post->content)) {
+            $description = Str::limit(strip_tags($post->content), 155, '');
+        }
+        if (! filled($description) && $tenant instanceof Tenant) {
+            $settingsDesc = $tenant->settings?->meta_description_default;
+            $description = filled($settingsDesc) ? Str::limit(trim((string) $settingsDesc), 155, '') : null;
+        }
+        $description = filled($description) ? Str::limit(trim((string) $description), 155, '') : null;
+
+        $image = $post->getFirstMediaUrl('cover', 'large');
+        if (! filled($image)) {
+            $image = $post->getFirstMediaUrl('cover');
+        }
+        if (! filled($image) && $tenant instanceof Tenant) {
+            $logoPath = $tenant->themeSettings?->logo_path;
+            $image = filled($logoPath) ? '/storage/'.ltrim((string) $logoPath, '/') : '/storage/placeholder-og.png';
+        }
+        if (! filled($image)) {
+            $image = '/storage/placeholder-og.png';
+        }
+        $image = self::ensureAbsolute((string) $image, $tenant, $urls);
+        if (! str_starts_with($image, 'http')) {
+            $image = $tenant instanceof Tenant ? $urls->canonicalPath($tenant, $image) : url($image);
+        }
+
+        $imageAlt = $post->title ?? $siteName;
+        $media = $post->getFirstMedia('cover');
+        if ($media) {
+            $imageAlt = media_alt($media, $imageAlt);
+        }
+
+        $canonical = $tenant instanceof Tenant
+            ? $urls->canonicalRoute($tenant, 'storefront.blog.show', [$post->slug])
+            : url('/blog/'.$post->slug);
+        $locale = $tenant instanceof Tenant ? $tenant->preferredLocale() : (string) app()->getLocale();
+
+        return new self(
+            title: $title,
+            description: $description,
+            canonical: $canonical,
+            image: $image,
+            imageAlt: $imageAlt,
+            type: 'article',
+            siteName: $siteName,
+            robots: null,
+            locale: $locale,
+        );
+    }
+
+    public static function fromBlogIndex(?Tenant $tenant = null, ?TenantUrlGenerator $urls = null): self
+    {
+        $urls ??= app(TenantUrlGenerator::class);
+        $tenant ??= tenant();
+        $siteName = $tenant instanceof Tenant ? $tenant->name : (string) config('app.name', 'Store');
+        $title = 'Blog - '.$siteName;
+        $description = $tenant instanceof Tenant ? ($tenant->settings?->meta_description_default ?? $tenant->themeSettings?->footer_text) : null;
+        $description = filled($description) ? Str::limit(trim((string) $description), 155, '') : 'Latest articles, guides and news from '.$siteName;
+        $logoPath = $tenant instanceof Tenant ? $tenant->themeSettings?->logo_path : null;
+        $image = filled($logoPath) ? '/storage/'.ltrim((string) $logoPath, '/') : '/storage/placeholder-og.png';
+        $image = self::ensureAbsolute((string) $image, $tenant, $urls);
+        if (! str_starts_with($image, 'http')) {
+            $image = $tenant instanceof Tenant ? $urls->canonicalPath($tenant, $image) : url($image);
+        }
+        $canonical = $tenant instanceof Tenant ? $urls->canonicalPath($tenant, '/blog') : url('/blog');
+        $locale = $tenant instanceof Tenant ? $tenant->preferredLocale() : (string) app()->getLocale();
+
+        return new self(
+            title: $title,
+            description: $description,
+            canonical: $canonical,
+            image: $image,
+            imageAlt: $siteName,
+            type: 'website',
+            siteName: $siteName,
+            robots: null,
             locale: $locale,
         );
     }

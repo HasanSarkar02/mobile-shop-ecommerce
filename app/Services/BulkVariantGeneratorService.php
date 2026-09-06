@@ -28,9 +28,14 @@ use Illuminate\Validation\ValidationException;
 final class BulkVariantGeneratorService
 {
     /** Hard ceiling so an accidental 10×10×10 cannot thrash the database. */
-    public const MAX_COMBINATIONS = 36;
+    public const MAX_COMBINATIONS = 100;
 
     public function __construct(private readonly VariantSignatureService $signatures) {}
+
+    public static function maxCombinations(): int
+    {
+        return (int) config('catalog.variant_max_combinations', self::MAX_COMBINATIONS);
+    }
 
     /**
      * @param  array<int|string, mixed>  $selections  [definitionId => list<optionId>]
@@ -56,12 +61,14 @@ final class BulkVariantGeneratorService
 
         $combinations = $this->cartesian($sets);
 
-        if (count($combinations) > self::MAX_COMBINATIONS) {
+        $max = self::maxCombinations();
+
+        if (count($combinations) > $max) {
             throw ValidationException::withMessages([
                 'attributes' => sprintf(
                     '%d combinations exceed the %d-variant limit — reduce your selections.',
                     count($combinations),
-                    self::MAX_COMBINATIONS,
+                    $max,
                 ),
             ]);
         }
@@ -137,10 +144,16 @@ final class BulkVariantGeneratorService
                 continue;
             }
 
+            // T1 hardening: explicit tenant ownership check (defense in depth beyond global scope)
+            if (tenant() !== null && (int) $definition->tenant_id !== (int) tenant()->id) {
+                continue;
+            }
+
             /** @var list<AttributeOption> $options */
             $options = AttributeOption::query()
                 ->whereIn('id', $ids)
                 ->where('attribute_definition_id', $definition->id)
+                ->when(tenant() !== null, fn ($q) => $q->where('tenant_id', tenant()->id))
                 ->orderBy('sort_order')
                 ->get()
                 ->all();

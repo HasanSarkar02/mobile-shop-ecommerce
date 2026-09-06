@@ -29,6 +29,8 @@ class SerialNumberResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Inventory';
 
+    protected static ?int $navigationSort = 4;
+
     protected static ?string $navigationLabel = 'Serial / IMEI Numbers';
 
     public static function form(Schema $schema): Schema

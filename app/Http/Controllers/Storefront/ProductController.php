@@ -108,9 +108,22 @@ class ProductController extends Controller
         // ACTIVE variant exists. A single active variant is auto-resolved on
         // load so its buy box is immediately usable. Inactive variants never
         // participate in selection (they are not purchasable surfaces).
+        // For multi-variant products, auto-select the first purchasable active
+        // variant so the PDP shows exact price/image/availability immediately.
         $activeVariants = $product->variants->where('is_active', true)->values();
         $requiresSelection = $activeVariants->count() > 1;
-        $initialVariantId = $activeVariants->count() === 1 ? $activeVariants->first()->id : null;
+        if ($activeVariants->count() === 1) {
+            $initialVariantId = $activeVariants->first()->id;
+        } elseif ($requiresSelection) {
+            $firstPurchasable = $activeVariants->first(fn ($v) => $inventory->isPurchasable($v, 1));
+            if ($firstPurchasable) {
+                $initialVariantId = $firstPurchasable->id;
+            } else {
+                $initialVariantId = $activeVariants->first()?->id;
+            }
+        } else {
+            $initialVariantId = null;
+        }
 
         $variantsData = [];
 
@@ -341,9 +354,24 @@ class ProductController extends Controller
 
         $seo = SeoData::fromProduct($product, $urls);
 
+        $relatedBlogPosts = \App\Models\BlogPost::query()
+            ->where('status', 'published')
+            ->where('published_at', '<=', now())
+            ->when($product->category, fn ($q) => $q->where(function ($qq) use ($product) {
+                $qq->where('title', 'like', '%'.$product->category->name.'%')
+                    ->orWhere('excerpt', 'like', '%'.$product->category->name.'%')
+                    ->orWhere('content', 'like', '%'.$product->category->name.'%');
+            }))
+            ->latest('published_at')
+            ->limit(3)
+            ->get();
+        if ($relatedBlogPosts->isEmpty()) {
+            $relatedBlogPosts = \App\Models\BlogPost::query()->where('status', 'published')->where('published_at', '<=', now())->latest('published_at')->limit(3)->get();
+        }
+
         return view('storefront.products.show', compact(
             'product', 'variantsData', 'dimensions', 'productImages', 'specificationGroups', 'productJsonLd', 'faqJsonLd', 'isWishlisted', 'isComparing',
-            'relatedCards', 'crossSellCards', 'upsellCards', 'frequentlyBoughtCards', 'compatibleAccessoryCards', 'recentlyViewedCards', 'policyLinks', 'emiData', 'shippingMethods', 'paymentMethods',
+            'relatedCards', 'crossSellCards', 'upsellCards', 'frequentlyBoughtCards', 'compatibleAccessoryCards', 'recentlyViewedCards', 'relatedBlogPosts', 'policyLinks', 'emiData', 'shippingMethods', 'paymentMethods',
             'requiresSelection', 'initialVariantId', 'seo',
         ));
     }

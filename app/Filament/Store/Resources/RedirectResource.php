@@ -20,9 +20,11 @@ class RedirectResource extends Resource
 {
     protected static ?string $model = Redirect::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-turn-down-right';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-path-rounded-square';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Merchandising';
+    protected static string|UnitEnum|null $navigationGroup = 'Storefront';
+
+    protected static ?int $navigationSort = 6;
 
     public static function form(Schema $schema): Schema
     {

@@ -39,7 +39,8 @@ class Product extends Model implements HasMedia
 
     protected $fillable = [
         'brand_id', 'category_id', 'model_number', 'type', 'base_price', 'uom_id', 'sell_by_unit', 'base_uom_quantity',
-        'status', 'is_featured', 'is_serialized', 'published_at', 'created_by', 'updated_by', 'is_official_import', 'max_discount_percentage', 'view_count',
+        'status', 'is_featured', 'is_serialized', 'published_at', 'created_by', 'updated_by', 'is_official_import', 'max_discount_percentage', 'view_count', 'sold_count',
+        'rating_1_count', 'rating_2_count', 'rating_3_count', 'rating_4_count', 'rating_5_count',
     ];
 
     protected function casts(): array
@@ -56,6 +57,12 @@ class Product extends Model implements HasMedia
             'is_official_import' => 'boolean',
             'max_discount_percentage' => 'integer',
             'view_count' => 'integer',
+            'sold_count' => 'integer',
+            'rating_1_count' => 'integer',
+            'rating_2_count' => 'integer',
+            'rating_3_count' => 'integer',
+            'rating_4_count' => 'integer',
+            'rating_5_count' => 'integer',
             'average_rating' => 'decimal:2',
             'reviews_count' => 'integer',
         ];

@@ -127,7 +127,7 @@ it('keeps generated variants tenant-isolated', function (): void {
     // Tenant B sees only its own definitions/options and its own variants
     expect($resultB)->toBe(['created' => 2, 'skipped' => 0]);
     expect($productB->variants()->count())->toBe(2);
-    expect(app(BulkVariantGeneratorService::class)::MAX_COMBINATIONS)->toBe(36);
+    expect(app(BulkVariantGeneratorService::class)::MAX_COMBINATIONS)->toBe(100);
 
     app(Tenancy::class)->set($tenantA);
     expect($productA->variants()->count())->toBe(2);

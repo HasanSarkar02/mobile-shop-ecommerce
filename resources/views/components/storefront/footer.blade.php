@@ -65,6 +65,10 @@
                         <a href="{{ route('storefront.faq') }}"
                             class="text-sm text-gray-600 dark:text-gray-400 hover:text-[var(--brand)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] rounded">{{ __('FAQ') }}</a>
                     </li>
+                    <li>
+                        <a href="{{ route('storefront.blog') }}"
+                            class="text-sm text-gray-600 dark:text-gray-400 hover:text-[var(--brand)] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] rounded">{{ __('Blog') }}</a>
+                    </li>
                     @if ($hasPreorders ?? false)
                         <li>
                             <a href="{{ route('storefront.preorders') }}"

@@ -22,7 +22,7 @@ class BlogController extends Controller
 
     public function show(string $slug)
     {
-        $post = BlogPost::query()->where('slug', $slug)->where('status', 'published')->firstOrFail();
+        $post = BlogPost::query()->where('slug', $slug)->where('status', 'published')->where('published_at', '<=', now())->firstOrFail();
 
         return view('storefront.blog.show', compact('post'));
     }

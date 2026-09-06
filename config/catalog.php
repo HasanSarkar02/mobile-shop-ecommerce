@@ -8,4 +8,5 @@ return [
     'wishlist_token_days' => env('WISHLIST_TOKEN_DAYS', 60),
     'recently_viewed_limit' => 20,
     'compare_limit' => 4,
+    'variant_max_combinations' => env('VARIANT_MAX_COMBINATIONS', 100),
 ];

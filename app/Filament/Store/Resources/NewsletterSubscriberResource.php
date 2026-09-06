@@ -34,6 +34,8 @@ class NewsletterSubscriberResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Marketing';
 
+    protected static ?int $navigationSort = 1;
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([

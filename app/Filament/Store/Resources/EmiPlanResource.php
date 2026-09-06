@@ -26,6 +26,8 @@ class EmiPlanResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';
 
+    protected static ?int $navigationSort = 5;
+
     protected static ?string $navigationLabel = 'EMI Plans';
 
     public static function form(Schema $schema): Schema

@@ -26,7 +26,9 @@ class AnnouncementResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-speaker-wave';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Merchandising';
+    protected static string|UnitEnum|null $navigationGroup = 'Storefront';
+
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

@@ -11,6 +11,8 @@ enum LinkType: string
     case Brand = 'brand';
     case Collection = 'collection';
     case StaticPage = 'static_page';
+    case Blog = 'blog';
+    case BlogIndex = 'blog_index';
     case External = 'external';
     case None = 'none';
 
@@ -22,6 +24,8 @@ enum LinkType: string
             self::Brand => 'Brand',
             self::Collection => 'Collection',
             self::StaticPage => 'Static Page',
+            self::Blog => 'Blog Post',
+            self::BlogIndex => 'Blog Index',
             self::External => 'External URL',
             self::None => 'No Link',
         };

@@ -8,6 +8,7 @@ use App\Filament\Store\Concerns\RestrictsToOwner;
 use App\Filament\Store\Resources\StaffResource\Pages;
 use App\Models\User;
 use BackedEnum;
+use UnitEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
@@ -24,7 +25,11 @@ class StaffResource extends Resource
 
     protected static ?string $model = User::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-user-group';
+
+    protected static string|UnitEnum|null $navigationGroup = 'System';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Staff';
 

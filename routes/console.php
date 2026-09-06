@@ -46,9 +46,27 @@ Schedule::command(PingSchedulerHeartbeat::class)
     ->withoutOverlapping()
     ->onOneServer();
 
+use App\Console\Commands\PurgeDeletedTenants;
 use App\Console\Commands\RefreshCourierStatus;
+use App\Console\Commands\ReleaseExpiredDeletions;
+use App\Console\Commands\SuspendInactiveTenants;
 
 Schedule::command(RefreshCourierStatus::class)
     ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command(ReleaseExpiredDeletions::class)
+    ->daily()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command(SuspendInactiveTenants::class)
+    ->daily()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command(PurgeDeletedTenants::class)
+    ->daily()
     ->withoutOverlapping()
     ->onOneServer();

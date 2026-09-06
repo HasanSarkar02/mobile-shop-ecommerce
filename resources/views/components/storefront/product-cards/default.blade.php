@@ -20,7 +20,7 @@
                 @if ($variant['is_preorder'] ?? false)
                     <span
                         class="rounded-md bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold leading-none tracking-wide text-white shadow-sm">
-                        PRE-ORDER
+                        {{ __('PRE-ORDER') }}
                     </span>
                 @endif
                 @if ($card['is_official_import'])
@@ -48,7 +48,7 @@
                 @if ($variant)
                     <x-ui.price size="sm" :price="$variant['price']" :compare-at-price="$variant['compare_at_price']" />
                 @else
-                    <span class="text-sm text-gray-400 dark:text-gray-500">Price unavailable</span>
+                    <span class="text-sm text-gray-400 dark:text-gray-500">{{ __('Price unavailable') }}</span>
                 @endif
             </div>
 
@@ -79,7 +79,7 @@
                             stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                     </svg>
-                    Addingâ€¦
+                    {{ __('Adding…') }}
                 </span>
             </button>
         @elseif ($cta && $cta['type'] === 'select_options')

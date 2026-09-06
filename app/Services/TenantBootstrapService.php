@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Plan;
+use App\Models\SubdomainTombstone;
 use App\Models\Tenant;
 use App\Models\TenantInvitation;
 use App\Models\User;
@@ -55,6 +56,18 @@ final class TenantBootstrapService
     public function bootstrap(array $data, string $ownerMode = self::OWNER_MODE_EXPLICIT, ?User $invitedBy = null, ?string $initialStatus = null): array
     {
         return DB::transaction(function () use ($data, $ownerMode, $invitedBy, $initialStatus): array {
+            // Enforce tombstone quarantine at bootstrap (race-safe, in transaction)
+            $subdomainLower = strtolower((string) $data['subdomain']);
+            $tombstone = SubdomainTombstone::where('subdomain', $subdomainLower)->first();
+            if ($tombstone) {
+                if ($tombstone->isPermanent()) {
+                    throw ValidationException::withMessages(['subdomain' => 'This subdomain is permanently reserved and cannot be reused.']);
+                }
+                if ($tombstone->isQuarantined()) {
+                    throw ValidationException::withMessages(['subdomain' => 'This subdomain is quarantined until '.$tombstone->quarantine_until->format('Y-m-d').' and cannot be reused yet.']);
+                }
+            }
+
             $plan = $this->resolveActivePlan($data['plan']);
             $isTrial = $plan->slug === 'trial';
 

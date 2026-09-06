@@ -14,10 +14,8 @@ window.money = function (cents, currency = 'BDT', locale = null, withTrailingZer
         maximumFractionDigits: withTrailingZeros ? 2 : 0,
     };
     let formatted = new Intl.NumberFormat(tag, opts).format(major);
-    // Keep Bangla digits when locale is bn, otherwise force Western
-    if (loc !== 'bn') {
-        formatted = formatted.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
-    }
+    // Western numerals always
+    formatted = formatted.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
     return symbol + formatted;
 };
 
@@ -50,16 +48,18 @@ window.variantSelectionState = function (variants, dimensions, requiresSelection
             if (!this.current()) return 'invalid';
             return null;
         },
+        t(key) {
+            return (window.translations && window.translations[key]) || key;
+        },
         selectionMessage() {
             if (this.requiresSelection && !this.selectionComplete()) {
                 const missing = this.missingDimensions().map((d) => d.label);
-                if (missing.length === 0) return 'Please select all product options';
-                return 'Please select ' + missing.join(' and ');
+                if (missing.length === 0) return this.t('Please select all product options');
+                return this.t('Please select ') + missing.join(' and ');
             }
-            return 'This combination of options is not available.';
+            return this.t('This combination of options is not available.');
         },
         current() {
-            if (this.unavailable) return null;
             if (this.requiresSelection) {
                 if (!this.selectionComplete()) return null;
                 const matches = this.activeVariants().filter((v) =>
@@ -86,20 +86,21 @@ window.variantSelectionState = function (variants, dimensions, requiresSelection
             return [...new Set(this.activeVariants().map((v) => v.dims[code]).filter((v) => v !== undefined && v !== null))];
         },
         formatPrice(cents) {
-            return window.money(cents, 'BDT', document.documentElement.lang || 'en', true);
+            const cur = document.body?.dataset?.currency || 'BDT';
+            return window.money(cents, cur, document.documentElement.lang || 'en', true);
         },
         ctaLabel() {
             const v = this.current();
             if (!v) {
-                if (this.requiresSelection && !this.selectionComplete()) return 'Select Options';
-                return 'Unavailable';
+                if (this.requiresSelection && !this.selectionComplete()) return this.t('Select Options');
+                return this.t('Unavailable');
             }
             if (!v.purchasable) {
-                return v.purchase_state === 'discontinued' ? 'Discontinued' : 'Out of Stock';
+                return v.purchase_state === 'discontinued' ? this.t('Discontinued') : this.t('Out of Stock');
             }
-            if (v.purchase_state === 'preorder') return 'Pre-Order Now';
-            if (v.purchase_state === 'out_of_stock' && v.backorder_policy === 'notify') return 'Backorder Now';
-            return 'Add to Cart';
+            if (v.purchase_state === 'preorder') return this.t('Pre-Order Now');
+            if (v.purchase_state === 'out_of_stock' && v.backorder_policy === 'notify') return this.t('Backorder Now');
+            return this.t('Add to Cart');
         },
     };
 };

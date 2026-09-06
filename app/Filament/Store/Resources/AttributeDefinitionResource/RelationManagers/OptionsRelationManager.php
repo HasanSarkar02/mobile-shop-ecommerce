@@ -12,6 +12,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class OptionsRelationManager extends RelationManager
 {
@@ -29,6 +30,7 @@ class OptionsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => tenant() !== null ? $query->where($query->getModel()->getTable().'.tenant_id', tenant()->id) : $query)
             ->recordTitleAttribute('label')
             ->columns([
                 TextColumn::make('label'),

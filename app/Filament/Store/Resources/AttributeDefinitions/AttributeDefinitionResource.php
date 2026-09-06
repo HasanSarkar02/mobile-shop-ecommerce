@@ -5,6 +5,7 @@ namespace App\Filament\Store\Resources\AttributeDefinitions;
 use App\Filament\Store\Resources\AttributeDefinitions\Pages\CreateAttributeDefinition;
 use App\Filament\Store\Resources\AttributeDefinitions\Pages\EditAttributeDefinition;
 use App\Filament\Store\Resources\AttributeDefinitions\Pages\ListAttributeDefinitions;
+use App\Filament\Store\Resources\AttributeDefinitions\RelationManagers\OptionsRelationManager;
 use App\Filament\Store\Resources\AttributeDefinitions\Schemas\AttributeDefinitionForm;
 use App\Filament\Store\Resources\AttributeDefinitions\Tables\AttributeDefinitionsTable;
 use App\Models\AttributeDefinition;
@@ -13,12 +14,17 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class AttributeDefinitionResource extends Resource
 {
     protected static ?string $model = AttributeDefinition::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Catalog';
+
+    protected static ?int $navigationSort = 7;
 
     protected static ?string $recordTitleAttribute = 'label';
 
@@ -35,7 +41,7 @@ class AttributeDefinitionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            OptionsRelationManager::class,
         ];
     }
 

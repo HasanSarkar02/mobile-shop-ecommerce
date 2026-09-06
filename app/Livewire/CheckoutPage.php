@@ -200,6 +200,15 @@ class CheckoutPage extends Component
                 return;
             }
 
+            // Validate shipping & payment for all users
+            $this->validate([
+                'shippingMethodId' => ['required', 'integer', 'exists:shipping_methods,id'],
+                'paymentMethodId' => ['required', 'integer', 'exists:payment_methods,id'],
+            ], [
+                'shippingMethodId.required' => __('Please select a shipping method.'),
+                'paymentMethodId.required' => __('Please select a payment method.'),
+            ]);
+
             $orderData = [
                 'shipping_method_id' => $this->shippingMethodId,
                 'payment_method_id' => $this->paymentMethodId,
@@ -209,6 +218,12 @@ class CheckoutPage extends Component
             ];
 
             if ($customer) {
+                $this->validate([
+                    'selectedAddressId' => ['required', 'integer', 'exists:addresses,id'],
+                ], [
+                    'selectedAddressId.required' => __('Please select a delivery address.'),
+                ]);
+
                 $address = Address::query()->findOrFail($this->selectedAddressId);
                 abort_unless($address->customer_id === $customer->id, 403);
 
@@ -226,16 +241,26 @@ class CheckoutPage extends Component
                 );
             } else {
                 $this->validate([
-                    'guestName' => ['required', 'string'],
-                    'guestEmail' => ['required', 'email'],
-                    'guestPhone' => ['required', 'string'],
-                    'guestAddress.recipient_name' => ['required', 'string'],
-                    'guestAddress.phone' => ['required', 'string'],
-                    'guestAddress.address_line_1' => ['required', 'string'],
+                    'guestName' => ['required', 'string', 'min:2'],
+                    'guestEmail' => ['nullable', 'email'],
+                    'guestPhone' => ['required', 'string', 'min:11'],
+                    'guestAddress.recipient_name' => ['required', 'string', 'min:2'],
+                    'guestAddress.phone' => ['required', 'string', 'min:11'],
+                    'guestAddress.address_line_1' => ['required', 'string', 'min:5'],
                     'guestAddress.city' => ['required', 'string'],
                     'bd_division_id' => ['required', 'integer', 'exists:bd_divisions,id'],
                     'bd_district_id' => ['required', 'integer', 'exists:bd_districts,id'],
                     'bd_upazila_id' => ['nullable', 'integer', 'exists:bd_upazilas,id'],
+                ], [
+                    'guestName.required' => __('Full name is required.'),
+                    'guestEmail.email' => __('Please enter a valid email address.'),
+                    'guestPhone.required' => __('Phone number is required.'),
+                    'guestAddress.recipient_name.required' => __('Recipient name is required.'),
+                    'guestAddress.phone.required' => __('Delivery phone is required.'),
+                    'guestAddress.address_line_1.required' => __('Address is required.'),
+                    'guestAddress.city.required' => __('City is required.'),
+                    'bd_division_id.required' => __('Please select your division.'),
+                    'bd_district_id.required' => __('Please select your district.'),
                 ]);
 
                 $orderData['guest_name'] = $this->guestName;

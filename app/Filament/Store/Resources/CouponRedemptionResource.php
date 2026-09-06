@@ -16,9 +16,11 @@ class CouponRedemptionResource extends Resource
 {
     protected static ?string $model = CouponRedemption::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-receipt-percent';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-receipt-refund';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Sales';
+    protected static string|UnitEnum|null $navigationGroup = 'Promotions';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationLabel = 'Coupon Redemptions';
 

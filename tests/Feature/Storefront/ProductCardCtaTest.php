@@ -128,7 +128,7 @@ it('routes multi-active-variant products to Select Options', function (): void {
 
     expect($card['requires_selection'])->toBeTrue();
     expect($card['cta']['type'])->toBe('select_options');
-    expect($card['cta']['label'])->toBe('Select Options');
+    expect($card['cta']['label'])->toBe('Add to Cart');
     expect($card['cta']['variant_id'])->toBeNull();
     expect($card['cta']['disabled'])->toBeFalse();
     expect($card['cta']['url'])->toBe(app(TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.product', [$product->translation('en')->slug]));
@@ -158,7 +158,7 @@ it('renders the Select Options link for a multi-active-variant product', functio
 
     $html = view('storefront.partials.product-card', ['card' => ctaView($product)])->render();
 
-    expect($html)->toContain('Select Options');
+    expect($html)->toContain('Add to Cart');
     expect($html)->toContain(app(TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.product', [$product->translation('en')->slug]));
     // F.7: Select Options now opens the variant modal which reuses the shared
     // selector engine and ultimately calls $store.cart.add for the chosen variant.

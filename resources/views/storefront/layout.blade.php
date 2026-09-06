@@ -10,7 +10,7 @@
         }
     </script>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', tenant()->name)</title>
     @if ($theme?->favicon_path)
@@ -19,12 +19,38 @@
     @stack('meta')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @php
+        $jsTranslations = [
+            'Add to Cart' => __('Add to Cart'),
+            'Pre-Order Now' => __('Pre-Order Now'),
+            'Pre-Order' => __('Pre-Order'),
+            'Select Options' => __('Select Options'),
+            'Out of Stock' => __('Out of Stock'),
+            'Out of stock' => __('Out of stock'),
+            'In Stock' => __('In Stock'),
+            'Low Stock' => __('Low Stock'),
+            'Discontinued' => __('Discontinued'),
+            'Backorder' => __('Backorder'),
+            'Backorder Now' => __('Backorder Now'),
+            'Buy Now' => __('Buy Now'),
+            'Unavailable' => __('Unavailable'),
+            'Adding…' => __('Adding…'),
+            'Adding...' => __('Adding...'),
+            'Please select all product options' => __('Please select all product options'),
+            'This combination of options is not available.' => __('This combination of options is not available.'),
+            'Please select ' => __('Please select '),
+        ];
+    @endphp
+    <script>
+        window.translations = @json($jsTranslations);
+    </script>
     @livewireStyles
 </head>
 
-<body class="bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 antialiased pb-16 lg:pb-0"
+<body class="bg-[#FAFAFA] text-gray-900 dark:bg-gray-950 dark:text-gray-100 antialiased pb-16 lg:pb-0"
     data-wishlist-toggle="{{ route('storefront.wishlist.toggle') }}"
-    data-cart-store="{{ route('storefront.cart.store') }}">
+    data-cart-store="{{ route('storefront.cart.store') }}"
+    data-currency="{{ tenant()->currency ?? 'BDT' }}">
     @if (session()->has('support_mode'))
         @php $isWrite = session('support_mode.is_write_enabled', false); @endphp
         <div

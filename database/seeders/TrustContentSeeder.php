@@ -21,6 +21,7 @@ class TrustContentSeeder extends Seeder
 {
     public function run(?Tenant $tenant = null): void
     {
+        $previous = tenant();
         $tenants = $tenant !== null ? collect([$tenant]) : Tenant::query()->get();
 
         $tenants->each(function (Tenant $tenant): void {
@@ -31,7 +32,7 @@ class TrustContentSeeder extends Seeder
             $this->seedFaqs($tenant);
         });
 
-        app(Tenancy::class)->set(null);
+        app(Tenancy::class)->set($previous);
     }
 
     private function seedPolicies(Tenant $tenant): void

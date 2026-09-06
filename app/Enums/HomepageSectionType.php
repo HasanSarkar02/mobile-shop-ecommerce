@@ -12,6 +12,7 @@ enum HomepageSectionType: string
     case CustomHtml = 'custom_html';
     case TrustBadges = 'trust_badges';
     case NewsletterCta = 'newsletter_cta';
+    case BlogGrid = 'blog_grid';
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum HomepageSectionType: string
             self::CustomHtml => 'Custom HTML',
             self::TrustBadges => 'Trust Badges',
             self::NewsletterCta => 'Newsletter Signup',
+            self::BlogGrid => 'Blog Grid',
         };
     }
 }

@@ -22,6 +22,7 @@ class CreateTenant extends CreateRecord
         [$tenant] = app(TenantBootstrapService::class)->bootstrap([
             'name' => $data['name'],
             'subdomain' => $data['subdomain'],
+            'industry' => $data['industry'] ?? null,
             'plan' => $data['plan'],
             'contact_email' => $data['contact_email'] ?? null,
             'contact_phone' => $data['contact_phone'] ?? null,

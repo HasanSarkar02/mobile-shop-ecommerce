@@ -16,7 +16,7 @@ class OrderItem extends Model
     protected $fillable = [
         'tenant_id',
         'order_id', 'order_fulfillment_id', 'product_variant_id', 'product_name_snapshot', 'variant_sku_snapshot',
-        'unit_price', 'unit_cost_price', 'quantity', 'line_total', 'line_cost', 'fulfillment_strategy', 'expected_available_at',
+        'unit_price', 'unit_cost_price', 'quantity', 'line_total', 'line_cost', 'unit_weight_grams', 'line_weight_grams', 'fulfillment_strategy', 'expected_available_at',
     ];
 
     protected function casts(): array
@@ -27,6 +27,8 @@ class OrderItem extends Model
             'quantity' => 'decimal:3',
             'line_total' => 'integer',
             'line_cost' => 'integer',
+            'unit_weight_grams' => 'integer',
+            'line_weight_grams' => 'integer',
             'expected_available_at' => 'datetime',
         ];
     }

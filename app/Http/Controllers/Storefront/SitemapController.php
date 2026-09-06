@@ -28,7 +28,7 @@ class SitemapController extends Controller
             $brands = Brand::query()->get();
             $collections = Collection::query()->where('is_active', true)->get();
             $pages = StaticPage::query()->where('status', 'published')->get();
-            $posts = BlogPost::query()->where('status', 'published')->get();
+            $posts = BlogPost::query()->where('status', 'published')->where('published_at', '<=', now())->get();
 
             return view('storefront.sitemap', compact(
                 'products', 'categories', 'brands', 'collections', 'pages', 'posts', 'urls', 'tenant',

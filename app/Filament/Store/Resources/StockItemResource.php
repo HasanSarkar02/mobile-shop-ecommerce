@@ -34,6 +34,8 @@ class StockItemResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Inventory';
 
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $navigationLabel = 'Stock';
 
     public static function table(Table $table): Table

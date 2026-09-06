@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * @property string $name
@@ -19,10 +20,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Tenant extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'name', 'subdomain', 'status', 'plan',
         'currency', 'locales', 'preferred_locale', 'industry', 'contact_email', 'contact_phone',
+        'deletion_requested_at', 'deletion_scheduled_at', 'deletion_reason', 'deleted_by_id', 'subdomain_original',
     ];
 
     protected function casts(): array
@@ -31,6 +34,9 @@ class Tenant extends Model
             'locales' => 'array',
             'preferred_locale' => 'string',
             'industry' => TenantIndustry::class,
+            'deletion_requested_at' => 'datetime',
+            'deletion_scheduled_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 
@@ -131,8 +137,23 @@ class Tenant extends Model
         return $this->belongsTo(User::class, 'primary_owner_id');
     }
 
+    public function deletedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'deleted_by_id');
+    }
+
+    public function tombstones(): HasMany
+    {
+        return $this->hasMany(SubdomainTombstone::class);
+    }
+
+    public function isPendingDeletion(): bool
+    {
+        return $this->status === 'pending_deletion';
+    }
+
     public function isActive(): bool
     {
-        return in_array($this->status, ['trial', 'active'], true);
+        return in_array($this->status, ['trial', 'active', 'pending_deletion'], true);
     }
 }

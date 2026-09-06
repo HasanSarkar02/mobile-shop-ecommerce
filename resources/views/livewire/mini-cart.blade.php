@@ -1,7 +1,7 @@
 <div x-data="{ open: false }" class="relative">
     @if ($variant === 'badge')
         <a href="{{ route('storefront.cart') }}"
-            class="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
+            class="relative flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[11px] font-medium text-gray-500 dark:text-gray-400"
             aria-label="Cart">
             <span class="relative">
                 <x-ui.icon name="cart" class="w-6 h-6" />

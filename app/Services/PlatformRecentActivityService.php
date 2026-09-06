@@ -91,7 +91,7 @@ class PlatformRecentActivityService
                     'label' => $this->eventLabel($type, $event->getRelation('toPlan')),
                     'actor' => $this->eventActor($event),
                     'note' => $this->nullableString($event->getAttribute('note')),
-                    'url' => TenantResource::getUrl('view', ['record' => $event->getAttribute('tenant_id')]),
+                    'url' => $this->safeTenantUrl((int) $event->getAttribute('tenant_id')),
                 ];
             })
             ->values()
@@ -131,7 +131,7 @@ class PlatformRecentActivityService
                     'label' => $this->decisionLabel($approved, $requestedPlanId, $planNames),
                     'actor' => $this->actorName($activity->getAttribute('causer_id'), $activity->getRelation('causer')),
                     'note' => $this->rejectionReason($approved, $requestId, $reasons),
-                    'url' => $tenantId > 0 ? TenantResource::getUrl('view', ['record' => $tenantId]) : null,
+                    'url' => $this->safeTenantUrl($tenantId),
                 ];
             })
             ->values()
@@ -169,7 +169,7 @@ class PlatformRecentActivityService
                     'label' => $hostname !== null ? $hostname.' '.$this->domainVerb($event) : $this->domainBadge($event),
                     'actor' => $this->actorName($activity->getAttribute('causer_id'), $activity->getRelation('causer')),
                     'note' => $this->safeNote($properties),
-                    'url' => $subject instanceof Domain ? DomainResource::getUrl('view', ['record' => $subject]) : null,
+                    'url' => $this->safeDomainUrl($subject),
                 ];
             })
             ->values()
@@ -377,5 +377,31 @@ class PlatformRecentActivityService
     private function nullableString(mixed $value): ?string
     {
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    private function safeTenantUrl(int $tenantId): ?string
+    {
+        if ($tenantId <= 0) {
+            return null;
+        }
+
+        try {
+            return TenantResource::getUrl('view', ['record' => $tenantId], panel: 'platform');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function safeDomainUrl(mixed $subject): ?string
+    {
+        if (! $subject instanceof Domain) {
+            return null;
+        }
+
+        try {
+            return DomainResource::getUrl('view', ['record' => $subject], panel: 'platform');
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

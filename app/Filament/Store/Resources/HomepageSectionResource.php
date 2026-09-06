@@ -19,6 +19,7 @@ use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -34,9 +35,11 @@ class HomepageSectionResource extends Resource
 {
     protected static ?string $model = HomepageSection::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-photo';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Merchandising';
+    protected static string|UnitEnum|null $navigationGroup = 'Storefront';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $navigationLabel = 'Homepage Sections';
 
@@ -122,6 +125,52 @@ class HomepageSectionResource extends Resource
                 ->rows(6)
                 ->helperText('Sanitized before rendering on the storefront.')
                 ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::CustomHtml->value),
+
+            Repeater::make('config_items')
+                ->label('Trust badges')
+                ->schema([
+                    Select::make('icon')
+                        ->label('Icon')
+                        ->options([
+                            'shield' => 'Shield',
+                            'truck' => 'Truck',
+                            'card' => 'Card',
+                            'refresh' => 'Refresh',
+                            'leaf' => 'Leaf',
+                            'wrench' => 'Wrench',
+                            'grid' => 'Grid',
+                            'phone' => 'Phone',
+                            'cart' => 'Cart',
+                            'user' => 'User',
+                        ])
+                        ->required()
+                        ->default('shield'),
+                    TextInput::make('label')
+                        ->label('Label')
+                        ->required()
+                        ->maxLength(40),
+                    TextInput::make('sub')
+                        ->label('Subtext')
+                        ->required()
+                        ->maxLength(60),
+                ])
+                ->columns(3)
+                ->reorderable()
+                ->collapsible()
+                ->maxItems(4)
+                ->defaultItems(0)
+                ->helperText('Up to 4 badges. Leave empty to use the industry default.')
+                ->visible(fn (Get $get): bool => $get('type') === HomepageSectionType::TrustBadges->value),
+
+            Select::make('config_presentation_rows')
+                ->label('Rows')
+                ->options([1 => 'Single Row', 2 => 'Two Rows'])
+                ->default(1)
+                ->visible(fn (Get $get): bool => in_array($get('type'), [
+                    HomepageSectionType::ProductGrid->value,
+                    HomepageSectionType::CategoryGrid->value,
+                ]))
+                ->helperText('Single row scrolls horizontally. Two rows shows a denser layout on desktop, still 2 columns on mobile.'),
 
             Select::make('visibility')
                 ->options(collect(Visibility::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))

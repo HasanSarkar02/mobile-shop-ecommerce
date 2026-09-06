@@ -10,12 +10,12 @@
             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0"
             x-transition:leave-end="-translate-x-full" @keydown.escape.window="$store.ui.mobileMenuOpen = false"
             class="absolute left-0 top-0 h-full w-[85%] max-w-sm bg-white dark:bg-gray-950 shadow-elevated overflow-y-auto">
-            <div class="flex items-center justify-between h-16 px-4 border-b border-gray-100 dark:border-gray-800">
+            <div class="flex items-center justify-between h-14 px-3 border-b border-gray-100 dark:border-gray-800">
                 @if ($theme?->logo_path)
                     <img src="{{ asset('storage/' . $theme->logo_path) }}" alt="{{ tenant()->name }}"
-                        class="h-7 w-auto">
+                        class="h-7 w-auto max-w-[140px] object-contain">
                 @else
-                    <span class="text-base font-semibold tracking-tight">{{ tenant()->name }}</span>
+                    <span class="text-sm font-semibold tracking-tight">{{ tenant()->name }}</span>
                 @endif
                 <button type="button" @click="$store.ui.mobileMenuOpen = false"
                     class="p-2 -mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
@@ -81,6 +81,29 @@
                     <x-storefront.theme-toggle :show-label="true"
                         class="w-full flex items-center px-2 py-3 rounded-lg text-[15px] font-medium text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-900 transition" />
                 </div>
+                @php $locales = tenant()?->enabledLocales() ?? ['en']; $currentLocale = app()->getLocale(); @endphp
+                @if (count($locales) > 1)
+                    <div class="border-t border-gray-100 dark:border-gray-800 px-4 py-3">
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 flex items-center gap-1.5"><x-ui.icon name="globe" class="w-4 h-4" /> Language</p>
+                        <div class="flex gap-2">
+                            @foreach (['en' => 'English', 'bn' => 'বাংলা'] as $code => $native)
+                                @if (in_array($code, $locales, true))
+                                    <form method="POST" action="{{ route('storefront.locale.switch', ['locale' => $code]) }}" class="flex-1">
+                                        @csrf
+                                        <input type="hidden" name="redirect_to" value="{{ request()->fullUrl() }}">
+                                        <button type="submit"
+                                            class="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium border transition {{ $currentLocale === $code ? 'bg-[var(--brand)] text-white border-[var(--brand)]' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-[var(--brand)]' }}">
+                                            {{ $code === 'en' ? 'EN' : 'বাংলা' }}
+                                            @if ($currentLocale === $code)
+                                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                            @endif
+                                        </button>
+                                    </form>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

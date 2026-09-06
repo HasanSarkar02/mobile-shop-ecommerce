@@ -68,7 +68,7 @@
                 <header class="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-gray-800 p-5">
                     <div class="min-w-0">
                         <h2 class="text-base font-semibold leading-tight truncate">{{ $productName }}</h2>
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose your options</p>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('Choose your options') }}</p>
                     </div>
                     <button type="button" @click="close()" aria-label="Close"
                         class="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]">
@@ -121,12 +121,12 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                             </svg>
-                            Adding…
+                            {{ __('Adding…') }}
                         </span>
                     </x-ui.button>
 
                     <a href="{{ $productUrl }}" class="text-center text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-[var(--brand)]">
-                        View full details →
+                        {{ __('View full details') }} →
                     </a>
                 </footer>
             </div>

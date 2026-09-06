@@ -4,6 +4,7 @@
     'dimmed' => false,
     'gallery' => [],
     'hoverEnabled' => false,
+    'aspect' => 'aspect-square',
 ])
 
 {{-- Shared product-image primitive (F.4 + F.6): skeleton until decode,
@@ -19,7 +20,7 @@
     // Limit gallery to 5 server-side already, but double-guard here.
     $gallery = $hasGallery ? array_values(array_slice($gallery, 0, 5)) : [];
 @endphp
-<div class="relative aspect-square overflow-hidden bg-gray-50 dark:bg-gray-800/60"
+<div class="relative {{ $aspect }} overflow-hidden bg-gray-50 dark:bg-gray-800/60"
     x-data="{
         imgLoaded: false,
         imgError: false,

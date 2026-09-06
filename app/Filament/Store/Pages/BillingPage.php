@@ -21,9 +21,11 @@ class BillingPage extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Settings';
+    protected static string|UnitEnum|null $navigationGroup = 'System';
 
     protected static ?string $navigationLabel = 'Billing & Plan';
+
+    protected static ?int $navigationSort = 8;
 
     protected string $view = 'filament.store.pages.billing';
 

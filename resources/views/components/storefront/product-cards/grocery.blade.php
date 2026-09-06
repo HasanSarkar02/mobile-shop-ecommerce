@@ -30,7 +30,7 @@
     }
 @endphp
 
-<div class="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900">
+<div class="group relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition hover:shadow-md dark:border-gray-800 dark:bg-gray-900">
     @if ($discount)
         <div class="pointer-events-none absolute left-2 top-2 z-[2] rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-bold leading-none text-white">-{{ $locale==='bn' ? strtr($discount, ['0'=>'০','1'=>'১','2'=>'২','3'=>'৩','4'=>'৪','5'=>'৫','6'=>'৬','7'=>'৭','8'=>'৮','9'=>'৯']) : $discount }}{{ __('% Off') }}</div>
     @endif
@@ -45,14 +45,14 @@
             @endif
         </div>
 
-        <div class="flex flex-col p-2">
+        <div class="flex flex-1 flex-col p-2">
             <h3 class="line-clamp-2 min-h-[2.2rem] text-[13px] font-medium leading-tight text-gray-900 dark:text-gray-100">
                 {{ $card['name'] }}
             </h3>
 
             <x-storefront.product-rating :rating="$rating" :count="$reviews" />
 
-            <div class="mt-1 flex flex-wrap items-baseline gap-1 leading-none">
+            <div class="mt-1 flex flex-wrap items-baseline gap-1 leading-none min-h-[18px]">
                 @if ($variant)
                     <span class="text-[15px] font-bold leading-none text-red-600">{{ money_without_trailing_zeros((int) $variant['price']) }}</span>
                     @if ($variant['compare_at_price'] && $variant['compare_at_price'] > $variant['price'])
@@ -69,12 +69,14 @@
                 </p>
             @endif
 
-            @if ($hasFreeDelivery)
-                <p class="mt-1 flex items-center gap-1 text-[11px] font-medium text-green-700 dark:text-green-400">
-                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
-                    {{ __('Free Delivery') }}
-                </p>
-            @endif
+            <div class="mt-1 h-[16px] flex items-center">
+                @if ($hasFreeDelivery)
+                    <p class="flex items-center gap-1 text-[11px] font-medium text-green-700 dark:text-green-400 leading-none">
+                        <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/></svg>
+                        {{ __('Free Delivery') }}
+                    </p>
+                @endif
+            </div>
         </div>
     </a>
 

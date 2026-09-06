@@ -38,10 +38,25 @@ class StorePanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->login()
             ->profile()
+            ->brandName(fn () => tenant()?->name ?? config('app.name', 'Store'))
+            ->brandLogo(fn () => ($path = tenant()?->themeSettings?->logo_path) ? asset('storage/' . $path) : null)
+            ->brandLogoHeight('2rem')
+            ->darkModeBrandLogo(fn () => ($path = tenant()?->themeSettings?->logo_path) ? asset('storage/' . $path) : null)
             ->colors(['primary' => '#16a34a'])
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')
             ->discoverWidgets(in: app_path('Filament/Store/Widgets'), for: 'App\\Filament\\Store\\Widgets')
+            ->navigationGroups([
+                'Sales',
+                'Catalog',
+                'Inventory',
+                'Storefront',
+                'Shipping',
+                'Promotions',
+                'Content',
+                'Marketing',
+                'System',
+            ])
             ->widgets([
                 FinancialOverviewWidget::class,
                 StockValuationWidget::class,

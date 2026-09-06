@@ -25,7 +25,7 @@ class ProductListingService
 
         // Eager-load everything a product card renders (name/slug, image,
         // cheapest variant, EMI) so the grid never triggers per-card queries.
-        $base->with(['translations', 'variants', 'media', 'emiPlans']);
+        $base->with(['translations', 'variants', 'media', 'emiPlans', 'brand']);
 
         $filtered = $base->clone();
         $this->applyStaticFilters($filtered, $filters);
@@ -189,7 +189,7 @@ class ProductListingService
 
     public function bestSelling(int $limit): Collection
     {
-        $query = Product::published()->with(['translations', 'variants', 'media', 'emiPlans']);
+        $query = Product::published()->with(['translations', 'variants', 'media', 'emiPlans', 'brand']);
         $this->applyBestSellingSort($query);
 
         return $query->limit($limit)->get();

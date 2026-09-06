@@ -32,7 +32,10 @@ class ProductVariantObserver
     {
         $this->syncBasePrice($variant);
         StorefrontLayoutComposer::forgetHasPreordersCache((int) $variant->tenant_id);
-        Cache::forget("tenant:{$variant->tenant_id}:catalog:category:{$variant->product->category_id}");
+        $categoryId = $variant->product?->category_id;
+        if ($categoryId !== null) {
+            Cache::forget("tenant:{$variant->tenant_id}:catalog:category:{$categoryId}");
+        }
     }
 
     public function deleted(ProductVariant $variant): void
@@ -40,7 +43,10 @@ class ProductVariantObserver
         $this->removeOrphanedCartItems($variant);
         $this->syncBasePrice($variant);
         StorefrontLayoutComposer::forgetHasPreordersCache((int) $variant->tenant_id);
-        Cache::forget("tenant:{$variant->tenant_id}:catalog:category:{$variant->product->category_id}");
+        $categoryId = $variant->product?->category_id;
+        if ($categoryId !== null) {
+            Cache::forget("tenant:{$variant->tenant_id}:catalog:category:{$categoryId}");
+        }
     }
 
     /**
@@ -58,7 +64,11 @@ class ProductVariantObserver
 
     private function syncBasePrice(ProductVariant $variant): void
     {
-        $activeVariants = $variant->product->variants()->where('is_active', true)->get();
+        $product = $variant->product;
+        if ($product === null) {
+            return;
+        }
+        $activeVariants = $product->variants()->where('is_active', true)->get();
 
         $minPrice = $activeVariants->min('price');
 
@@ -67,7 +77,7 @@ class ProductVariantObserver
             ->filter()
             ->max();
 
-        $variant->product->update([
+        $product->update([
             'base_price' => $minPrice ?? 0,
             'max_discount_percentage' => $maxDiscount,
         ]);

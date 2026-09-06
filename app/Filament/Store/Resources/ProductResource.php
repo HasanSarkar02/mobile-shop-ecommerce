@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Store\Resources;
 
+use App\Enums\ProductStatus;
 use App\Enums\ProductType;
 use App\Filament\Store\Resources\ProductResource\Pages;
 use App\Filament\Store\Resources\ProductResource\RelationManagers\AttributeValuesRelationManager;
@@ -12,7 +13,10 @@ use App\Filament\Store\Resources\ProductResource\RelationManagers\VariantsRelati
 use App\Models\Product;
 use App\Models\ProductTranslation;
 use BackedEnum;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
@@ -21,20 +25,24 @@ use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 use UnitEnum;
 
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-device-phone-mobile';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cube';
 
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';
+
+    protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
@@ -110,7 +118,61 @@ class ProductResource extends Resource
                 TextColumn::make('status')->badge(),
                 TextColumn::make('variants_count')->counts('variants')->label('Variants'),
             ])
-            ->recordActions([EditAction::make(), DeleteAction::make()]);
+            ->recordActions([EditAction::make(), DeleteAction::make()])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    BulkAction::make('publish')
+                        ->label('Publish')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            foreach ($records as $record) {
+                                $record->update(['status' => ProductStatus::Published]);
+                            }
+                            Notification::make()->title($records->count().' product(s) published')->success()->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('draft')
+                        ->label('Move to Draft')
+                        ->icon('heroicon-o-pencil-square')
+                        ->color('gray')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            foreach ($records as $record) {
+                                $record->update(['status' => ProductStatus::Draft]);
+                            }
+                            Notification::make()->title($records->count().' product(s) moved to draft')->success()->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('archive')
+                        ->label('Archive')
+                        ->icon('heroicon-o-archive-box')
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->action(function (Collection $records): void {
+                            foreach ($records as $record) {
+                                $record->update(['status' => ProductStatus::Archived]);
+                            }
+                            Notification::make()->title($records->count().' product(s) archived')->success()->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('toggleFeatured')
+                        ->label('Toggle Featured')
+                        ->icon('heroicon-o-star')
+                        ->color('warning')
+                        ->action(function (Collection $records): void {
+                            foreach ($records as $record) {
+                                if ($record instanceof Product) {
+                                    $record->update(['is_featured' => ! $record->is_featured]);
+                                }
+                            }
+                            Notification::make()->title($records->count().' product(s) toggled featured')->success()->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                ]),
+            ]);
     }
 
     public static function getRelations(): array

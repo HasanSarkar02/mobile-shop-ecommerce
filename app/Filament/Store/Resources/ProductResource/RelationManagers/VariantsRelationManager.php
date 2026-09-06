@@ -13,8 +13,11 @@ use App\Models\AttributeDefinition;
 use App\Models\Product;
 use App\Services\BulkVariantGeneratorService;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
@@ -26,9 +29,13 @@ use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as BaseCollection;
 use LogicException;
 
 class VariantsRelationManager extends RelationManager
@@ -105,19 +112,77 @@ class VariantsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['media', 'stockItems'])->when(tenant() !== null, fn (Builder $q): Builder => $q->where($q->getModel()->getTable().'.tenant_id', tenant()->id)))
             ->recordTitleAttribute('sku')
             ->columns([
-                TextColumn::make('sku'),
+                SpatieMediaLibraryImageColumn::make('images')
+                    ->collection('images')
+                    ->conversion('thumb')
+                    ->label('Thumb')
+                    ->circular()
+                    ->defaultImageUrl(null),
+                TextColumn::make('sku')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('stock_available')
+                    ->label('Stock')
+                    ->getStateUsing(function ($record): string {
+                        // Sum available = quantity - reserved across all locations (decimal-safe display)
+                        if (! $record->relationLoaded('stockItems')) {
+                            $record->load('stockItems');
+                        }
+                        $total = '0.000';
+                        foreach ($record->stockItems as $item) {
+                            $available = method_exists($item, 'availableQuantityDecimal')
+                                ? $item->availableQuantityDecimal()
+                                : bcsub((string) $item->quantity, (string) $item->reserved_quantity, 3);
+                            $total = bcadd($total, $available, 3);
+                        }
+
+                        // Trim trailing zeros for discrete display but keep 3dp for measured
+                        return rtrim(rtrim($total, '0'), '.') ?: '0';
+                    })
+                    ->badge()
+                    ->color(fn (string $state): string => match (true) {
+                        $state === '0' => 'danger',
+                        is_numeric($state) && (float) $state <= 5 => 'warning',
+                        default => 'success',
+                    }),
                 // Native phone columns deprecated in UI (PLAN #48) — dimensions
                 // render from variant-defining EAV attributes on the storefront.
-                TextColumn::make('price')->formatStateUsing(fn (int $state): string => money((int) $state)),
+                TextColumn::make('price')->formatStateUsing(fn (int $state): string => money((int) $state))->sortable(),
                 TextColumn::make('fulfillment_strategy')->badge(),
                 TextColumn::make('inventory_type')->badge(),
                 TextColumn::make('availability')->badge(),
-                TextColumn::make('is_active')->badge(),
+                IconColumn::make('is_active')->label('Active')->boolean(),
             ])
             ->headerActions([$this->generateVariantsAction(), CreateAction::make()])
-            ->recordActions([EditAction::make(), DeleteAction::make()]);
+            ->recordActions([EditAction::make(), DeleteAction::make()])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                    BulkAction::make('activate')
+                        ->label('Activate')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->action(function (BaseCollection $records): void {
+                            $records->each(fn ($r) => $r->update(['is_active' => true]));
+                            Notification::make()->title($records->count().' variant(s) activated')->success()->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('deactivate')
+                        ->label('Deactivate')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(function (BaseCollection $records): void {
+                            $records->each(fn ($r) => $r->update(['is_active' => false]));
+                            Notification::make()->title($records->count().' variant(s) deactivated')->success()->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                ]),
+            ]);
     }
 
     /**
@@ -178,6 +243,7 @@ class VariantsRelationManager extends RelationManager
         return AttributeDefinition::query()
             ->where('is_variant_defining', true)
             ->whereIn('data_type', [AttributeDataType::Select->value, AttributeDataType::MultiSelect->value])
+            ->when(tenant() !== null, fn (Builder $q): Builder => $q->where($q->getModel()->getTable().'.tenant_id', tenant()->id))
             ->orderBy('sort_order')
             ->with('options')
             ->get();

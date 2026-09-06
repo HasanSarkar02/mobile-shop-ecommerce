@@ -15,13 +15,16 @@ use App\Filament\Platform\Support\SubscriptionHistoryPresenter;
 use App\Models\Domain;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\SubdomainTombstone;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Models\User;
 use App\Rules\BangladeshiPhone;
 use App\Rules\ValidSubdomain;
+use App\Support\Tenancy\TenantUrlGenerator;
 use BackedEnum;
 use Carbon\CarbonInterface;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
@@ -34,6 +37,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -96,10 +100,18 @@ class TenantResource extends Resource
                     'active' => 'Active',
                     'suspended' => 'Suspended',
                     'rejected' => 'Rejected',
+                    'pending_deletion' => 'Pending Deletion',
+                    'deleted' => 'Deleted',
                 ])
                 ->disabled()
                 ->dehydrated(false)
                 ->hiddenOn('create'),
+            TextInput::make('deletion_scheduled_at')
+                ->label('Deletion scheduled at')
+                ->hiddenOn('create')
+                ->disabled()
+                ->dehydrated(false)
+                ->visible(fn (?Tenant $record): bool => $record && $record->isPendingDeletion()),
             TextInput::make('contact_email')->email(),
             TextInput::make('contact_phone'),
         ]);
@@ -123,9 +135,21 @@ class TenantResource extends Resource
                         'active' => 'Active',
                         'suspended' => 'Suspended',
                         'rejected' => 'Rejected',
+                        'pending_deletion' => 'Pending Deletion',
+                        'deleted' => 'Deleted',
                     ]),
+                TrashedFilter::make(),
             ])
-            ->recordActions([ViewAction::make(), EditAction::make()])
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make(),
+                Action::make('viewStore')
+                    ->label('View Store')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (Tenant $record): string => app(TenantUrlGenerator::class)->storefront($record))
+                    ->openUrlInNewTab()
+                    ->visible(fn (Tenant $record): bool => $record->isActive()),
+            ])
             ->toolbarActions([]);
     }
 
@@ -161,8 +185,31 @@ class TenantResource extends Resource
                             ->badge()
                             ->state(fn (Tenant $record): string => $record->preferredLocale())
                             ->placeholder('—'),
+                        TextEntry::make('subdomain_original')->label('Original subdomain')->placeholder('—')->visible(fn (Tenant $r): bool => filled($r->subdomain_original)),
+                        TextEntry::make('deletion_scheduled_at')->label('Deletion scheduled')->dateTime()->placeholder('—')->visible(fn (Tenant $r): bool => $r->isPendingDeletion()),
+                        TextEntry::make('deleted_at')->label('Deleted at')->dateTime()->placeholder('—')->visible(fn (Tenant $r): bool => $r->trashed()),
                     ]),
                 ]),
+            Section::make('Deletion & Quarantine')
+                ->schema([
+                    TextEntry::make('deletion_reason')->label('Deletion reason')->placeholder('—')->visible(fn (Tenant $r): bool => filled($r->deletion_reason) || $r->isPendingDeletion() || $r->trashed()),
+                    TextEntry::make('tombstone')->label('Tombstone quarantine')->state(function (Tenant $record): string {
+                        $tomb = SubdomainTombstone::where('tenant_id', $record->id)->latest()->first()
+                            ?? SubdomainTombstone::where('subdomain', strtolower($record->subdomain_original ?? $record->subdomain))->first();
+                        if (! $tomb) {
+                            return '—';
+                        }
+                        if ($tomb->isPermanent()) {
+                            return 'Permanent ('.$tomb->reason->value.')';
+                        }
+                        if ($tomb->isQuarantined()) {
+                            return 'Until '.$tomb->quarantine_until->toDateTimeString().' ('.$tomb->reason->value.')';
+                        }
+
+                        return 'Expired — released';
+                    })->visible(fn (Tenant $r): bool => $r->trashed() || $r->isPendingDeletion()),
+                ])
+                ->visible(fn (Tenant $r): bool => $r->isPendingDeletion() || $r->trashed() || filled($r->deletion_reason)),
             Section::make('Subscription')
                 ->schema([
                     Grid::make(3)->schema([

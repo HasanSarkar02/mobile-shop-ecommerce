@@ -1,16 +1,14 @@
 @extends('storefront.layout')
 
-@section('title', ($post->meta_title ?: $post->title) . ' - ' . tenant()->name)
+@section('title', \App\Support\Seo\SeoData::fromBlogPost($post)->title)
 
 @section('content')
     @php
         $canonicalBlogUrl = app(\App\Support\Tenancy\TenantUrlGenerator::class)
             ->canonicalRoute(tenant(), 'storefront.blog.show', [$post->slug]);
+        $seo = \App\Support\Seo\SeoData::fromBlogPost($post);
     @endphp
-    @include('storefront.partials.seo-meta', [
-        'description' => $post->meta_description ?: $post->excerpt,
-        'canonical' => $canonicalBlogUrl,
-    ])
+    <x-seo.meta :seo="$seo" />
 
     <div class="max-w-3xl mx-auto px-4 py-8 prose dark:prose-invert">
         <h1>{{ $post->title }}</h1>

@@ -194,6 +194,11 @@ class OrderService
                 $upazilaId = isset($addr['bd_upazila_id']) && $addr['bd_upazila_id'] !== '' ? (int) $addr['bd_upazila_id'] : null;
                 $districtId = isset($addr['bd_district_id']) && $addr['bd_district_id'] !== '' ? (int) $addr['bd_district_id'] : null;
                 $divisionId = isset($addr['bd_division_id']) && $addr['bd_division_id'] !== '' ? (int) $addr['bd_division_id'] : null;
+                // Single matched-rate query — zone name for snapshot + free-check; no redundant query.
+                $matchedRate = ($upazilaId !== null || $districtId !== null || $divisionId !== null)
+                    ? $shippingService->getMatchedRate($upazilaId, $districtId, $divisionId)
+                    : null;
+                $deliveryZoneSnapshot = $matchedRate?->name;
                 // Try geo quote only when shipping address has geo info; otherwise trust client-provided/method cost (preserves tests with no address)
                 $geoCost = null;
                 if ($upazilaId !== null || $districtId !== null || $divisionId !== null) {
@@ -221,6 +226,7 @@ class OrderService
                     'currency_code' => $cart->currency_code,
                     'currency_rate' => 1.000000,
                     'shipping_cost' => $shippingCost,
+                    'delivery_zone_snapshot' => $deliveryZoneSnapshot ?? null,
                     'discount_total' => $discountTotal,
                     'tax_total' => $orderData['tax_total'] ?? 0,
                     'shipping_address_id' => $orderData['shipping_address_id'] ?? null,
@@ -279,6 +285,7 @@ class OrderService
                 $variant = $variants->get($item->product_variant_id);
                 $strategy = $variant->fulfillment_strategy->value;
                 $unitCostPrice = (int) ($variant->cost_price ?? 0);
+                $unitWeight = $variant->weight_grams;
 
                 $order->items()->create([
                     'tenant_id' => $order->tenant_id,
@@ -291,6 +298,8 @@ class OrderService
                     'quantity' => (string) $item->quantity,
                     'line_total' => $this->pricing->calculateLineTotal($variant, (string) $item->quantity),
                     'line_cost' => $this->lineTotal($unitCostPrice, (string) $item->quantity),
+                    'unit_weight_grams' => $unitWeight,
+                    'line_weight_grams' => $unitWeight !== null ? (int) round((float) $unitWeight * (float) ((string) $item->quantity)) : null,
                     'fulfillment_strategy' => $strategy,
                     'expected_available_at' => $variant->expected_available_at,
                 ]);
@@ -443,6 +452,7 @@ class OrderService
                 $qty = number_format((float) $line['quantity'], 3, '.', '');
                 $strategy = $variant->fulfillment_strategy->value;
                 $unitCostPrice = (int) ($variant->cost_price ?? 0);
+                $unitWeight = $variant->weight_grams;
 
                 $order->items()->create([
                     'tenant_id' => $order->tenant_id,
@@ -455,6 +465,8 @@ class OrderService
                     'quantity' => $qty,
                     'line_total' => $this->pricing->calculateLineTotal($variant, $qty),
                     'line_cost' => $this->lineTotal($unitCostPrice, $qty),
+                    'unit_weight_grams' => $unitWeight,
+                    'line_weight_grams' => $unitWeight !== null ? (int) round((float) $unitWeight * (float) $qty) : null,
                     'fulfillment_strategy' => $strategy,
                     'expected_available_at' => $variant->expected_available_at,
                 ]);
@@ -1049,6 +1061,7 @@ class OrderService
         DB::transaction(function () use ($order): void {
             $subtotal = (int) $order->items()->sum('line_total');
             $costTotal = (int) $order->items()->sum('line_cost');
+            $totalWeight = (int) round((float) $order->items()->sum('line_weight_grams'));
             $discount = (int) $order->discount_total;
             $shipping = (int) $order->shipping_cost;
             $tax = (int) $order->tax_total;
@@ -1069,7 +1082,7 @@ class OrderService
                 );
             }
 
-            $order->update(['subtotal' => $subtotal, 'cost_total' => $costTotal, 'grand_total' => $grandTotal]);
+            $order->update(['subtotal' => $subtotal, 'cost_total' => $costTotal, 'total_weight_grams' => $totalWeight, 'grand_total' => $grandTotal]);
         }, 3);
     }
 
@@ -1114,6 +1127,7 @@ class OrderService
 
             $resolvedUnitPrice = $this->pricing->resolveUnitPrice($variant);
             $unitCostPrice = (int) ($variant->cost_price ?? 0);
+            $unitWeight = $variant->weight_grams;
             $item = $order->items()->create([
                 'tenant_id' => $order->tenant_id,
                 'product_variant_id' => $variant->id,
@@ -1124,6 +1138,8 @@ class OrderService
                 'quantity' => $qty,
                 'line_total' => $this->pricing->calculateLineTotal($variant, $qty),
                 'line_cost' => $this->lineTotal($unitCostPrice, $qty),
+                'unit_weight_grams' => $unitWeight,
+                'line_weight_grams' => $unitWeight !== null ? (int) round((float) $unitWeight * (float) $qty) : null,
             ]);
 
             $this->recalculateTotals($order);
@@ -1175,6 +1191,7 @@ class OrderService
                 'quantity' => $qty,
                 'line_total' => $this->lineTotal((int) $item->unit_price, $qty),
                 'line_cost' => $this->lineTotal((int) ($item->unit_cost_price ?? 0), $qty),
+                'line_weight_grams' => $item->unit_weight_grams !== null ? (int) round((float) $item->unit_weight_grams * (float) $qty) : null,
             ]);
 
             $this->recalculateTotals($order);
@@ -1242,12 +1259,19 @@ class OrderService
 
             $this->inventory->reserve($newVariant, $quantity, null, $order);
 
+            $unitCostPrice = (int) ($newVariant->cost_price ?? 0);
+            $unitWeight = $newVariant->weight_grams;
+
             $item->update([
                 'product_variant_id' => $newVariant->id,
                 'product_name_snapshot' => $newVariant->product?->name ?? $newVariant->sku,
                 'variant_sku_snapshot' => $newVariant->sku,
                 'unit_price' => $this->pricing->resolveUnitPrice($newVariant),
+                'unit_cost_price' => $unitCostPrice,
                 'line_total' => $this->pricing->calculateLineTotal($newVariant, (string) $quantity),
+                'line_cost' => $this->lineTotal($unitCostPrice, (string) $quantity),
+                'unit_weight_grams' => $unitWeight,
+                'line_weight_grams' => $unitWeight !== null ? (int) round((float) $unitWeight * (float) ((string) $quantity)) : null,
             ]);
 
             $this->recalculateTotals($order);

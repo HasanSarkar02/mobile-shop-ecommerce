@@ -92,7 +92,7 @@
             @else
                 <div class="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-gray-400 dark:text-gray-500">
                     <x-ui.icon name="image" class="h-8 w-8" />
-                    <span class="text-[11px] font-medium">No image</span>
+                    <span class="text-[11px] font-medium">{{ __('No image') }}</span>
                 </div>
             @endif
         </a>
@@ -101,7 +101,7 @@
         <div class="pointer-events-none absolute left-2 top-2 z-[2] flex flex-col items-start gap-1">
             <x-storefront.discount-badge :percentage="$discount" />
             @if (($variant['is_preorder'] ?? false) && $discount === null)
-                <span class="rounded-md bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold leading-none tracking-wide text-white shadow-sm">PRE-ORDER</span>
+                <span class="rounded-md bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold leading-none tracking-wide text-white shadow-sm">{{ __('PRE-ORDER') }}</span>
             @endif
         </div>
 
@@ -161,7 +161,7 @@
                     @endif
                 @endif
             @else
-                <span class="text-sm text-gray-400 dark:text-gray-500">Price unavailable</span>
+                <span class="text-sm text-gray-400 dark:text-gray-500">{{ __('Price unavailable') }}</span>
             @endif
         </div>
 
@@ -184,7 +184,7 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                         </svg>
-                        Adding…
+                        {{ __('Adding…') }}
                     </span>
                 </button>
             @elseif ($cta && $cta['type'] === 'select_options')

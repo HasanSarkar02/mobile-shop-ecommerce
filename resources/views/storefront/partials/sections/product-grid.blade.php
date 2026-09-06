@@ -17,6 +17,7 @@
 @endphp
 @if ($cards->isNotEmpty())
     <div
+        class="-mt-4 sm:-mt-2"
         x-data="{
             canPrev: false,
             canNext: false,
@@ -30,7 +31,15 @@
             },
             gap() {
                 const el = this.$refs.track;
+                const style = window.getComputedStyle(el);
+                const colGap = parseFloat(style.columnGap || style.gap || '0');
+                if (!isNaN(colGap) && colGap > 0) return colGap;
                 if (el.children.length > 1) {
+                    const isGrid = el.classList.contains('grid');
+                    const idx = isGrid && el.children.length > 2 ? 2 : 1;
+                    if (el.children.length > idx) {
+                        return el.children[idx].offsetLeft - el.children[0].offsetLeft - el.children[0].offsetWidth;
+                    }
                     return el.children[1].offsetLeft - el.children[0].offsetLeft - el.children[0].offsetWidth;
                 }
                 return 0;
@@ -46,8 +55,9 @@
             }
         }">
         <div class="flex justify-between items-center gap-4 mb-4">
-            @if ($section->title)
-                <h2 class="text-xl font-bold">{{ $section->title }}</h2>
+            @php $displayTitle = trim((string) ($section->title ?? '')) !== '' ? $section->title : \App\Support\IndustryConfig::currentGet('homepage.product_grid_title', 'Featured Products'); @endphp
+            @if ($displayTitle)
+                <h2 class="text-xl font-bold">{{ $displayTitle }}</h2>
             @endif
             <div class="flex items-center gap-1.5 flex-shrink-0 -mr-1">
                 @if ($showArrows)
@@ -72,14 +82,23 @@
             </div>
         </div>
 
+        @php
+            $rows = \App\Support\HomepagePresentation::rows($section);
+            $isGrocery = \App\Support\IndustryConfig::currentGet('ui.card_component') === 'storefront.product-cards.grocery';
+            // Production: correct gap math for 6-col (100% -5*1.25)/6 = 16.666% -1.042rem, grocery needs 6 at lg, others 4 at lg
+            $trackClass = $rows === 2
+                ? 'carousel-track-scroll grid grid-flow-col grid-rows-2 auto-cols-[calc(50%-0.5rem)] sm:auto-cols-[calc(33.333%-0.834rem)] md:auto-cols-[calc(25%-0.938rem)] lg:auto-cols-[calc(20%-1rem)] xl:auto-cols-[calc(16.666%-1.042rem)] gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]'
+                : ($isGrocery
+                    ? 'carousel-track-scroll flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]'
+                    : 'carousel-track-scroll flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]');
+        @endphp
         <div x-ref="track" tabindex="0" role="region" aria-label="{{ $section->title ?: 'Products' }} carousel"
             @scroll.passive="update()"
             @keydown.arrow-left.prevent="scrollBy(-1)"
             @keydown.arrow-right.prevent="scrollBy(1)"
-            class="carousel-track-scroll flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]">
-            @php $isGrocery = \App\Support\IndustryConfig::currentGet('ui.card_component') === 'storefront.product-cards.grocery'; @endphp
+            class="{{ $trackClass }}">
             @foreach ($cards as $card)
-                <div class="shrink-0 snap-start {{ $isGrocery ? 'w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.5rem)] md:w-[calc(25%-0.75rem)] lg:w-[calc(16.666%-0.85rem)]' : 'w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.834rem)] md:w-[calc(25%-0.938rem)]' }}">
+                <div class="{{ $rows === 2 ? 'snap-start min-w-0' : ($isGrocery ? 'shrink-0 snap-start w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.834rem)] md:w-[calc(25%-0.938rem)] lg:w-[calc(20%-1rem)] xl:w-[calc(16.666%-1.042rem)]' : 'shrink-0 snap-start w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.834rem)] md:w-[calc(25%-0.938rem)] lg:w-[calc(25%-0.938rem)]') }}">
                     <x-dynamic-component :component="\App\Support\IndustryConfig::currentGet('ui.card_component', 'storefront.product-cards.default')" :card="$card" />
                 </div>
             @endforeach

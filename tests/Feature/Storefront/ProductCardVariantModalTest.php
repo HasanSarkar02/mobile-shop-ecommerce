@@ -62,8 +62,8 @@ it('renders the variant modal with shared selector for products requiring select
     expect($card['requires_selection'])->toBeTrue();
     expect($card['modal_variants'])->toHaveCount(2);
     expect($card['modal_dimensions'])->not->toBeEmpty();
-    // Modal trigger
-    expect($html)->toContain('Select Options');
+    // Modal trigger (unified to Add to Cart - see 1b83689)
+    expect($html)->toContain('Add to Cart');
     // Shared engine reuse: same JS helper the PDP uses and same Blade primitive (inlined)
     expect($html)->toContain('variantSelectionState');
     expect($html)->toContain('dimension in dimensions');

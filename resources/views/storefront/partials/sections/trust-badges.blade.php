@@ -1,11 +1,13 @@
 @php
-    $defaults = [
-        ['icon' => 'grid', 'label' => 'Official Products', 'sub' => '100% Authentic'],
-        ['icon' => 'phone', 'label' => '0% EMI Available', 'sub' => 'On select cards'],
-        ['icon' => 'cart', 'label' => 'Fast Delivery', 'sub' => 'Nationwide shipping'],
-        ['icon' => 'user', 'label' => 'Secure Payment', 'sub' => 'Cash, card & mobile banking'],
+    $hardcodedFallback = [
+        ['icon' => 'shield', 'label' => 'Genuine Products', 'sub' => '100% Authentic'],
+        ['icon' => 'truck', 'label' => 'Fast Delivery', 'sub' => 'Nationwide shipping'],
+        ['icon' => 'card', 'label' => 'Secure Payment', 'sub' => 'Cash, card & mobile banking'],
+        ['icon' => 'refresh', 'label' => 'Easy Returns', 'sub' => '7-day returns'],
     ];
-    $items = $section->config['items'] ?? $defaults;
+    $preset = \App\Support\IndustryConfig::currentGet('trust_badges.items', $hardcodedFallback);
+    $raw = $section->config['items'] ?? null;
+    $items = ! empty($raw) ? $raw : $preset;
 @endphp
 @if (!empty($items))
     <div

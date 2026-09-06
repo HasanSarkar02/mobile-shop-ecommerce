@@ -86,9 +86,9 @@ class GlobalSearchService
     /**
      * Lightweight suggest for autocomplete — products (via Scout, deep: name,
      * slug, model_number, tags, SKU/barcode, brand, category) plus matching
-     * categories and brands by name.
+     * categories and brands by name, plus blog posts.
      *
-     * @return array{products: Collection, categories: Collection, brands: Collection}
+     * @return array{products: Collection, categories: Collection, brands: Collection, posts: Collection}
      */
     public function suggest(string $term, int $productLimit = 6, int $categoryLimit = 4, int $brandLimit = 4): array
     {
@@ -99,6 +99,7 @@ class GlobalSearchService
                 'products' => collect(),
                 'categories' => collect(),
                 'brands' => collect(),
+                'posts' => collect(),
             ];
         }
 
@@ -132,7 +133,13 @@ class GlobalSearchService
             $brands->push(['name' => $b->name, 'url' => $this->urls->canonicalRoute(tenant(), 'storefront.brand', [$b->slug])]);
         }
 
-        return compact('products', 'categories', 'brands');
+        $postModels = \App\Models\BlogPost::query()->where('status', 'published')->where('published_at', '<=', now())->where('title', 'like', "%{$term}%")->limit(3)->get(['title', 'slug']);
+        $posts = collect();
+        foreach ($postModels as $post) {
+            $posts->push(['title' => $post->title, 'url' => $this->urls->canonicalRoute(tenant(), 'storefront.blog.show', [$post->slug])]);
+        }
+
+        return compact('products', 'categories', 'brands', 'posts');
     }
 
     /**

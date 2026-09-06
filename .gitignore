@@ -16,7 +16,8 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+# /public/build is now tracked intentionally — required for cPanel shared hosting without npm (vite assets)
+# /public/build
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage

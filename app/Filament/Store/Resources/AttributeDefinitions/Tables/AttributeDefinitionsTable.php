@@ -11,12 +11,14 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class AttributeDefinitionsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => tenant() !== null ? $query->where($query->getModel()->getTable().'.tenant_id', tenant()->id) : $query)
             ->columns([
                 TextColumn::make('label')
                     ->searchable()
@@ -29,6 +31,12 @@ class AttributeDefinitionsTable
                 TextColumn::make('data_type')
                     ->badge()
                     ->sortable(),
+
+                TextColumn::make('options_count')
+                    ->label('Values')
+                    ->counts('options')
+                    ->badge()
+                    ->color(fn (int $state): string => $state > 0 ? 'success' : 'gray'),
 
                 IconColumn::make('is_filterable')
                     ->boolean(),

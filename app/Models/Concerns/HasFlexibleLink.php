@@ -22,6 +22,8 @@ trait HasFlexibleLink
             'brand' => '/brand/'.$this->link_value,
             'collection' => '/collection/'.$this->link_value,
             'static_page' => '/page/'.$this->link_value,
+            'blog' => '/blog/'.$this->link_value,
+            'blog_index' => '/blog',
             'external' => $this->link_value,
             default => null,
         };

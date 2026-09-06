@@ -15,5 +15,9 @@
         <h1 class="text-2xl font-bold tracking-tight mb-6">{{ $category->name }}</h1>
 
         <livewire:product-catalog mode="category" :slug="$category->slug" />
+
+        @if (!empty($relatedBlogPosts) && $relatedBlogPosts->isNotEmpty())
+            @include('storefront.partials.blog-rail', ['posts' => $relatedBlogPosts, 'title' => __('Guides & Articles')])
+        @endif
     </div>
 @endsection

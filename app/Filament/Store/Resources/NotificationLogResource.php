@@ -19,9 +19,11 @@ class NotificationLogResource extends Resource
 {
     protected static ?string $model = NotificationLog::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clock';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Notifications';
+    protected static string|UnitEnum|null $navigationGroup = 'System';
+
+    protected static ?int $navigationSort = 7;
 
     protected static ?string $navigationLabel = 'Delivery Log';
 

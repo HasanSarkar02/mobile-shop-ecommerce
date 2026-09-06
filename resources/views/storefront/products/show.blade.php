@@ -9,8 +9,18 @@
         $showSpecifications = $specificationGroups->isNotEmpty();
         $showDescription = filled($productDescription);
         $showWarranty = filled(optional($translation)->warranty_info);
-        $showReviews = $product->reviews_count > 0;
-        $showFaqs = $product->faqs->isNotEmpty();
+        // Industry-specific information priority (IndustryConfig::pdp.information_priority)
+        // Reorders navSections according to vertical preset, unknown industries fall back to standard.
+        $informationPriority = \App\Support\IndustryConfig::currentGet('pdp.information_priority', ['specifications','description','warranty','reviews','faq']);
+        if (! is_array($informationPriority)) {
+            $informationPriority = ['specifications','description','warranty','reviews','faq'];
+        }
+        // Reviews must always be reachable (empty state when 0) — see Task 4.
+        $showReviews = true;
+        // FAQ: respect IndustryConfig — render section (with empty state) only when vertical expects FAQ.
+        $faqConfigured = in_array('faq', $informationPriority, true);
+        $showFaqs = $faqConfigured;
+        $hasFaqs = $product->faqs->isNotEmpty();
         $navSections = collect([
             'specifications' => $showSpecifications,
             'description' => $showDescription,
@@ -21,19 +31,16 @@
             ->filter()
             ->keys()
             ->values();
-        // Industry-specific information priority (IndustryConfig::pdp.information_priority)
-        // Reorders navSections according to vertical preset, unknown industries fall back to standard.
-        $informationPriority = \App\Support\IndustryConfig::currentGet('pdp.information_priority', ['specifications','description','warranty','reviews','faq']);
-        if (is_array($informationPriority) && $informationPriority !== []) {
+        if ($informationPriority !== []) {
             $priorityIndex = array_flip($informationPriority);
             $navSections = $navSections->sortBy(fn ($section) => $priorityIndex[$section] ?? 999)->values();
         }
         $navLabels = [
-            'specifications' => 'Specifications',
-            'description' => 'Description',
-            'warranty' => 'Warranty',
-            'reviews' => 'Reviews',
-            'faq' => 'FAQ',
+            'specifications' => __('Specifications'),
+            'description' => __('Description'),
+            'warranty' => __('Warranty'),
+            'reviews' => __('Reviews'),
+            'faq' => __('FAQ'),
         ];
         $policyLinks = collect($policyLinks ?? []);
         $warrantyPolicyLink = $policyLinks->first(fn($link) => $link['label'] === 'Warranty');
@@ -48,6 +55,22 @@
             : null;
         $emiHasZero = $product->emiPlans->contains(fn($plan) => (float) $plan->interest_rate === 0.0);
         $productName = optional($translation)->name ?? 'Product';
+        $pdpI18n = [
+            'preOrder' => __('Pre-Order'),
+            'available' => __('available'),
+            'discontinued' => __('Discontinued'),
+            'backorder' => __('Backorder'),
+            'outOfStock' => __('Out of Stock'),
+            'inStock' => __('In Stock'),
+            'lowStock' => __('Low Stock'),
+            'unavailable' => __('Unavailable'),
+            'adding' => __('Adding…'),
+            'preOrderNow' => __('Pre-Order Now'),
+            'backorderNow' => __('Backorder Now'),
+            'addToCart' => __('Add to Cart'),
+            'buyNow' => __('Buy Now'),
+            'selectOptions' => __('Select Options'),
+        ];
     @endphp
 
     <x-seo.meta :seo="$seo" />
@@ -78,7 +101,7 @@
         </style>
     @endpush
 
-    <div class="{{ \App\Support\IndustryConfig::currentGet('ui.container_class', 'max-w-7xl mx-auto') }} px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8" x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), @js($initialVariantId), @js($isWishlisted), @js($isComparing), @js($emiData), @js($requiresSelection), @js($product->sell_by_unit ?? '1.000'), @js(tenant()->currency ?? 'BDT'))" x-init="init()">
+    <div class="{{ \App\Support\IndustryConfig::currentGet('ui.container_class', 'max-w-7xl mx-auto') }} px-4 sm:px-6 lg:px-8 py-8 pb-24 lg:pb-8" x-data="productDetail(@js($variantsData), @js($productImages), @js($dimensions), @js($initialVariantId), @js($isWishlisted), @js($isComparing), @js($emiData), @js($requiresSelection), @js($product->sell_by_unit ?? '1.000'), @js(tenant()->currency ?? 'BDT'), @js($pdpI18n))" x-init="init()">
         <nav class="text-sm text-gray-500 mb-6" aria-label="Breadcrumb">
             <a href="{{ app(\App\Support\Tenancy\TenantUrlGenerator::class)->canonicalRoute(tenant(), 'storefront.home') }}" class="hover:text-[var(--brand)]">Home</a>
             @if ($product->category)
@@ -117,6 +140,10 @@
             :showWarranty="$showWarranty ?? false"
             :showFaqs="$showFaqs ?? false"
         />
+
+        @if (!empty($relatedBlogPosts) && $relatedBlogPosts->isNotEmpty())
+            @include('storefront.partials.blog-rail', ['posts' => $relatedBlogPosts, 'title' => __('Related Articles')])
+        @endif
     </div>
 @endsection
 
@@ -158,12 +185,13 @@
         }
 
         function productDetail(variants, productImages, dimensions, initialId, initialWishlisted, initialComparing,
-            emiPlans, requiresSelection, sellByUnit, currency) {
+            emiPlans, requiresSelection, sellByUnit, currency, i18n) {
             return {
                 ...variantSelectionState(variants, dimensions, requiresSelection, initialId),
                 productImages,
                 dimensions,
                 currency: currency || 'BDT',
+                i18n: i18n || {},
                 selected: {},
                 activeImage: null,
                 loadedImages: {},
@@ -328,6 +356,19 @@
                     if (images.some(img => img.src === this.activeImage)) return this.activeImage;
                     return images[0].src;
                 },
+                galleryIndex() {
+                    return this.currentImages().findIndex(i => i.src === this.resolvedActiveImage());
+                },
+                galleryPrev() {
+                    const images = this.currentImages();
+                    const idx = images.findIndex(i => i.src === this.resolvedActiveImage());
+                    if (idx > 0) this.activeImage = images[idx - 1].src;
+                },
+                galleryNext() {
+                    const images = this.currentImages();
+                    const idx = images.findIndex(i => i.src === this.resolvedActiveImage());
+                    if (idx >= 0 && idx < images.length - 1) this.activeImage = images[idx + 1].src;
+                },
                 markLoaded(src) {
                     if (src) this.loadedImages[src] = true;
                 },
@@ -363,11 +404,11 @@
                 availabilityLabel() {
                     const v = this.current();
                     if (!v) return '';
-                    if (v.purchase_state === 'preorder') return 'Pre-Order';
-                    if (v.purchase_state === 'dropship') return 'Available';
-                    if (v.purchase_state === 'discontinued') return 'Discontinued';
-                    if (v.purchase_state === 'out_of_stock') return v.backorder_policy ? 'Backorder' : 'Out of Stock';
-                    return 'In Stock';
+                    if (v.purchase_state === 'preorder') return this.i18n.preOrder || 'Pre-Order';
+                    if (v.purchase_state === 'dropship') return this.i18n.available || 'Available';
+                    if (v.purchase_state === 'discontinued') return this.i18n.discontinued || 'Discontinued';
+                    if (v.purchase_state === 'out_of_stock') return v.backorder_policy ? (this.i18n.backorder || 'Backorder') : (this.i18n.outOfStock || 'Out of Stock');
+                    return this.i18n.inStock || 'In Stock';
                 },
                 availabilityTone() {
                     const v = this.current();
@@ -387,16 +428,16 @@
                 },
                 ctaLabel() {
                     const v = this.current();
-                    if (this.cartLoading) return 'Addingâ€¦';
-                    if (!v) return 'Unavailable';
+                    if (this.cartLoading) return this.i18n.adding || 'Adding…';
+                    if (!v) return this.i18n.unavailable || 'Unavailable';
                     if (!v.purchasable) {
-                        return v.purchase_state === 'discontinued' ? 'Discontinued' : 'Out of Stock';
+                        return v.purchase_state === 'discontinued' ? (this.i18n.discontinued || 'Discontinued') : (this.i18n.outOfStock || 'Out of Stock');
                     }
-                    if (v.purchase_state === 'preorder') return 'Pre-Order Now';
+                    if (v.purchase_state === 'preorder') return this.i18n.preOrderNow || 'Pre-Order Now';
                     if (v.purchase_state === 'out_of_stock') {
-                        return v.backorder_policy === 'notify' ? 'Backorder Now' : 'Add to Cart';
+                        return v.backorder_policy === 'notify' ? (this.i18n.backorderNow || 'Backorder Now') : (this.i18n.addToCart || 'Add to Cart');
                     }
-                    return 'Add to Cart';
+                    return this.i18n.addToCart || 'Add to Cart';
                 },
                 formatPrice(cents) {
                     return window.money(cents, this.currency || 'BDT', document.documentElement.lang || 'en', true);

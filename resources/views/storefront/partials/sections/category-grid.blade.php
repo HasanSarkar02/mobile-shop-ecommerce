@@ -2,6 +2,17 @@
     $renderer = app(\App\Services\Storefront\HomepageSectionRenderer::class);
     $isBrandSource = ($section->config['source'] ?? 'category') === 'brand';
     $items = $isBrandSource ? $renderer->resolveBrands($section) : $renderer->resolveCategories($section);
+    $rows = \App\Support\HomepagePresentation::rows($section);
+@endphp
+@php
+    // Enterprise responsive cap: desktop 6/12, mobile 3/6 via take(12) + hidden md:flex.
+    // rows=1 → 6 max (desktop 1 row), rows=2 → 12 max (desktop 2 rows); mobile shows 3 / 6 via responsive hide.
+    if (! $isBrandSource) {
+        $cap = $rows === 2 ? 12 : 6;
+        if ($items->count() > $cap) {
+            $items = $items->take($cap);
+        }
+    }
 
     // Deterministic pastel palette for fallback tiles — looks intentional, not "empty"
     $palette = [
@@ -79,11 +90,12 @@
                     </div>
                 </div>
 
+                @php $brandTrackClass = $rows === 2 ? 'carousel-track-scroll grid grid-flow-col grid-rows-2 auto-cols-[calc(50%-0.5rem)] sm:auto-cols-[calc(33.333%-0.834rem)] md:auto-cols-[calc(25%-0.938rem)] lg:auto-cols-[calc(20%-1rem)] xl:auto-cols-[calc(16.667%-1.042rem)] gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]' : 'carousel-track-scroll flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]'; @endphp
                 <div x-ref="track" tabindex="0" role="region" aria-label="Brand carousel"
                     @scroll.passive="update()"
                     @keydown.arrow-left.prevent="scrollBy(-1)"
                     @keydown.arrow-right.prevent="scrollBy(1)"
-                    class="carousel-track-scroll flex gap-4 sm:gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]">
+                    class="{{ $brandTrackClass }}">
                     @foreach ($items as $item)
                         @php
                             $swatch = $palette[crc32($item->name) % count($palette)];
@@ -132,20 +144,21 @@
                 @endif
             </div>
             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 sm:gap-5">
-                @foreach ($items as $item)
+                @foreach ($items as $idx => $item)
                     @php
                         $swatch = $palette[crc32($item->name) % count($palette)];
                         $domId = 'tile-c-' . $item->id;
+                        $hideOnMobile = ($rows === 1 && $idx >= 3) || ($rows === 2 && $idx >= 6);
                     @endphp
                     <a href="{{ route('storefront.category', $item->slug) }}"
-                        class="group flex flex-col items-center gap-2.5 text-center">
+                        class="group {{ $hideOnMobile ? 'hidden md:flex' : 'flex' }} flex-col items-center gap-1.5 text-center">
                         <div
-                            class="relative w-full aspect-square rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 flex items-center justify-center transition-all duration-300 group-hover:border-[var(--brand)] group-hover:shadow-soft group-hover:-translate-y-0.5 bg-white dark:bg-gray-900">
+                            class="relative w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-full overflow-hidden border border-gray-100 dark:border-gray-800 flex items-center justify-center transition-all duration-300 group-hover:border-[var(--brand)] group-hover:shadow-soft group-hover:-translate-y-0.5 bg-white dark:bg-gray-900">
 
                             {{-- Fallback: always in DOM, shown by default, hidden by JS if the image loads --}}
                             <div id="{{ $domId }}-fallback"
                                 class="absolute inset-0 flex items-center justify-center {{ $swatch['bg'] }}">
-                                <span class="text-2xl font-bold {{ $swatch['text'] }}">
+                                <span class="text-xl font-bold {{ $swatch['text'] }}">
                                     {{ mb_substr($item->name, 0, 1) }}
                                 </span>
                             </div>
@@ -153,13 +166,13 @@
                             @if ($item->image_path)
                                 <img src="{{ asset('storage/' . $item->image_path) }}" alt="{{ $item->name }}" loading="lazy"
                                     decoding="async"
-                                    class="relative w-full h-full object-contain opacity-0 transition-all duration-500 ease-out scale-95 group-hover:scale-100"
+                                    class="relative w-full h-full object-cover opacity-0 transition-all duration-500 ease-out scale-95 group-hover:scale-100"
                                     onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';"
                                     onerror="this.remove();">
                             @endif
                         </div>
                         <span
-                            class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-[var(--brand)] transition-colors line-clamp-1"
+                            class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-[var(--brand)] transition-colors line-clamp-2 leading-tight"
                             title="{{ $item->name }}">
                             {{ $item->name }}
                         </span>

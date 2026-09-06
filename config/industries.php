@@ -54,13 +54,28 @@ return [
             ],
             'pdp' => [
                 'layout' => 'standard',
-                'information_priority' => ['specifications', 'description', 'reviews'],
+                'information_priority' => ['specifications', 'description', 'warranty', 'reviews', 'faq'],
             ],
             'facets' => [
                 'priority' => [],
             ],
             'theme' => [
                 'preset' => 'brand',
+            ],
+            'trust_badges' => [
+                'items' => [
+                    ['icon' => 'shield', 'label' => 'Genuine Products', 'sub' => '100% Authentic'],
+                    ['icon' => 'truck', 'label' => 'Fast Delivery', 'sub' => 'Nationwide shipping'],
+                    ['icon' => 'card', 'label' => 'Secure Payment', 'sub' => 'Cash, card & mobile banking'],
+                    ['icon' => 'refresh', 'label' => 'Easy Returns', 'sub' => '7-day returns'],
+                ],
+            ],
+            'homepage' => [
+                'product_grid_title' => 'Featured Products',
+                'presentation' => [
+                    'product_rows' => 1,
+                    'category_rows' => 1,
+                ],
             ],
             'ui' => [
                 'container_class' => 'max-w-7xl mx-auto',
@@ -81,6 +96,17 @@ return [
             ],
             'theme' => [
                 'preset' => 'electronics',
+            ],
+            'trust_badges' => [
+                'items' => [
+                    ['icon' => 'shield', 'label' => 'Official Products', 'sub' => '100% Authentic'],
+                    ['icon' => 'shield', 'label' => 'Warranty Included', 'sub' => 'Brand warranty'],
+                    ['icon' => 'truck', 'label' => 'Fast Delivery', 'sub' => 'Nationwide shipping'],
+                    ['icon' => 'card', 'label' => 'Secure Payment', 'sub' => 'Cash, card & mobile banking'],
+                ],
+            ],
+            'homepage' => [
+                'product_grid_title' => 'Featured Smartphones',
             ],
             'ui' => [
                 'container_class' => 'max-w-[1440px] mx-auto',
@@ -103,6 +129,17 @@ return [
             'theme' => [
                 'preset' => 'electronics',
             ],
+            'trust_badges' => [
+                'items' => [
+                    ['icon' => 'shield', 'label' => 'Genuine Products', 'sub' => '100% Authentic'],
+                    ['icon' => 'shield', 'label' => 'Manufacturer Warranty', 'sub' => 'Brand warranty'],
+                    ['icon' => 'truck', 'label' => 'Fast Delivery', 'sub' => 'Nationwide shipping'],
+                    ['icon' => 'card', 'label' => 'Secure Payment', 'sub' => 'Cash, card & mobile banking'],
+                ],
+            ],
+            'homepage' => [
+                'product_grid_title' => 'Featured Electronics',
+            ],
             'ui' => [
                 'container_class' => 'max-w-[1440px] mx-auto',
                 'grid_class' => 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
@@ -120,10 +157,21 @@ return [
             ],
             'pdp' => [
                 'layout' => 'imagery-led',
-                'information_priority' => ['description', 'specifications', 'reviews'],
+                'information_priority' => ['description', 'specifications', 'warranty', 'reviews', 'faq'],
             ],
             'theme' => [
                 'preset' => 'fashion',
+            ],
+            'trust_badges' => [
+                'items' => [
+                    ['icon' => 'shield', 'label' => 'Authentic Products', 'sub' => '100% Genuine'],
+                    ['icon' => 'refresh', 'label' => 'Easy Returns', 'sub' => '7-day returns'],
+                    ['icon' => 'truck', 'label' => 'Fast Delivery', 'sub' => 'Nationwide shipping'],
+                    ['icon' => 'card', 'label' => 'Secure Payment', 'sub' => 'Cash, card & mobile banking'],
+                ],
+            ],
+            'homepage' => [
+                'product_grid_title' => 'Trending Now',
             ],
             'ui' => [
                 'container_class' => 'max-w-[1440px] mx-auto',
@@ -141,7 +189,7 @@ return [
             ],
             'pdp' => [
                 'layout' => 'standard',
-                'information_priority' => ['description', 'reviews'],
+                'information_priority' => ['description', 'specifications', 'warranty', 'reviews', 'faq'],
             ],
             'pricing' => [
                 'per_unit_enabled' => true,
@@ -149,12 +197,26 @@ return [
             'theme' => [
                 'preset' => 'grocery',
             ],
+            'trust_badges' => [
+                'items' => [
+                    ['icon' => 'leaf', 'label' => 'Fresh & Quality', 'sub' => 'Handpicked daily'],
+                    ['icon' => 'truck', 'label' => 'Same-Day Delivery', 'sub' => 'Dhaka metro'],
+                    ['icon' => 'refresh', 'label' => 'Easy Returns', 'sub' => 'No questions asked'],
+                    ['icon' => 'card', 'label' => 'Secure Payment', 'sub' => 'Cash, card & mobile banking'],
+                ],
+            ],
+            'homepage' => [
+                'product_grid_title' => 'Popular Picks',
+                'presentation' => [
+                    'category_rows' => 2,
+                ],
+            ],
             'ui' => [
                 'container_class' => 'max-w-[1600px] mx-auto',
                 'grid_class' => 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6',
                 'image_aspect' => 'aspect-square',
                 'card_component' => 'storefront.product-cards.grocery',
-                'pdp_component' => 'storefront.products.pdp-default',
+                'pdp_component' => 'storefront.products.pdp-grocery',
             ],
         ],
 
@@ -165,6 +227,17 @@ return [
             ],
             'theme' => [
                 'preset' => 'sports',
+            ],
+            'trust_badges' => [
+                'items' => [
+                    ['icon' => 'shield', 'label' => 'Authentic Products', 'sub' => '100% Genuine'],
+                    ['icon' => 'refresh', 'label' => 'Easy Returns', 'sub' => '7-day returns'],
+                    ['icon' => 'truck', 'label' => 'Fast Delivery', 'sub' => 'Nationwide shipping'],
+                    ['icon' => 'card', 'label' => 'Secure Payment', 'sub' => 'Cash, card & mobile banking'],
+                ],
+            ],
+            'homepage' => [
+                'product_grid_title' => 'Top Picks',
             ],
             'ui' => [
                 'container_class' => 'max-w-7xl mx-auto',
@@ -185,6 +258,17 @@ return [
             ],
             'theme' => [
                 'preset' => 'furniture',
+            ],
+            'trust_badges' => [
+                'items' => [
+                    ['icon' => 'shield', 'label' => 'Quality Assured', 'sub' => 'Premium materials'],
+                    ['icon' => 'truck', 'label' => 'Home Delivery', 'sub' => 'Nationwide shipping'],
+                    ['icon' => 'wrench', 'label' => 'Installation Available', 'sub' => 'Expert setup'],
+                    ['icon' => 'card', 'label' => 'Secure Payment', 'sub' => 'Cash, card & mobile banking'],
+                ],
+            ],
+            'homepage' => [
+                'product_grid_title' => 'Featured Furniture',
             ],
             'ui' => [
                 'container_class' => 'max-w-7xl mx-auto',

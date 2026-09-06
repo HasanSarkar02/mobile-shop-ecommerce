@@ -28,13 +28,13 @@ class TenantShippingRateResource extends Resource
 {
     protected static ?string $model = TenantShippingRate::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-map-pin';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-map';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Sales';
-
-    protected static ?string $navigationLabel = 'Shipping Rates';
+    protected static string|UnitEnum|null $navigationGroup = 'Shipping';
 
     protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationLabel = 'Shipping Rates';
 
     public static function form(Schema $schema): Schema
     {

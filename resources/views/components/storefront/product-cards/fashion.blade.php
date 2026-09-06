@@ -129,7 +129,7 @@
             @else
                 <div class="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-[#f8f5f0] text-gray-400 dark:bg-gray-800/40">
                     <x-ui.icon name="image" class="h-8 w-8" />
-                    <span class="text-[11px] font-medium">No image</span>
+                    <span class="text-[11px] font-medium">{{ __('No image') }}</span>
                 </div>
             @endif
         </a>
@@ -148,7 +148,7 @@
         {{-- PRE-ORDER overlay badge if not already shown as % OFF --}}
         @if (($variant['is_preorder'] ?? false) && $badge === null)
             <div class="pointer-events-none absolute left-2 top-2 z-[2]">
-                <span class="inline-flex rounded-[6px] bg-amber-500 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white shadow-sm">PRE-ORDER</span>
+                <span class="inline-flex rounded-[6px] bg-amber-500 px-2 py-1 text-[10px] font-bold leading-none tracking-wide text-white shadow-sm">{{ __('PRE-ORDER') }}</span>
             </div>
         @endif
 
@@ -217,7 +217,7 @@
                     @endif
                 @endif
             @else
-                <span class="text-sm text-gray-400 dark:text-gray-500">Price unavailable</span>
+                <span class="text-sm text-gray-400 dark:text-gray-500">{{ __('Price unavailable') }}</span>
             @endif
         </div>
 
@@ -274,7 +274,7 @@
                         </x-slot:trigger>
                     </x-storefront.variant-modal>
                 @elseif ($cta && $cta['type'] === 'disabled')
-                    <button type="button" disabled aria-label="Out of stock"
+                    <button type="button" disabled aria-label="{{ __('Out of stock') }}"
                         class="inline-flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-xl bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" class="h-5 w-5" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 9.465A2.25 2.25 0 0119.245 21H4.755a2.25 2.25 0 01-2.243-2.532l1.263-9.465A1.5 1.5 0 014.26 7.5h15.48a1.5 1.5 0 011.486 1.507z" />

@@ -25,6 +25,7 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
 
 class EditProduct extends EditRecord
 {
@@ -56,7 +57,7 @@ class EditProduct extends EditRecord
                 $defaultLocation = $inventory->defaultLocation();
 
                 $variants = $record->variants()
-                    ->with(['stockItems.location'])
+                    ->with(['stockItems.location', 'media'])
                     ->orderBy('sku')
                     ->get();
 
@@ -75,15 +76,17 @@ class EditProduct extends EditRecord
                     ->get()
                     ->keyBy('product_variant_id');
 
-                $defaultStocks = $variants->map(function (ProductVariant $variant) use ($stockItems) {
+                $defaultStocks = $variants->map(function (ProductVariant $variant) use ($stockItems, $record) {
                     $item = $stockItems->get($variant->id);
                     $available = $item instanceof StockItem ? $item->availableQuantityDecimal() : '0.000';
                     $isSerialized = $variant->inventory_type === InventoryType::Serialized;
+                    $thumbUrl = $variant->getFirstMediaUrl('images', 'thumb') ?: $record->getFirstMediaUrl('images', 'thumb') ?: null;
 
                     return [
                         'variant_id' => $variant->id,
                         'sku' => $variant->sku,
                         'variant_label' => $variant->sku.($isSerialized ? ' · Serialized' : ''),
+                        'thumb_url' => $thumbUrl,
                         'current_stock' => $available,
                         'is_serialized' => $isSerialized,
                         'quantity_change' => null,
@@ -157,6 +160,17 @@ class EditProduct extends EditRecord
                         ->schema([
                             Hidden::make('variant_id'),
                             Hidden::make('is_serialized'),
+                            Hidden::make('thumb_url'),
+                            Placeholder::make('thumb')
+                                ->label('Image')
+                                ->content(function (Get $get): HtmlString {
+                                    $url = $get('thumb_url');
+                                    if (! $url) {
+                                        return new HtmlString('<span class="text-xs text-gray-400">—</span>');
+                                    }
+
+                                    return new HtmlString('<img src="'.e($url).'" class="w-10 h-10 rounded object-cover border border-gray-200 dark:border-gray-700" loading="lazy" alt="" />');
+                                }),
                             Placeholder::make('variant_label')
                                 ->label('Variant'),
                             Placeholder::make('current_stock')
@@ -175,7 +189,7 @@ class EditProduct extends EditRecord
                         ->deletable(false)
                         ->reorderable(false)
                         ->collapsible(false)
-                        ->columns(4)
+                        ->columns(5)
                         ->columnSpanFull()
                         ->helperText('Tab through fields to quickly enter quantities for 10 variants.'),
                 ];

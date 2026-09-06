@@ -48,6 +48,14 @@ class SetLocale
         /** @var Response $response */
         $response = $next($request);
 
+        // Do not overwrite the cookie that LocaleController just queued for POST /locale/{locale}
+        // (otherwise SetLocale's stale bn cookie would win and switching bn→en would stay bn).
+        if ($request->is('locale/*') || $request->is('bn/locale/*')) {
+            $response->headers->set('Content-Language', $locale);
+
+            return $response;
+        }
+
         // Persist choice (cookie-only per Phase A). When locale came from URL,
         // always store it; otherwise store non-default or update stale cookie.
         if ($fromRoute) {

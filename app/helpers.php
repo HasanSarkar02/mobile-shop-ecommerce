@@ -54,13 +54,11 @@ if (! function_exists('money')) {
 
         $formatted = Number::format($major, precision: $withTrailingZeros ? 2 : 0, locale: $localeTag);
 
-        // Bangla digits strictly when active locale is bn, otherwise Western (en)
-        if ($locale !== 'bn') {
-            $formatted = strtr($formatted, [
-                '০' => '0', '১' => '1', '২' => '2', '৩' => '3', '৪' => '4',
-                '৫' => '5', '৬' => '6', '৭' => '7', '৮' => '8', '৯' => '9',
-            ]);
-        }
+        // Western numerals always (Chaldal/Daraz) — even when locale is bn
+        $formatted = strtr($formatted, [
+            '০' => '0', '১' => '1', '২' => '2', '৩' => '3', '৪' => '4',
+            '৫' => '5', '৬' => '6', '৭' => '7', '৮' => '8', '৯' => '9',
+        ]);
 
         return $symbol.$formatted;
     }
