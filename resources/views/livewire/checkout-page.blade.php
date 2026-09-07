@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-[calc(9rem+env(safe-area-inset-bottom))] lg:pb-8">
+    <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
         {{-- Header + Stepper --}}
         <div class="mb-6">
             <nav class="text-xs text-gray-500 mb-2">
@@ -335,11 +335,11 @@
                         class="w-full min-h-[88px] rounded-xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-sm placeholder:text-gray-400 shadow-sm focus:border-[var(--brand)] focus:ring-4 focus:ring-[var(--brand)]/10 outline-none transition p-3.5"></textarea>
                 </section>
 
-                <x-ui.button type="submit" variant="primary" size="lg" class="w-full hidden lg:inline-flex !py-3.5 text-base font-bold tracking-tight shadow-soft"
+                <x-ui.button type="submit" variant="primary" size="lg" class="w-full inline-flex !py-3.5 text-base font-bold tracking-tight shadow-soft"
                     loading-target="placeOrder">
                     <span class="inline-flex items-center gap-2">{{ __('Place Order') }} <span class="hidden sm:inline">— {{ money((int) ($subtotal - $discount + $shippingCost)) }}</span></span>
                 </x-ui.button>
-                <p class="hidden lg:flex items-center justify-center gap-2 text-xs text-gray-500 mt-2"><x-ui.icon name="lock" class="w-3.5 h-3.5" /> {{ __('Your order is protected') }} · {{ __('SSL secured') }}</p>
+                <p class="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2"><x-ui.icon name="lock" class="w-3.5 h-3.5" /> {{ __('Your order is protected') }} · {{ __('SSL secured') }}</p>
             </form>
 
             {{-- Summary — sticky, collapsible on mobile --}}
@@ -463,19 +463,6 @@
         </div>
     </div>
 
-    {{-- Mobile sticky CTA — above bottom nav (z-40 < nav z-50), offset for nav height + safe area --}}
-    <div class="lg:hidden fixed inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800" style="bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));">
-        <div class="px-4 pt-3 pb-3">
-            <div class="flex items-center justify-between gap-3 mb-2.5">
-                <span class="text-sm font-medium text-gray-600 dark:text-gray-300">{{ __('Total') }}</span>
-                <span class="text-lg font-extrabold tracking-tight">{{ money((int) ($subtotal - $discount + $shippingCost)) }}</span>
-            </div>
-            <x-ui.button type="button" onclick="document.querySelector('form').requestSubmit()" variant="primary" size="lg" class="w-full !py-3.5 text-base font-bold shadow-soft" loading-target="placeOrder">
-                {{ __('Place Order') }} — {{ money((int) ($subtotal - $discount + $shippingCost)) }}
-            </x-ui.button>
-            <p class="flex items-center justify-center gap-1.5 text-xs text-gray-500 mt-2"><x-ui.icon name="lock" class="w-3 h-3" /> {{ __('Secure checkout') }} · {{ __('SSL secured') }}</p>
-        </div>
-    </div>
 </div>
 
 <style>

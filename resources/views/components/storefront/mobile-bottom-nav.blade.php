@@ -8,12 +8,11 @@
             Home
         </a>
 
-        <button type="button" @click="$store.ui.mobileMenuOpen = true"
-            class="flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[11px] font-medium text-gray-500 dark:text-gray-400"
-            aria-label="Browse categories">
+        <a href="{{ route('storefront.categories.index') }}"
+            class="flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[11px] font-medium {{ request()->routeIs('storefront.categories.*') || request()->routeIs('storefront.category') ? 'text-[var(--brand)]' : 'text-gray-500 dark:text-gray-400' }}">
             <x-ui.icon name="grid" class="w-6 h-6" />
             Categories
-        </button>
+        </a>
 
         <livewire:mini-cart variant="badge" />
 
