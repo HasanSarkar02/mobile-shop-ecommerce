@@ -20,11 +20,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Placeholder;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Utilities\Text;
 use Filament\Schemas\Schema;
-use Filament\Support\Enums\MaxWidth;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -180,7 +179,7 @@ class AttributeValuesRelationManager extends RelationManager
                     ->label('Manage Specifications')
                     ->icon('heroicon-o-adjustments-horizontal')
                     ->color('primary')
-                    ->modalWidth(MaxWidth::SevenExtraLarge)
+                    ->modalWidth('7xl')
                     ->modalHeading(fn (): string => 'Manage Specifications — '.$this->getOwnerRecord()?->translations()->where('locale', 'en')->value('name') ?? 'Product')
                     ->form(fn (): array => $this->bulkSpecificationForm())
                     ->action(function (array $data): void {
@@ -254,7 +253,7 @@ class AttributeValuesRelationManager extends RelationManager
                     ->label('Manage Specifications')
                     ->icon('heroicon-o-adjustments-horizontal')
                     ->color('primary')
-                    ->modalWidth(MaxWidth::SevenExtraLarge)
+                    ->modalWidth('7xl')
                     ->form(fn (): array => $this->bulkSpecificationForm())
                     ->action(function (array $data): void {
                         $product = $this->getOwnerRecord();
@@ -353,7 +352,7 @@ class AttributeValuesRelationManager extends RelationManager
         $totalApplicable = $applicableDefinitions->count();
         $completedApplicable = $applicableDefinitions->filter(fn (AttributeDefinition $d) => $existingMap->has($d->id) && ! $this->isEmptyValueForDisplay($d, $existingMap->get($d->id)))->count();
 
-        $components[] = Text::make('__completion')
+        $components[] = Placeholder::make('__completion')
             ->content(fn (): string => "{$completedApplicable} / {$totalApplicable} specifications completed".($isFallback ? ' (showing all — no category mapping)' : ''))
             ->columnSpanFull();
 
