@@ -191,7 +191,7 @@
 
         <div class="mt-3 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
             <button type="button" @click="toggleCompare()" class="flex items-center gap-1.5 hover:text-[var(--brand)]" :class="comparing ? 'text-[var(--brand)]' : ''">
-                <x-ui.icon name="grid" class="w-4 h-4" /> <span x-text="comparing ? &quot;{{ __('Added to Compare') }}&quot; : &quot;{{ __('Add to Compare') }}&quot;"></span>
+                <x-ui.icon name="compare" class="w-4 h-4" /> <span x-text="comparing ? &quot;{{ __('Added to Compare') }}&quot; : &quot;{{ __('Add to Compare') }}&quot;"></span>
             </button>
             <button type="button" @click="share()" class="flex items-center gap-1.5 hover:text-[var(--brand)]">
                 <x-ui.icon name="share" class="w-4 h-4" /> {{ __('Share this product') }}

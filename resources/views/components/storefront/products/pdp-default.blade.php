@@ -78,7 +78,7 @@
                     class="p-2.5 rounded-xl border transition text-sm"
                     :class="comparing ? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]' : 'border-gray-300 dark:border-gray-700'"
                     aria-label="Toggle compare" :aria-pressed="comparing">
-                    <x-ui.icon name="grid" class="w-5 h-5" />
+                    <x-ui.icon name="compare" class="w-5 h-5" />
                 </button>
                 <button @click="share()" :disabled="shareLoading"
                     class="p-2.5 rounded-xl border transition text-sm border-gray-300 dark:border-gray-700"

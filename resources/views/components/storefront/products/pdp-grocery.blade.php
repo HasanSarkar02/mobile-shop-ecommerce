@@ -86,7 +86,9 @@
             @endif
             <div class="ml-auto flex gap-1.5">
                 <x-storefront.wishlist-button :id="$product->id" :wishlisted="$isWishlisted" variant="pdp" />
-                <button @click="toggleCompare()" :disabled="compareLoading" class="w-9 h-9 rounded-xl border flex items-center justify-center" :class="comparing ? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]' : 'border-gray-200 dark:border-gray-700'" aria-label="Compare"><x-ui.icon name="grid" class="w-4 h-4" /></button>
+                <button @click="toggleCompare()" :disabled="compareLoading" class="w-9 h-9 rounded-xl border flex items-center justify-center"
+                    :class="comparing ? 'border-[var(--brand)] bg-[var(--brand)]/10 text-[var(--brand)]' : 'border-gray-200 dark:border-gray-700'"
+                    aria-label="Compare"><x-ui.icon name="compare" class="w-4 h-4" /></button>
                 <button @click="share()" class="w-9 h-9 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center" aria-label="Share"><x-ui.icon name="share" class="w-4 h-4" /></button>
             </div>
         </div>
