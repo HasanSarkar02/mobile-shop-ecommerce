@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
+use App\Models\BlogPost;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\Storefront\FilterQueryParser;
@@ -64,7 +65,7 @@ class CategoryController extends Controller
 
         $seo = SeoData::fromCategory($category, $isFiltered);
 
-        $relatedBlogPosts = \App\Models\BlogPost::query()
+        $relatedBlogPosts = BlogPost::query()
             ->where('status', 'published')
             ->where('published_at', '<=', now())
             ->where(function ($q) use ($category) {
@@ -76,7 +77,7 @@ class CategoryController extends Controller
             ->limit(3)
             ->get();
         if ($relatedBlogPosts->isEmpty()) {
-            $relatedBlogPosts = \App\Models\BlogPost::query()->where('status', 'published')->where('published_at', '<=', now())->latest('published_at')->limit(3)->get();
+            $relatedBlogPosts = BlogPost::query()->where('status', 'published')->where('published_at', '<=', now())->latest('published_at')->limit(3)->get();
         }
 
         return view('storefront.categories.show', compact('category', 'isFiltered', 'seo', 'relatedBlogPosts'));

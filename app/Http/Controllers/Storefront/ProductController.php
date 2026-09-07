@@ -8,6 +8,7 @@ use App\Enums\StaticPageStatus;
 use App\Enums\StockStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\IncrementProductViewCount;
+use App\Models\BlogPost;
 use App\Models\EmiPlan;
 use App\Models\PaymentMethod;
 use App\Models\Product;
@@ -355,7 +356,7 @@ class ProductController extends Controller
 
         $seo = SeoData::fromProduct($product, $urls);
 
-        $relatedBlogPosts = \App\Models\BlogPost::query()
+        $relatedBlogPosts = BlogPost::query()
             ->where('status', 'published')
             ->where('published_at', '<=', now())
             ->when($product->category, fn ($q) => $q->where(function ($qq) use ($product) {
@@ -367,7 +368,7 @@ class ProductController extends Controller
             ->limit(3)
             ->get();
         if ($relatedBlogPosts->isEmpty()) {
-            $relatedBlogPosts = \App\Models\BlogPost::query()->where('status', 'published')->where('published_at', '<=', now())->latest('published_at')->limit(3)->get();
+            $relatedBlogPosts = BlogPost::query()->where('status', 'published')->where('published_at', '<=', now())->latest('published_at')->limit(3)->get();
         }
 
         return view('storefront.products.show', compact(

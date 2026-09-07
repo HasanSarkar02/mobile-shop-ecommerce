@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\BlogPost;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -133,7 +134,7 @@ class GlobalSearchService
             $brands->push(['name' => $b->name, 'url' => $this->urls->canonicalRoute(tenant(), 'storefront.brand', [$b->slug])]);
         }
 
-        $postModels = \App\Models\BlogPost::query()->where('status', 'published')->where('published_at', '<=', now())->where('title', 'like', "%{$term}%")->limit(3)->get(['title', 'slug']);
+        $postModels = BlogPost::query()->where('status', 'published')->where('published_at', '<=', now())->where('title', 'like', "%{$term}%")->limit(3)->get(['title', 'slug']);
         $posts = collect();
         foreach ($postModels as $post) {
             $posts->push(['title' => $post->title, 'url' => $this->urls->canonicalRoute(tenant(), 'storefront.blog.show', [$post->slug])]);

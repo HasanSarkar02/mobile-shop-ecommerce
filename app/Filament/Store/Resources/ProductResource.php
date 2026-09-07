@@ -30,7 +30,9 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use UnitEnum;
 
@@ -109,15 +111,60 @@ class ProductResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['translations', 'brand', 'category', 'variants']))
             ->columns([
                 SpatieMediaLibraryImageColumn::make('images')->collection('images')->conversion('thumb'),
-                TextColumn::make('name')->label('Name')->limit(40),
-                TextColumn::make('brand.name'),
-                TextColumn::make('category.name'),
-                TextColumn::make('base_price')->formatStateUsing(fn (int $state): string => money((int) $state)),
-                TextColumn::make('status')->badge(),
+                TextColumn::make('name')
+                    ->label('Name')
+                    ->limit(40)
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where(function (Builder $q) use ($search): void {
+                            $q->whereHas('translations', fn (Builder $t): Builder => $t->where('name', 'like', "%{$search}%"))
+                                ->orWhere('model_number', 'like', "%{$search}%")
+                                ->orWhereHas('variants', fn (Builder $v): Builder => $v->where('sku', 'like', "%{$search}%")->orWhere('barcode', 'like', "%{$search}%"))
+                                ->orWhereHas('brand', fn (Builder $b): Builder => $b->where('name', 'like', "%{$search}%"))
+                                ->orWhereHas('category', fn (Builder $c): Builder => $c->where('name', 'like', "%{$search}%"))
+                                ->orWhereHas('tags', fn (Builder $tg): Builder => $tg->where('name', 'like', "%{$search}%"));
+                        });
+                    })
+                    ->sortable(query: function (Builder $query, string $direction): Builder {
+                        $locale = app()->getLocale();
+
+                        return $query->orderBy(
+                            ProductTranslation::select('name')
+                                ->whereColumn('product_translations.product_id', 'products.id')
+                                ->where('product_translations.locale', $locale)
+                                ->limit(1),
+                            $direction
+                        );
+                    }),
+                TextColumn::make('model_number')->label('Model')->searchable()->toggleable()->sortable(),
+                TextColumn::make('brand.name')->searchable(false)->sortable()->toggleable(),
+                TextColumn::make('category.name')->searchable(false)->sortable()->toggleable(),
+                TextColumn::make('base_price')->label('Price')->formatStateUsing(fn (int $state): string => money((int) $state))->sortable(),
+                TextColumn::make('status')->badge()->sortable(),
                 TextColumn::make('variants_count')->counts('variants')->label('Variants'),
             ])
+            ->searchPlaceholder('Search by name, model, SKU, barcode, brand, category, tags...')
+            ->filters([
+                SelectFilter::make('status')
+                    ->options(['draft' => 'Draft', 'published' => 'Published', 'archived' => 'Archived'])
+                    ->multiple()
+                    ->preload(),
+                SelectFilter::make('brand_id')
+                    ->label('Brand')
+                    ->relationship('brand', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
+                SelectFilter::make('category_id')
+                    ->label('Category')
+                    ->relationship('category', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
+            ])
+            ->defaultSort('created_at', 'desc')
             ->recordActions([EditAction::make(), DeleteAction::make()])
             ->toolbarActions([
                 BulkActionGroup::make([

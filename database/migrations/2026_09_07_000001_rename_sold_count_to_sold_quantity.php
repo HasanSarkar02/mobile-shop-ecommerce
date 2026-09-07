@@ -80,7 +80,7 @@ return new class extends Migration
         }
 
         if (Schema::hasColumn('products', 'sold_quantity') && Schema::hasColumn('products', 'sold_count')) {
-            DB::statement("UPDATE products SET sold_count = CAST(sold_quantity AS UNSIGNED) WHERE sold_quantity IS NOT NULL");
+            DB::statement('UPDATE products SET sold_count = CAST(sold_quantity AS UNSIGNED) WHERE sold_quantity IS NOT NULL');
         }
 
         if (Schema::hasColumn('products', 'sold_quantity')) {

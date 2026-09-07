@@ -8,7 +8,6 @@ use App\Filament\Store\Concerns\RestrictsToOwner;
 use App\Filament\Store\Resources\StaffResource\Pages;
 use App\Models\User;
 use BackedEnum;
-use UnitEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
@@ -18,6 +17,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use UnitEnum;
 
 class StaffResource extends Resource
 {

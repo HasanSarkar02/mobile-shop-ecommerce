@@ -14,6 +14,7 @@ use App\Enums\StockStatus;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Location;
 use App\Models\OrderItem;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\SerialNumber;
 use App\Models\StockItem;
@@ -94,7 +95,7 @@ class InventoryService
      * the per-variant helper. Tenant-scoped to avoid cross-tenant races.
      *
      * @param  Collection<int, ProductVariant>  $variants
-     * @return Collection<int, \App\Models\Product>
+     * @return Collection<int, Product>
      */
     public function lockProductsForVariants(Collection $variants): Collection
     {
@@ -108,7 +109,7 @@ class InventoryService
             return collect();
         }
 
-        return \App\Models\Product::query()
+        return Product::query()
             ->whereIn('id', $productIds->all())
             ->orderBy('id')
             ->lockForUpdate()
@@ -121,7 +122,7 @@ class InventoryService
      * updated once per product, not once per variant, when an order touches
      * multiple variants of the same product.
      *
-     * @param  Collection<int, \App\Models\OrderItem|array>  $items
+     * @param  Collection<int, OrderItem|array>  $items
      * @return array<int, string> product_id => quantity string "3.750"
      */
     public function aggregateQuantitiesByProduct(Collection $items): array
@@ -132,10 +133,10 @@ class InventoryService
             $productId = null;
             $qty = '0.000';
 
-            if ($item instanceof \App\Models\OrderItem) {
+            if ($item instanceof OrderItem) {
                 $productId = $item->variant?->product_id ?? null;
                 if ($productId === null && isset($item->product_variant_id)) {
-                    $productId = \App\Models\ProductVariant::query()->whereKey($item->product_variant_id)->value('product_id');
+                    $productId = ProductVariant::query()->whereKey($item->product_variant_id)->value('product_id');
                 }
                 $qty = $this->normalizeQty($item->quantity);
             } elseif (is_array($item)) {
@@ -148,7 +149,7 @@ class InventoryService
             }
 
             $map[$productId] = isset($map[$productId])
-                ? bcadd($map[$productId], $qty, \App\Models\StockItem::SCALE)
+                ? bcadd($map[$productId], $qty, StockItem::SCALE)
                 : $qty;
         }
 
@@ -472,11 +473,11 @@ class InventoryService
 
             // Atomic sold_quantity increment with deterministic product lock (tenant-scoped).
             // Decision 2/3: DECIMAL(10,3) sold_quantity increments atomically with Sale.
-            $productId = $variant->product_id ?? \App\Models\ProductVariant::query()->whereKey($variant->id)->value('product_id');
+            $productId = $variant->product_id ?? ProductVariant::query()->whereKey($variant->id)->value('product_id');
             if ($productId !== null) {
                 DB::table('products')->where('id', $productId)->where('tenant_id', $variant->tenant_id)->lockForUpdate()->first();
                 DB::table('products')->where('id', $productId)->where('tenant_id', $variant->tenant_id)->update([
-                    'sold_quantity' => DB::raw("sold_quantity + ".$qty),
+                    'sold_quantity' => DB::raw('sold_quantity + '.$qty),
                 ]);
             }
         });
@@ -528,11 +529,11 @@ class InventoryService
             $this->logMovement($variant, $location, StockMovementType::Sale, -$qtyInt, $reference);
 
             // Atomic sold_quantity increment for serialized (discrete units, integer qty).
-            $productId = $variant->product_id ?? \App\Models\ProductVariant::query()->whereKey($variant->id)->value('product_id');
+            $productId = $variant->product_id ?? ProductVariant::query()->whereKey($variant->id)->value('product_id');
             if ($productId !== null) {
                 DB::table('products')->where('id', $productId)->where('tenant_id', $variant->tenant_id)->lockForUpdate()->first();
                 DB::table('products')->where('id', $productId)->where('tenant_id', $variant->tenant_id)->update([
-                    'sold_quantity' => DB::raw("sold_quantity + ".$qtyDec),
+                    'sold_quantity' => DB::raw('sold_quantity + '.$qtyDec),
                 ]);
             }
         });
@@ -590,11 +591,11 @@ class InventoryService
             $this->logMovement($variant, $location, StockMovementType::Return, $qty, $reference, null, 'Restocked from cancelled order');
 
             // Atomic sold_quantity decrement — single path for both cancellation and full refund+restock (decisions 4,7).
-            $productId = $variant->product_id ?? \App\Models\ProductVariant::query()->whereKey($variant->id)->value('product_id');
+            $productId = $variant->product_id ?? ProductVariant::query()->whereKey($variant->id)->value('product_id');
             if ($productId !== null) {
                 DB::table('products')->where('id', $productId)->where('tenant_id', $variant->tenant_id)->lockForUpdate()->first();
                 DB::table('products')->where('id', $productId)->where('tenant_id', $variant->tenant_id)->update([
-                    'sold_quantity' => DB::raw("GREATEST(0.000, sold_quantity - ".$qty.")"),
+                    'sold_quantity' => DB::raw('GREATEST(0.000, sold_quantity - '.$qty.')'),
                 ]);
             }
         });
@@ -645,11 +646,11 @@ class InventoryService
             $this->logMovement($variant, $location, StockMovementType::Return, $qty, $reference);
 
             // Atomic sold_quantity decrement for serialized — aggregated per product.
-            $productId = $variant->product_id ?? \App\Models\ProductVariant::query()->whereKey($variant->id)->value('product_id');
+            $productId = $variant->product_id ?? ProductVariant::query()->whereKey($variant->id)->value('product_id');
             if ($productId !== null) {
                 DB::table('products')->where('id', $productId)->where('tenant_id', $variant->tenant_id)->lockForUpdate()->first();
                 DB::table('products')->where('id', $productId)->where('tenant_id', $variant->tenant_id)->update([
-                    'sold_quantity' => DB::raw("GREATEST(0.000, sold_quantity - ".$qty.")"),
+                    'sold_quantity' => DB::raw('GREATEST(0.000, sold_quantity - '.$qty.')'),
                 ]);
             }
 
