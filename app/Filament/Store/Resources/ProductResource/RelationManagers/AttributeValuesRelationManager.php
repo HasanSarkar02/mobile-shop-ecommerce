@@ -7,6 +7,7 @@ namespace App\Filament\Store\Resources\ProductResource\RelationManagers;
 use App\Enums\AttributeDataType;
 use App\Models\AttributeDefinition;
 use App\Models\AttributeOption;
+use App\Models\Category;
 use App\Models\ProductAttributeValue;
 use App\Services\ProductSpecificationBulkService;
 use Filament\Actions\Action;
@@ -464,7 +465,7 @@ class AttributeValuesRelationManager extends RelationManager
                 TextInput::make('new_attribute.group')->label('Group')->placeholder('e.g. Battery')->helperText('Pre-filled from current group if Add is clicked inside a group. You can change it.'),
                 TextInput::make('new_attribute.group_sort_order')->label('Group order')->numeric()->default(0),
                 TextInput::make('new_attribute.sort_order')->label('Attribute order')->numeric()->default(0),
-                Select::make('new_attribute.categories')->label('Categories')->relationship('categories', 'name', modifyQueryUsing: fn (Builder $q) => $q->where('tenant_id', tenant()?->id ?? 0))->multiple()->preload()->helperText('Empty = all products. Map to limit.'),
+                Select::make('new_attribute.categories')->label('Categories')->options(fn (): array => Category::where('tenant_id', tenant()?->id ?? 0)->pluck('name', 'id')->all())->multiple()->preload()->helperText('Empty = all products. Map to limit.'),
                 Toggle::make('new_attribute.is_filterable')->label('Filterable')->default(true),
                 Toggle::make('new_attribute.is_variant_defining')->label('Variant-defining')->default(false),
                 Repeater::make('new_attribute.options')->label('Options (for Select)')->schema([
