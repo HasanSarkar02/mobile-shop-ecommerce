@@ -262,7 +262,7 @@
                     </div>
                 </li>
                 <li class="flex gap-2">
-                    <x-ui.icon name="lock" class="w-4 h-4 text-gray-700 flex-shrink-0" />
+                    <x-ui.icon name="lock" class="w-4 h-4 text-blue-600 flex-shrink-0" />
                     <div>
                         <p class="font-medium">{{ __('Secure Payments') }}</p>
                         <p class="text-gray-500">{{ __('SSL encrypted & safe') }}</p>
