@@ -34,6 +34,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class ProductResource extends Resource
@@ -234,5 +235,45 @@ class ProductResource extends Resource
             'create' => Pages\CreateProduct::route('/create'),
             'edit' => Pages\EditProduct::route('/{record}/edit'),
         ];
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'model_number',
+            'translations.name',
+            'brand.name',
+            'category.name',
+            'tags.name',
+            'variants.sku',
+            'variants.barcode',
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['translations', 'brand', 'category', 'tags', 'variants']);
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        /** @var Product $record */
+        return $record->translation()?->name ?? $record->translation('en')?->name ?? $record->model_number ?? 'Product #'.$record->getKey();
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Product $record */
+        return array_filter([
+            'Brand' => $record->brand?->name,
+            'Category' => $record->category?->name,
+            'Model' => $record->model_number,
+            'Price' => money((int) $record->base_price),
+        ]);
+    }
+
+    public static function getGlobalSearchResultUrl(Model $record): string
+    {
+        return static::getUrl('edit', ['record' => $record]);
     }
 }

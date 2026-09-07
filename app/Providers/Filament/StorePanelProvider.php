@@ -42,6 +42,12 @@ class StorePanelProvider extends PanelProvider
             ->brandLogo(fn () => ($path = tenant()?->themeSettings?->logo_path) ? asset('storage/'.$path) : null)
             ->brandLogoHeight('2rem')
             ->darkModeBrandLogo(fn () => ($path = tenant()?->themeSettings?->logo_path) ? asset('storage/'.$path) : null)
+            ->globalSearch(true)
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
+            ->globalSearchFieldSuffix(fn () => match (true) {
+                str_contains(request()->userAgent() ?? '', 'Mac') => '⌘K',
+                default => 'Ctrl+K',
+            })
             ->colors(['primary' => '#16a34a'])
             ->discoverResources(in: app_path('Filament/Store/Resources'), for: 'App\\Filament\\Store\\Resources')
             ->discoverPages(in: app_path('Filament/Store/Pages'), for: 'App\\Filament\\Store\\Pages')

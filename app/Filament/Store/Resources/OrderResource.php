@@ -37,6 +37,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
@@ -919,5 +920,39 @@ class OrderResource extends Resource
             'create' => Pages\CreateOrder::route('/create'),
             'view' => Pages\ViewOrder::route('/{record}'),
         ];
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'order_number',
+            'invoice_number',
+            'guest_name',
+            'guest_email',
+            'guest_phone',
+            'customer.name',
+            'customer.email',
+        ];
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['customer']);
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        /** @var Order $record */
+        return $record->order_number ?? 'Order #'.$record->getKey();
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Order $record */
+        return array_filter([
+            'Customer' => $record->customerDisplayName(),
+            'Status' => $record->status?->label() ?? $record->status?->value,
+            'Total' => money((int) $record->grand_total),
+        ]);
     }
 }

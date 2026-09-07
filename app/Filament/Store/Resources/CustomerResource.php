@@ -61,6 +61,26 @@ class CustomerResource extends Resource
         ];
     }
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'email', 'phone'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        /** @var Customer $record */
+        return $record->name ?? $record->email ?? 'Customer #'.$record->getKey();
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        /** @var Customer $record */
+        return array_filter([
+            'Email' => $record->email,
+            'Phone' => $record->phone,
+        ]);
+    }
+
     // Staff can view and edit customer records as part of normal customer
     // service (addresses, notes, etc.); deleting a customer record is a more
     // significant, less-reversible action reserved for owners.
