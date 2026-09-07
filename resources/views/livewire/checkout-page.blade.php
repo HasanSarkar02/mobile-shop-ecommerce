@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 lg:pb-8">
+    <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-[calc(9rem+env(safe-area-inset-bottom))] lg:pb-8">
         {{-- Header + Stepper --}}
         <div class="mb-6">
             <nav class="text-xs text-gray-500 mb-2">
@@ -463,9 +463,9 @@
         </div>
     </div>
 
-    {{-- Mobile sticky CTA — enterprise: total + trust, not just button --}}
-    <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800 safe-bottom">
-        <div class="px-4 pt-3 pb-[calc(0.75rem+var(--safe-bottom))]">
+    {{-- Mobile sticky CTA — above bottom nav (z-40 < nav z-50), offset for nav height + safe area --}}
+    <div class="lg:hidden fixed inset-x-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur border-t border-gray-200 dark:border-gray-800" style="bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));">
+        <div class="px-4 pt-3 pb-3">
             <div class="flex items-center justify-between gap-3 mb-2.5">
                 <span class="text-sm font-medium text-gray-600 dark:text-gray-300">{{ __('Total') }}</span>
                 <span class="text-lg font-extrabold tracking-tight">{{ money((int) ($subtotal - $discount + $shippingCost)) }}</span>

@@ -1,5 +1,5 @@
 {{-- resources/views/livewire/cart-page.blade.php --}}
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-8">
     <h1 class="text-2xl font-bold tracking-tight mb-6">Your Cart</h1>
 
     @if ($items->isEmpty())
@@ -9,51 +9,58 @@
         <div class="flex flex-col lg:flex-row gap-8 items-start">
             <div class="flex-1 min-w-0 divide-y divide-gray-100 dark:divide-gray-800">
                 @foreach ($items as $item)
-                    <div class="flex items-center gap-4 py-4" wire:key="cart-item-{{ $item->id }}"
+                    @php
+                        $product = $item->variant->product;
+                        $translation = $product?->translation() ?? $product?->translation('en');
+                        $productUrl = $translation?->slug ? route('storefront.product', $translation->slug) : ($product ? route('storefront.product', $product->id) : '#');
+                    @endphp
+                    <div class="flex gap-3 py-4 items-start" wire:key="cart-item-{{ $item->id }}"
                         wire:loading.class="opacity-50"
                         wire:target="updateQuantity({{ $item->id }}),removeItem({{ $item->id }})">
-                        <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-900 flex-shrink-0">
+                        <a href="{{ $productUrl }}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-900 flex-shrink-0 block">
                             @if ($url = $item->variant->getFirstMediaUrl('images', 'thumb'))
                                 <img src="{{ $url }}" width="80" height="80" loading="lazy"
                                     class="w-full h-full object-cover">
                             @endif
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-medium truncate">
-                                {{ $item->variant->product->name ?? $item->variant->sku }}
-                                @if ($item->variant?->fulfillment_strategy?->value === 'preorder')
-                                    <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">PRE-ORDER</span>
+                        </a>
+                        <div class="flex-1 min-w-0 flex flex-col gap-2">
+                            <div class="min-w-0">
+                                <a href="{{ $productUrl }}" class="font-medium text-sm sm:text-base leading-snug line-clamp-2 hover:text-[var(--brand)] transition block">
+                                    {{ $product?->name ?? $item->variant->sku }}
+                                    @if ($item->variant?->fulfillment_strategy?->value === 'preorder')
+                                        <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">PRE-ORDER</span>
+                                    @endif
+                                </a>
+                                <p class="text-xs sm:text-sm text-gray-500 truncate">{{ $item->variant->sku }}</p>
+                                @if ($item->variant?->fulfillment_strategy?->value === 'preorder' && $item->variant?->expected_available_at)
+                                    <p class="text-xs text-purple-600 dark:text-purple-400">Expected {{ $item->variant->expected_available_at->format('M j, Y') }}</p>
                                 @endif
-                            </p>
-                            <p class="text-sm text-gray-500">{{ $item->variant->sku }}</p>
-                            @if ($item->variant?->fulfillment_strategy?->value === 'preorder' && $item->variant?->expected_available_at)
-                                <p class="text-xs text-purple-600 dark:text-purple-400">Expected {{ $item->variant->expected_available_at->format('M j, Y') }}</p>
-                            @endif
-                            <button wire:click="removeItem({{ $item->id }})" wire:loading.attr="disabled"
-                                wire:target="removeItem({{ $item->id }})"
-                                class="text-xs text-red-500 hover:underline mt-1">Remove</button>
+                                <button wire:click="removeItem({{ $item->id }})" wire:loading.attr="disabled"
+                                    wire:target="removeItem({{ $item->id }})"
+                                    class="text-xs text-red-500 hover:underline mt-1">Remove</button>
+                            </div>
+                            <div class="flex items-center justify-between gap-2 sm:gap-3">
+                                @php
+                                    $step = $item->variant->product->sell_by_unit ?? '1.000';
+                                    $stepStr = number_format((float) $step, 3, '.', '');
+                                    $decQty = bcsub((string) $item->quantity, $stepStr, 3);
+                                    $incQty = bcadd((string) $item->quantity, $stepStr, 3);
+                                @endphp
+                                <div class="flex items-center border border-gray-200 dark:border-gray-800 rounded-xl flex-shrink-0">
+                                    <button wire:click="updateQuantity({{ $item->id }}, '{{ $decQty }}')"
+                                        @disabled(bccomp((string) $item->quantity, $stepStr, 3) <= 0)
+                                        class="w-7 h-8 sm:w-8 sm:h-9 flex items-center justify-center text-base disabled:opacity-30"
+                                        aria-label="Decrease quantity">−</button>
+                                    <input type="number" value="{{ $item->quantity }}" step="{{ $stepStr }}" min="{{ $stepStr }}"
+                                        wire:change="updateQuantity({{ $item->id }}, $event.target.value)"
+                                        class="w-12 sm:w-16 text-center text-sm bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                                    <button wire:click="updateQuantity({{ $item->id }}, '{{ $incQty }}')"
+                                        class="w-7 h-8 sm:w-8 sm:h-9 flex items-center justify-center text-base"
+                                        aria-label="Increase quantity">+</button>
+                                </div>
+                                <span class="text-right font-semibold text-sm sm:text-base flex-shrink-0 ml-auto">{{ money((int) $item->lineTotal()) }}</span>
+                            </div>
                         </div>
-                        @php
-                            $step = $item->variant->product->sell_by_unit ?? '1.000';
-                            $stepStr = number_format((float) $step, 3, '.', '');
-                            $decQty = bcsub((string) $item->quantity, $stepStr, 3);
-                            $incQty = bcadd((string) $item->quantity, $stepStr, 3);
-                        @endphp
-                        <div
-                            class="flex items-center border border-gray-200 dark:border-gray-800 rounded-xl flex-shrink-0">
-                            <button wire:click="updateQuantity({{ $item->id }}, '{{ $decQty }}')"
-                                @disabled(bccomp((string) $item->quantity, $stepStr, 3) <= 0)
-                                class="w-8 h-9 flex items-center justify-center text-base disabled:opacity-30"
-                                aria-label="Decrease quantity">−</button>
-                            <input type="number" value="{{ $item->quantity }}" step="{{ $stepStr }}" min="{{ $stepStr }}"
-                                wire:change="updateQuantity({{ $item->id }}, $event.target.value)"
-                                class="w-16 text-center text-sm bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                            <button wire:click="updateQuantity({{ $item->id }}, '{{ $incQty }}')"
-                                class="w-8 h-9 flex items-center justify-center text-base"
-                                aria-label="Increase quantity">+</button>
-                        </div>
-                        <span
-                            class="w-24 text-right font-semibold flex-shrink-0">{{ money((int) $item->lineTotal()) }}</span>
                     </div>
                 @endforeach
             </div>
